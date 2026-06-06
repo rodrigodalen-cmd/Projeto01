@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bolão Copa</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#006B3F;--primary-light:#00A651;--secondary:#F4D03F;
+  --bg:#0D1B2A;--surface:#152536;--surface2:#1E3448;
+  --text:#fff;--text2:#8FA3B8;--text3:#4A6278;
+  --ok:#27AE60;--err:#E74C3C;--warn:#F39C12;
+  --gold:#FFD700;--pix:#32BCAD;--border:#1E3448;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
+#app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;transform:translateX(100%);transition:transform .3s ease;z-index:1}
+.screen.active{transform:translateX(0);z-index:2}
+.screen.prev{transform:translateX(-30%)}
+.scroll{overflow-y:auto;flex:1;padding:20px;padding-bottom:90px}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 20px 0;position:sticky;top:0;background:var(--bg);z-index:10}
+.topbar-title{flex:1;font-size:17px;font-weight:800}
+.back-btn{width:36px;height:36px;border-radius:18px;background:var(--surface);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* TABS */
+.tabs{display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 20px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;padding:4px 0}
+.tab.active{color:var(--primary)}
+.tab svg{width:22px;height:22px}
+.tab.create-tab svg{width:32px;height:32px;color:var(--secondary)}
+/* CARDS */
+.card{background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
+.card.selected{border-color:var(--primary);border-width:2px;background:var(--surface2)}
+/* INPUTS */
+.field{margin-bottom:16px}
+.field label{display:block;color:var(--text2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-size:15px;outline:none;font-family:inherit}
+.field input:focus{border-color:var(--primary)}
+.field input::placeholder{color:var(--text3)}
+/* BUTTONS */
+.btn{width:100%;padding:16px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.3px;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-secondary{background:var(--secondary);color:#0D1B2A}
+.btn-outline{background:transparent;border:2px solid var(--primary);color:var(--primary)}
+.btn-ghost{background:var(--surface2);color:var(--text)}
+.btn-pix{background:var(--pix);color:#fff}
+.btn-sm{padding:10px 18px;width:auto;font-size:13px;border-radius:10px}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700}
+.badge-green{background:rgba(39,174,96,.2);color:var(--ok)}
+.badge-yellow{background:rgba(243,156,18,.2);color:var(--warn)}
+.badge-red{background:rgba(231,76,60,.2);color:var(--err)}
+/* MATCH CARD */
+.match-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid var(--border);margin-bottom:12px;cursor:pointer}
+.match-card:active{opacity:.85}
+.match-card.selected{border-color:var(--primary);border-width:2px}
+.match-stage{display:flex;justify-content:space-between;margin-bottom:10px}
+.match-stage span:first-child{color:var(--primary);font-size:10px;font-weight:700;text-transform:uppercase}
+.match-stage span:last-child{color:var(--text2);font-size:10px;font-weight:600}
+.match-row{display:flex;align-items:center;gap:8px}
+.team-block{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.team-block.right{align-items:center}
+.flag{font-size:32px;line-height:1}
+.team-name{color:var(--text);font-size:12px;font-weight:700;text-align:center}
+.team-code{color:var(--text3);font-size:10px;font-weight:600}
+.vs-block{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 8px}
+.vs-text{color:var(--text3);font-size:16px;font-weight:900}
+.match-venue{color:var(--text3);font-size:10px;text-align:center;margin-top:8px}
+/* HOME */
+.greeting{font-size:20px;font-weight:800}
+.sub-greeting{color:var(--text3);font-size:11px;margin-top:2px}
+.banner{background:var(--primary);border-radius:20px;padding:20px;margin-bottom:24px}
+.banner h3{font-size:17px;font-weight:800;margin-bottom:4px}
+.banner p{color:rgba(255,255,255,.75);font-size:12px;margin-bottom:14px}
+.section-title{font-size:17px;font-weight:800;margin-bottom:14px}
+.section-sub{color:var(--text3);font-size:12px;margin-bottom:10px;margin-top:-10px}
+.empty-box{background:var(--surface);border-radius:16px;padding:28px;text-align:center;border:1px dashed var(--border)}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.empty-text{color:var(--text2);font-size:13px;margin-bottom:16px}
+/* BOLAO CARD */
+.bolao-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.bolao-title{font-size:15px;font-weight:700;flex:1;margin-right:8px}
+.bolao-match{color:var(--text2);font-size:13px;margin-bottom:10px}
+.stats-row{display:flex;background:var(--bg);border-radius:10px;padding:10px}
+.stat{flex:1;text-align:center}
+.stat-val{color:var(--secondary);font-size:13px;font-weight:800}
+.stat-lbl{color:var(--text3);font-size:9px;font-weight:600;text-transform:uppercase;margin-top:2px}
+.stat-div{width:1px;background:var(--border)}
+/* PRIZE */
+.prize-card{background:var(--surface);border-radius:16px;padding:20px;margin:12px 0;border:1px solid rgba(255,215,0,.3)}
+.prize-main{text-align:center;margin-bottom:12px}
+.prize-lbl{color:var(--text2);font-size:12px;margin-bottom:4px}
+.prize-val{color:var(--gold);font-size:38px;font-weight:900;line-height:1}
+.prize-sub{color:var(--text3);font-size:11px;margin-top:4px}
+.prize-proj{background:var(--bg);border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center}
+.proj-lbl{color:var(--text3);font-size:12px}
+.proj-val{color:var(--secondary);font-size:13px;font-weight:800}
+/* INVITE */
+.invite-card{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid var(--border)}
+.invite-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.code-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-radius:10px;padding:12px 16px;margin-bottom:10px}
+.code-text{color:var(--secondary);font-size:22px;font-weight:900;letter-spacing:4px}
+.copy-btn{background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px}
+/* PARTICIPANTS */
+.part-row{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid var(--border)}
+.part-avatar{width:38px;height:38px;border-radius:19px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0}
+.part-name{font-size:13px;font-weight:700}
+.part-bet{color:var(--text3);font-size:11px;margin-top:2px}
+.paid-badge{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:auto;flex-shrink:0}
+.paid-ok{background:rgba(39,174,96,.15);color:var(--ok)}
+.paid-no{background:rgba(243,156,18,.15);color:var(--warn)}
+/* BET SCREEN */
+.bet-card{background:var(--surface);border-radius:20px;padding:24px;border:1px solid var(--border);margin-bottom:16px}
+.bet-teams{display:flex;align-items:center;gap:8px}
+.bet-team{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bet-flag{font-size:44px;line-height:1}
+.bet-name{font-size:12px;font-weight:700;text-align:center}
+.bet-center{display:flex;flex-direction:column;align-items:center;gap:10px}
+.bet-lbl{color:var(--text3);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.scores{display:flex;align-items:center;gap:6px}
+.score-sel{display:flex;flex-direction:column;align-items:center;gap:4px}
+.score-btn{width:34px;height:34px;border-radius:17px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.score-btn:active{background:var(--primary)}
+.score-num{color:var(--secondary);font-size:30px;font-weight:900;min-width:44px;text-align:center}
+.score-dash{color:var(--text3);font-size:18px;font-weight:900}
+.result-badge{background:rgba(0,107,63,.2);padding:4px 10px;border-radius:8px}
+.result-text{color:var(--primary-light);font-size:11px;font-weight:700;text-align:center}
+/* AMOUNTS */
+.amounts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.amount-btn{flex:1;min-width:calc(33% - 6px);padding:13px 6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text2);font-size:14px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s}
+.amount-btn.selected{background:var(--primary);border-color:var(--primary);color:#fff}
+/* STEPS */
+.steps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:28px}
+.step-dot{width:26px;height:26px;border-radius:13px;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3)}
+.step-dot.done{background:var(--primary);border-color:var(--primary);color:#fff}
+.step-line{width:36px;height:2px;background:var(--border)}
+.step-line.done{background:var(--primary)}
+/* SWITCH */
+.switch-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--border)}
+.switch-info{}
+.switch-lbl{font-size:14px;font-weight:600}
+.switch-sub{color:var(--text3);font-size:11px;margin-top:2px}
+.toggle{position:relative;width:44px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--border);border-radius:13px;cursor:pointer;transition:.2s}
+.slider:before{content:'';position:absolute;width:20px;height:20px;border-radius:10px;background:#fff;top:3px;left:3px;transition:.2s}
+input:checked+.slider{background:var(--primary)}
+input:checked+.slider:before{transform:translateX(18px)}
+/* PROFILE */
+.avatar-card{background:var(--surface);border-radius:20px;padding:28px;text-align:center;border:1px solid var(--border);margin-bottom:16px}
+.avatar-big{width:70px;height:70px;border-radius:35px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;margin:0 auto 12px}
+.profile-name{font-size:19px;font-weight:800}
+.profile-email{color:var(--text3);font-size:12px;margin-top:4px}
+.info-row{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border)}
+.info-lbl{color:var(--text3);font-size:10px;font-weight:700;text-transform:uppercase}
+.info-val{color:var(--text);font-size:13px;font-weight:600;margin-top:2px}
+.about-card{background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border)}
+.about-item{color:var(--text2);font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)}
+.about-item:last-child{border-bottom:none}
+.signout-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);border-radius:14px;padding:16px;color:var(--err);font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;width:100%}
+/* JOIN */
+.code-input-big input{font-size:22px;letter-spacing:6px;font-weight:900;text-align:center;text-transform:uppercase}
+.found-box{background:var(--surface);border-radius:16px;padding:16px;border:1px solid rgba(39,174,96,.4);margin-top:12px}
+.found-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--ok);font-size:13px;font-weight:700}
+.not-found{text-align:center;margin-top:28px}
+.not-found .nf-icon{font-size:40px;margin-bottom:8px}
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a2a3a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;border:1px solid var(--primary);white-space:nowrap}
+.toast.show{opacity:1}
+/* MY BET BOX */
+.my-bet-box{background:rgba(0,107,63,.1);border:1px solid rgba(0,107,63,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px}
+.my-bet-lbl{color:var(--text2);font-size:11px;margin-bottom:4px}
+.my-bet-score{color:var(--text);font-size:20px;font-weight:900}
+.my-bet-edit{color:var(--primary);font-size:11px;font-weight:600;margin-top:6px;cursor:pointer;background:none;border:none}
+/* SUMMARY */
+.summary-card{background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
+.summary-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.summary-row:last-child{border-bottom:none}
+.summary-icon{width:32px;height:32px;border-radius:8px;background:rgba(0,107,63,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.summary-lbl{color:var(--text3);font-size:10px;font-weight:700;text-transform:uppercase}
+.summary-val{color:var(--text);font-size:13px;font-weight:700;margin-top:2px}
+/* PRIZE PREVIEW */
+.prize-preview{background:var(--surface);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.prize-preview-text{color:var(--text2);font-size:12px;flex:1}
+.prize-preview-val{color:var(--gold);font-weight:800}
+/* PW ROW */
+.pw-row{display:flex;align-items:center;gap:4px}
+.pw-dot{color:var(--text2);font-size:20px}
+/* ACTION BOX */
+.action-box{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
+/* INFO CHIPS */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{display:flex;align-items:center;gap:4px;background:var(--bg);padding:5px 10px;border-radius:8px;font-size:11px;color:var(--text2);font-weight:600}
+/* HEADER with trophy */
+.home-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.trophy-badge{width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px}
+/* PIX QR SCREEN */
+.pix-screen-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px;text-align:center}
+.pix-icon{font-size:60px}
+.pix-title{font-size:22px;font-weight:800;color:var(--pix)}
+.pix-amount{font-size:38px;font-weight:900;color:var(--secondary)}
+.qr-mock{width:180px;height:180px;background:#fff;border-radius:16px;margin:8px auto;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden}
+.qr-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;width:150px;height:150px}
+.qr-cell{border-radius:2px}
+.pix-key{background:var(--surface);border-radius:12px;padding:12px 20px;font-size:13px;color:var(--pix);font-weight:700;width:100%}
+.pix-info{color:var(--text3);font-size:12px;line-height:1.6}
+/* Tip card */
+.tip-card{background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:16px}
+.tip-title{color:var(--secondary);font-size:13px;font-weight:700;margin-bottom:8px}
+.tip-text{color:var(--text2);font-size:12px;line-height:1.8}
+/* Auth screen */
+.auth-wrapper{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:32px 24px}
+.auth-logo{text-align:center;margin-bottom:40px}
+.auth-trophy{font-size:60px;display:block;margin-bottom:10px}
+.auth-appname{color:var(--secondary);font-size:34px;font-weight:900;letter-spacing:-1px;display:block}
+.auth-tagline{color:var(--text2);font-size:14px;margin-top:6px;display:block}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0}
+.div-line{flex:1;height:1px;background:var(--border)}
+.div-text{color:var(--text3);font-size:12px}
+.hint-text{color:var(--text3);font-size:11px;text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- === LOGIN === -->
+<div class="screen active" id="s-login">
+  <div class="auth-wrapper">
+    <div class="auth-logo">
+      <span class="auth-trophy">🏆</span>
+      <span class="auth-appname">Bolão Copa</span>
+      <span class="auth-tagline">Aposte com os amigos. Ganhe junto.</span>
+    </div>
+    <div class="field"><label>E-mail</label><input id="li-email" type="email" placeholder="seu@email.com" value="joao@email.com"></div>
+    <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" value="123456"></div>
+    <button class="btn btn-primary" style="margin-top:8px;margin-bottom:20px" onclick="doLogin()">Entrar</button>
+    <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
+    <button class="btn btn-outline" onclick="go('s-register')">Criar conta gratuita</button>
+    <p class="hint-text">💡 Teste: joao@email.com / 123456</p>
+  </div>
+</div>
+
+<!-- === REGISTER === -->
+<div class="screen" id="s-register">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar conta</span></div>
+  <div class="scroll">
+    <p style="color:var(--text2);font-size:13px;margin-bottom:20px">É grátis e rápido 🎉</p>
+    <div class="field"><label>Nome completo</label><input id="rg-name" placeholder="Seu nome"></div>
+    <div class="field"><label>E-mail</label><input id="rg-email" type="email" placeholder="seu@email.com"></div>
+    <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
+    <div class="field"><label>Chave Pix</label><input id="rg-pix" placeholder="CPF, e-mail, telefone..."></div>
+    <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
+      <span style="font-size:12px">🏦</span><span style="color:var(--pix);font-size:11px">Sua chave Pix será usada para receber prêmios</span>
+    </div>
+    <div class="field"><label>Senha</label><input id="rg-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar senha</label><input id="rg-pass2" type="password" placeholder="Repita a senha"></div>
+    <button class="btn btn-primary" onclick="doRegister()">Criar minha conta</button>
+  </div>
+</div>
+
+<!-- === HOME === -->
+<div class="screen" id="s-home">
+  <div class="scroll" style="padding-top:24px">
+    <div class="home-header">
+      <div>
+        <div class="greeting" id="home-greeting">Olá! 👋</div>
+        <div class="sub-greeting">Copa do Mundo 2026 · USA/CAN/MEX</div>
+      </div>
+      <div class="trophy-badge">🏆</div>
+    </div>
+    <div class="banner">
+      <h3>🇧🇷 Brasil na Copa 2026</h3>
+      <p>Crie seu bolão e aposte com os amigos!</p>
+      <button class="btn btn-secondary btn-sm" onclick="go('s-create')">➕ Criar Bolão</button>
+    </div>
+    <div class="section-title">Meus Bolões</div>
+    <div id="my-boloes-list"></div>
+    <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
+    <div class="section-sub">Toque num jogo para criar um bolão</div>
+    <div id="games-list"></div>
+  </div>
+  <div class="tabs" id="main-tabs">
+    <button class="tab active" onclick="showTab('home')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
+    </button>
+    <button class="tab" onclick="showTab('join')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar
+    </button>
+    <button class="tab create-tab" onclick="go('s-create')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar
+    </button>
+    <button class="tab" onclick="showTab('profile')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Perfil
+    </button>
+  </div>
+</div>
+
+<!-- === JOIN (tab dentro do home) === -->
+<div class="screen" id="s-join">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Entrar no Bolão</span></div>
+  <div class="scroll">
+    <p style="font-size:17px;font-weight:800;margin-bottom:4px">Código do bolão</p>
+    <p style="color:var(--text3);font-size:12px;margin-bottom:16px">Digite o código de 8 caracteres do seu amigo</p>
+    <div class="field code-input-big">
+      <input id="join-code" placeholder="COPA2026" maxlength="8" oninput="checkJoinCode(this.value.toUpperCase());this.value=this.value.toUpperCase()">
+    </div>
+    <div id="join-result"></div>
+  </div>
+</div>
+
+<!-- === PROFILE (tab dentro do home) === -->
+<div class="screen" id="s-profile">
+  <div class="topbar"><span class="topbar-title" style="flex:0;margin-right:auto">Perfil</span></div>
+  <div class="scroll" style="padding-top:16px">
+    <div class="avatar-card">
+      <div class="avatar-big" id="prof-avatar">J</div>
+      <div class="profile-name" id="prof-name">João Silva</div>
+      <div class="profile-email" id="prof-email">joao@email.com</div>
+    </div>
+    <div style="display:flex;background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:20px">
+      <div class="stat" id="prof-criados"><div class="stat-val">0</div><div class="stat-lbl">Criados</div></div>
+      <div class="stat-div"></div>
+      <div class="stat" id="prof-partic"><div class="stat-val">0</div><div class="stat-lbl">Particip.</div></div>
+      <div class="stat-div"></div>
+      <div class="stat" id="prof-total"><div class="stat-val">R$0</div><div class="stat-lbl">Apostado</div></div>
+    </div>
+    <div class="section-title">Meus dados</div>
+    <div class="info-row">
+      <span style="font-size:18px">📱</span>
+      <div><div class="info-lbl">Telefone</div><div class="info-val" id="prof-phone">-</div></div>
+    </div>
+    <div class="info-row">
+      <span style="font-size:18px;color:var(--pix)">🏦</span>
+      <div><div class="info-lbl">Chave Pix</div><div class="info-val" style="color:var(--pix)" id="prof-pix">-</div></div>
+    </div>
+    <div class="section-title" style="margin-top:20px">Sobre o app</div>
+    <div class="about-card">
+      <div class="about-item">🏆 Bolão Copa v1.0.0</div>
+      <div class="about-item">🇧🇷 Feito para a Copa do Mundo 2026</div>
+      <div class="about-item">💰 Taxa de 10% sobre o prêmio</div>
+      <div class="about-item">🔒 Máximo 50 participantes por bolão</div>
+      <div class="about-item">⚖️ Apenas para uso entre amigos</div>
+    </div>
+    <button class="signout-btn" onclick="doLogout()">🚪 Sair da conta</button>
+  </div>
+</div>
+
+<!-- === CREATE BOLÃO === -->
+<div class="screen" id="s-create">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar Bolão</span></div>
+  <div class="scroll" id="create-content"></div>
+</div>
+
+<!-- === BOLÃO DETAIL === -->
+<div class="screen" id="s-detail">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title" id="detail-title">Bolão</span></div>
+  <div class="scroll" id="detail-content"></div>
+</div>
+
+<!-- === MAKE BET === -->
+<div class="screen" id="s-bet">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Meu Palpite</span></div>
+  <div class="scroll" id="bet-content"></div>
+</div>
+
+<!-- === PIX PAYMENT === -->
+<div class="screen" id="s-pix">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Pagamento Pix</span></div>
+  <div class="pix-screen-content" id="pix-content"></div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ===== STATE =====
+let state = {
+  user: null,
+  boloes: [],
+  screenStack: ['s-login'],
+  createStep: 1,
+  createData: {},
+  currentBolaoId: null,
+  betScores: {home:0, away:0},
+  betBolaoId: null,
+  pixBolaoId: null,
+};
+
+const GAMES = [
+  {id:'1',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'México',code:'MEX',flag:'🇲🇽'},date:'14 Jun',time:'16:00',stage:'Fase de Grupos',group:'Grupo E',venue:'SoFi Stadium, Los Angeles'},
+  {id:'2',home:{name:'Argentina',code:'ARG',flag:'🇦🇷'},away:{name:'EUA',code:'USA',flag:'🇺🇸'},date:'15 Jun',time:'19:00',stage:'Fase de Grupos',group:'Grupo A',venue:'MetLife Stadium, Nova York'},
+  {id:'3',home:{name:'Portugal',code:'POR',flag:'🇵🇹'},away:{name:'França',code:'FRA',flag:'🇫🇷'},date:'16 Jun',time:'13:00',stage:'Fase de Grupos',group:'Grupo B',venue:'AT&T Stadium, Dallas'},
+  {id:'4',home:{name:'Alemanha',code:'GER',flag:'🇩🇪'},away:{name:'Espanha',code:'ESP',flag:'🇪🇸'},date:'17 Jun',time:'16:00',stage:'Fase de Grupos',group:'Grupo C',venue:"Levi's Stadium, San Francisco"},
+  {id:'5',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'Croácia',code:'CRO',flag:'🇭🇷'},date:'20 Jun',time:'13:00',stage:'Fase de Grupos',group:'Grupo E',venue:'Rose Bowl, Pasadena'},
+  {id:'6',home:{name:'Inglaterra',code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},away:{name:'Japão',code:'JPN',flag:'🇯🇵'},date:'18 Jun',time:'19:00',stage:'Fase de Grupos',group:'Grupo D',venue:'Arrowhead Stadium, Kansas City'},
+  {id:'7',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'Argentina',code:'ARG',flag:'🇦🇷'},date:'01 Jul',time:'20:00',stage:'Oitavas de Final',venue:'MetLife Stadium, Nova York'},
+];
+
+const USERS = [{name:'João Silva',email:'joao@email.com',phone:'(11) 99999-9999',pix:'joao@email.com',pass:'123456'}];
+
+// ===== NAV =====
+function go(screenId, push=true) {
+  const cur = state.screenStack[state.screenStack.length-1];
+  if(cur === screenId) return;
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById(cur).classList.add('prev');
+  document.getElementById(screenId).classList.add('active');
+  if(push) state.screenStack.push(screenId);
+  setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{if(s.id!==screenId)s.classList.remove('prev')}),400);
+}
+
+function back() {
+  if(state.screenStack.length <= 1) return;
+  const cur = state.screenStack.pop();
+  const prev = state.screenStack[state.screenStack.length-1];
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById(prev).classList.remove('prev');
+  document.getElementById(prev).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ===== AUTH =====
+function doLogin() {
+  const email = document.getElementById('li-email').value.trim().toLowerCase();
+  const pass = document.getElementById('li-pass').value;
+  const u = USERS.find(u=>u.email===email && u.pass===pass);
+  if(!u) { showToast('❌ E-mail ou senha incorretos'); return; }
+  state.user = {...u};
+  loginSuccess();
+}
+
+function doRegister() {
+  const name = document.getElementById('rg-name').value.trim();
+  const email = document.getElementById('rg-email').value.trim().toLowerCase();
+  const phone = document.getElementById('rg-phone').value.trim();
+  const pix = document.getElementById('rg-pix').value.trim();
+  const pass = document.getElementById('rg-pass').value;
+  const pass2 = document.getElementById('rg-pass2').value;
+  if(!name||!email||!phone||!pix||!pass) { showToast('⚠️ Preencha todos os campos'); return; }
+  if(pass!==pass2) { showToast('❌ As senhas não conferem'); return; }
+  if(pass.length<6) { showToast('❌ Senha muito curta'); return; }
+  USERS.push({name,email,phone,pix,pass});
+  state.user = {name,email,phone,pix};
+  loginSuccess();
+}
+
+function loginSuccess() {
+  updateProfileUI();
+  renderHome();
+  // Clear stack and go home
+  state.screenStack = ['s-home'];
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
+  document.getElementById('s-home').classList.add('active');
+}
+
+function doLogout() {
+  if(!confirm('Sair da conta?')) return;
+  state.user = null;
+  state.screenStack = ['s-login'];
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
+  document.getElementById('s-login').classList.add('active');
+}
+
+// ===== TABS =====
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['home','join','','profile'][i]===tab);
+  });
+  if(tab==='home') { renderHome(); }
+  if(tab==='join') { go('s-join'); }
+  if(tab==='profile') { updateProfileUI(); go('s-profile'); }
+}
+
+// ===== HOME =====
+function renderHome() {
+  document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name.split(' ')[0]} 👋`;
+  renderMyBoloes();
+  renderGames();
+}
+
+function renderMyBoloes() {
+  const el = document.getElementById('my-boloes-list');
+  const mine = state.boloes.filter(b=> b.creatorId===state.user?.email || b.participants.find(p=>p.email===state.user?.email));
+  if(mine.length===0) {
+    el.innerHTML = `<div class="empty-box">
+      <div class="empty-icon">🎯</div>
+      <div class="empty-title">Nenhum bolão ainda</div>
+      <div class="empty-text">Crie um bolão ou entre com um código de convite</div>
+      <button class="btn btn-ghost btn-sm" onclick="showTab('join')">Entrar com código</button>
+    </div>`;
+    return;
+  }
+  el.innerHTML = mine.map(b=>{
+    const paidCount = b.participants.filter(p=>p.paid).length;
+    const isCreator = b.creatorId === state.user?.email;
+    const me = b.participants.find(p=>p.email===state.user?.email);
+    const hasPaid = me?.paid||false;
+    return `<div class="card" onclick="openDetail('${b.id}')" style="cursor:pointer">
+      <div class="bolao-header">
+        <div>
+          <span class="bolao-title">${b.title}</span>
+          ${isCreator?'<span class="badge badge-green" style="margin-left:6px;font-size:9px">Criador</span>':''}
+        </div>
+        <span class="badge ${b.status==='open'?'badge-green':b.status==='closed'?'badge-yellow':'badge-red'}">${b.status==='open'?'Aberto':'Finalizado'}</span>
+      </div>
+      <div class="bolao-match">${b.game.home.flag} ${b.game.home.code} vs ${b.game.away.code} ${b.game.away.flag}</div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">R$${b.amount}</div><div class="stat-lbl">por aposta</div></div>
+        <div class="stat-div"></div>
+        <div class="stat"><div class="stat-val" style="color:var(--gold)">R$${fmtPrize(b)}</div><div class="stat-lbl">prêmio</div></div>
+        <div class="stat-div"></div>
+        <div class="stat"><div class="stat-val">${paidCount}/${b.maxPart}</div><div class="stat-lbl">pagantes</div></div>
+      </div>
+      ${me?`<div style="margin-top:8px;padding:6px 10px;border-radius:8px;background:${hasPaid?'rgba(39,174,96,.1)':'rgba(243,156,18,.1)'};color:${hasPaid?'var(--ok)':'var(--warn)'};font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px">
+        ${hasPaid?'✅ Pix confirmado':'⏳ Aguardando pagamento'}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderGames() {
+  document.getElementById('games-list').innerHTML = GAMES.slice(0,5).map(g=>`
+    <div class="match-card" onclick="go('s-create')">
+      <div class="match-stage"><span>${g.stage}${g.group?` · ${g.group}`:''}</span><span>${g.date} · ${g.time}</span></div>
+      <div class="match-row">
+        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div><div class="team-code">${g.home.code}</div></div>
+        <div class="vs-block"><div class="vs-text">VS</div></div>
+        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div><div class="team-code">${g.away.code}</div></div>
+      </div>
+      <div class="match-venue">📍 ${g.venue}</div>
+    </div>`).join('');
+}
+
+function fmtPrize(b) {
+  return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
+}
+
+// ===== CREATE BOLÃO =====
+let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:''};
+
+function go_create() {
+  createState = {step:1,title:'',game:null,amount:50,maxPart:20,hasPw:false,pw:''};
+  renderCreateStep();
+  go('s-create');
+}
+
+function renderCreateStep() {
+  const el = document.getElementById('create-content');
+  const s = createState;
+  // Progress dots
+  const dots = [1,2,3].map(n=>`
+    <div class="step-dot${s.step>=n?' done':''}">
+      ${s.step>n?'✓':n}
+    </div>
+    ${n<3?`<div class="step-line${s.step>n?' done':''}"></div>`:''}`).join('');
+
+  if(s.step===1) {
+    el.innerHTML = `
+      <div class="steps">${dots}</div>
+      <div class="section-title" style="margin-bottom:4px">Nome do Bolão</div>
+      <div class="field"><input id="c-title" placeholder='"Bolão dos Amigos da Firma"' value="${s.title}" oninput="createState.title=this.value"></div>
+      <div class="section-title" style="margin-top:16px;margin-bottom:4px">Escolha o Jogo</div>
+      <div class="section-sub">Selecione qual jogo da Copa</div>
+      ${GAMES.map(g=>`
+        <div class="match-card${s.game?.id===g.id?' selected':''}" onclick="createState.game=${JSON.stringify(g).replace(/"/g,'&quot;')};renderCreateStep()">
+          <div class="match-stage"><span>${g.stage}${g.group?` · ${g.group}`:''}</span><span>${g.date} · ${g.time}</span></div>
+          <div class="match-row">
+            <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div><div class="team-code">${g.home.code}</div></div>
+            <div class="vs-block"><div class="vs-text">VS</div></div>
+            <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div><div class="team-code">${g.away.code}</div></div>
+          </div>
+        </div>`).join('')}
+      <button class="btn btn-primary" style="margin-top:8px" onclick="nextCreateStep()">Próximo →</button>`;
+  } else if(s.step===2) {
+    el.innerHTML = `
+      <div class="steps">${dots}</div>
+      <div class="section-title" style="margin-bottom:4px">Valor da Aposta</div>
+      <div class="section-sub">Cada participante paga via Pix</div>
+      <div class="amounts">
+        ${[20,50,100,200,500,1000].map(a=>`<div class="amount-btn${s.amount===a?' selected':''}" onclick="createState.amount=${a};renderCreateStep()">R$${a}</div>`).join('')}
+      </div>
+      <div class="prize-preview">
+        <span style="font-size:20px">🏆</span>
+        <span class="prize-preview-text">Com 10 participantes → prêmio de <span class="prize-preview-val">R$${Math.floor(s.amount*10*0.9)}</span> (após 10% do app)</span>
+      </div>
+      <div class="section-title" style="margin-top:16px;margin-bottom:4px">Limite de Participantes</div>
+      <div class="section-sub">Máximo 50 para manter privacidade</div>
+      <div class="field"><input id="c-maxpart" type="number" placeholder="Ex: 20" min="2" max="50" value="${s.maxPart}" oninput="createState.maxPart=parseInt(this.value)||20"></div>
+      <div class="switch-row">
+        <div class="switch-info"><div class="switch-lbl">Proteger com senha</div><div class="switch-sub">Só entra quem souber a senha</div></div>
+        <label class="toggle"><input type="checkbox" id="c-haspw" ${s.hasPw?'checked':''} onchange="createState.hasPw=this.checked;renderCreateStep()"><span class="slider"></span></label>
+      </div>
+      ${s.hasPw?`<div class="field"><label>Senha do bolão</label><input type="password" id="c-pw" placeholder="Senha" value="${s.pw}" oninput="createState.pw=this.value"></div>`:''}
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="createState.step=1;renderCreateStep()">← Voltar</button>
+        <button class="btn btn-primary" onclick="nextCreateStep()">Próximo →</button>
+      </div>`;
+  } else {
+    const g = s.game;
+    el.innerHTML = `
+      <div class="steps">${dots}</div>
+      <div class="section-title" style="margin-bottom:4px">Confirmar Bolão</div>
+      <div class="section-sub">Revise antes de criar</div>
+      <div class="summary-card">
+        ${summaryRow('🏆','Nome',s.title)}
+        ${summaryRow('⚽','Jogo',`${g.home.flag} ${g.home.code} × ${g.away.code} ${g.away.flag}`)}
+        ${summaryRow('💵','Valor da aposta',`R$ ${s.amount}`)}
+        ${summaryRow('👥','Máx. participantes',`${s.maxPart} pessoas`)}
+        ${summaryRow('🔒','Senha',s.hasPw?'✅ Sim':'🔓 Sem senha')}
+        ${summaryRow('📊','Taxa do app','10% do prêmio total')}
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="createState.step=2;renderCreateStep()">← Voltar</button>
+        <button class="btn btn-primary" onclick="finishCreate()">Criar Bolão 🚀</button>
+      </div>`;
+  }
+}
+
+function summaryRow(icon,label,val) {
+  return `<div class="summary-row">
+    <div class="summary-icon">${icon}</div>
+    <div><div class="summary-lbl">${label}</div><div class="summary-val">${val}</div></div>
+  </div>`;
+}
+
+function nextCreateStep() {
+  const s = createState;
+  if(s.step===1) {
+    if(!s.title.trim()) { showToast('⚠️ Digite o nome do bolão'); return; }
+    if(!s.game) { showToast('⚠️ Escolha um jogo'); return; }
+    s.step=2;
+  } else if(s.step===2) {
+    if(!s.maxPart||s.maxPart<2||s.maxPart>50) { showToast('⚠️ Limite deve ser entre 2 e 50'); return; }
+    if(s.hasPw&&!s.pw.trim()) { showToast('⚠️ Digite uma senha'); return; }
+    s.step=3;
+  }
+  renderCreateStep();
+}
+
+function finishCreate() {
+  const s = createState;
+  const code = genCode();
+  const bolao = {
+    id: Date.now().toString(),
+    title: s.title,
+    game: s.game,
+    creatorId: state.user.email,
+    creatorName: state.user.name,
+    amount: s.amount,
+    maxPart: s.maxPart,
+    hasPw: s.hasPw,
+    pw: s.pw,
+    status: 'open',
+    participants: [],
+    code,
+    createdAt: new Date().toISOString(),
+  };
+  state.boloes.unshift(bolao);
+  state.currentBolaoId = bolao.id;
+  openDetail(bolao.id);
+  // Replace create screen in stack
+  const idx = state.screenStack.indexOf('s-create');
+  if(idx>-1) state.screenStack.splice(idx,1);
+}
+
+function genCode() {
+  const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({length:8},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+
+// ===== DETAIL =====
+function openDetail(id) {
+  state.currentBolaoId = id;
+  renderDetail();
+  go('s-detail');
+}
+
+function renderDetail() {
+  const b = state.boloes.find(x=>x.id===state.currentBolaoId);
+  if(!b) return;
+  document.getElementById('detail-title').textContent = b.title;
+  const paidCount = b.participants.filter(p=>p.paid).length;
+  const prize = paidCount * b.amount * 0.9;
+  const me = b.participants.find(p=>p.email===state.user?.email);
+  const isCreator = b.creatorId===state.user?.email;
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="match-card" style="cursor:default">
+      <div class="match-stage"><span>${b.game.stage}${b.game.group?` · ${b.game.group}`:''}</span><span>${b.game.date} · ${b.game.time}</span></div>
+      <div class="match-row">
+        <div class="team-block"><div class="flag">${b.game.home.flag}</div><div class="team-name">${b.game.home.name}</div><div class="team-code">${b.game.home.code}</div></div>
+        <div class="vs-block"><div class="vs-text">VS</div></div>
+        <div class="team-block right"><div class="flag">${b.game.away.flag}</div><div class="team-name">${b.game.away.name}</div><div class="team-code">${b.game.away.code}</div></div>
+      </div>
+    </div>
+
+    <div class="prize-card">
+      <div class="prize-main">
+        <div class="prize-lbl">💰 Prêmio Acumulado</div>
+        <div class="prize-val">R$${Math.floor(prize)}</div>
+        <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 10% do app descontado</div>
+      </div>
+      <div class="prize-proj">
+        <span class="proj-lbl">Potencial máximo</span>
+        <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.9)}</span>
+      </div>
+    </div>
+
+    <div class="invite-card">
+      <div class="invite-title">🔗 Código de Convite</div>
+      <div class="code-row">
+        <span class="code-text">${b.code}</span>
+        <button class="copy-btn" onclick="copyCode('${b.code}')">📋 Copiar</button>
+      </div>
+      <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">📤 Compartilhar convite</button>
+    </div>
+
+    <div class="action-box">
+      ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">🏦 Pagar R$${b.amount} via Pix</button>` : ''}
+      ${me ? (me.homeScore!=null ? `
+        <div class="my-bet-box">
+          <div class="my-bet-lbl">Meu palpite</div>
+          <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+          <button class="my-bet-edit" onclick="openBet('${b.id}')">Alterar palpite</button>
+        </div>` :
+        `<button class="btn btn-secondary" onclick="openBet('${b.id}')">⚽ Fazer meu palpite</button>`)
+      : `<button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>`}
+    </div>
+
+    <div class="section-title">Participantes (${b.participants.length}/${b.maxPart})</div>
+    ${b.participants.length===0
+      ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
+      : b.participants.map(p=>`
+        <div class="part-row">
+          <div class="part-avatar">${p.name.charAt(0).toUpperCase()}</div>
+          <div style="flex:1">
+            <div class="part-name">${p.name}</div>
+            <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
+          </div>
+          <div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>
+        </div>`).join('')
+    }`;
+}
+
+function copyCode(code) {
+  if(navigator.clipboard) navigator.clipboard.writeText(code);
+  showToast('✅ Código copiado!');
+}
+
+function shareInvite(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  const msg = `🏆 Entre no meu bolão "${b.title}"!\n\nCódigo: ${b.code}\n\nJogo: ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\nValor: R$${b.amount} por pessoa`;
+  if(navigator.share) navigator.share({text:msg});
+  else { if(navigator.clipboard) navigator.clipboard.writeText(msg); showToast('✅ Texto copiado para compartilhar!'); }
+}
+
+function joinAndBet(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado!'); return; }
+  if(b.hasPw) {
+    const pw = prompt('Digite a senha do bolão:');
+    if(pw !== b.pw) { showToast('❌ Senha incorreta'); return; }
+  }
+  if(!b.participants.find(p=>p.email===state.user.email)) {
+    b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
+  }
+  openBet(id);
+}
+
+// ===== JOIN BOLÃO =====
+function checkJoinCode(code) {
+  const el = document.getElementById('join-result');
+  if(code.length<8) { el.innerHTML=''; return; }
+  const b = state.boloes.find(x=>x.code===code);
+  if(!b) {
+    el.innerHTML=`<div class="not-found"><div class="nf-icon">❌</div><div style="color:var(--err);font-weight:700">Bolão não encontrado</div><div style="color:var(--text3);font-size:12px;margin-top:4px">Verifique o código e tente novamente</div></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="found-box">
+    <div class="found-header">✅ Bolão encontrado!</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:8px">${b.title}</div>
+    <div class="match-card" style="cursor:default;margin-bottom:10px">
+      <div class="match-stage"><span>${b.game.stage}</span><span>${b.game.date}</span></div>
+      <div class="match-row">
+        <div class="team-block"><div class="flag" style="font-size:24px">${b.game.home.flag}</div><div class="team-name">${b.game.home.name}</div></div>
+        <div class="vs-block"><div class="vs-text">VS</div></div>
+        <div class="team-block right"><div class="flag" style="font-size:24px">${b.game.away.flag}</div><div class="team-name">${b.game.away.name}</div></div>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip">💵 R$${b.amount}</div>
+      <div class="chip">👥 ${b.participants.length}/${b.maxPart}</div>
+      ${b.hasPw?'<div class="chip">🔒 Com senha</div>':''}
+    </div>
+    ${b.hasPw?`<div class="field"><label>Senha do bolão</label><input id="join-pw" type="password" placeholder="Digite a senha"></div>`:''}
+    <button class="btn btn-primary" onclick="doJoin('${b.id}')">Entrar no bolão 🎯</button>
+  </div>`;
+}
+
+function doJoin(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(b.hasPw) {
+    const pw = document.getElementById('join-pw')?.value;
+    if(pw!==b.pw) { showToast('❌ Senha incorreta'); return; }
+  }
+  if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado'); return; }
+  if(!b.participants.find(p=>p.email===state.user.email)) {
+    b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
+  }
+  document.getElementById('join-code').value='';
+  document.getElementById('join-result').innerHTML='';
+  openDetail(id);
+}
+
+// ===== BET =====
+function openBet(id) {
+  state.betBolaoId = id;
+  const b = state.boloes.find(x=>x.id===id);
+  const me = b?.participants.find(p=>p.email===state.user?.email);
+  state.betScores = {home: me?.homeScore??0, away: me?.awayScore??0};
+  renderBet();
+  go('s-bet');
+}
+
+function renderBet() {
+  const b = state.boloes.find(x=>x.id===state.betBolaoId);
+  if(!b) return;
+  const s = state.betScores;
+  const result = s.home>s.away?`Vitória do ${b.game.home.name}`:s.away>s.home?`Vitória do ${b.game.away.name}`:'Empate';
+  document.getElementById('bet-content').innerHTML=`
+    <p style="color:var(--text2);font-size:13px;text-align:center;margin-bottom:20px">${b.title}</p>
+    <div class="bet-card">
+      <div class="bet-teams">
+        <div class="bet-team">
+          <div class="bet-flag">${b.game.home.flag}</div>
+          <div class="bet-name">${b.game.home.name}</div>
+          <div class="team-code">${b.game.home.code}</div>
+        </div>
+        <div class="bet-center">
+          <div class="bet-lbl">PLACAR FINAL</div>
+          <div class="scores">
+            <div class="score-sel">
+              <button class="score-btn" onclick="adj('home',1)">+</button>
+              <div class="score-num" id="score-home">${s.home}</div>
+              <button class="score-btn" onclick="adj('home',-1)">−</button>
+            </div>
+            <div class="score-dash">×</div>
+            <div class="score-sel">
+              <button class="score-btn" onclick="adj('away',1)">+</button>
+              <div class="score-num" id="score-away">${s.away}</div>
+              <button class="score-btn" onclick="adj('away',-1)">−</button>
+            </div>
+          </div>
+          <div class="result-badge"><div class="result-text">${result}</div></div>
+        </div>
+        <div class="bet-team">
+          <div class="bet-flag">${b.game.away.flag}</div>
+          <div class="bet-name">${b.game.away.name}</div>
+          <div class="team-code">${b.game.away.code}</div>
+        </div>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-title">💡 Como funciona</div>
+      <div class="tip-text">• Registre o palpite do placar final\n• Pague via Pix para confirmar\n• Quem acertar o placar exato divide o prêmio\n• Se ninguém acertar, ganha quem chegou mais perto</div>
+    </div>
+    <button class="btn btn-primary" onclick="confirmBet()">✅ Confirmar meu palpite</button>`;
+}
+
+function adj(team, delta) {
+  state.betScores[team] = Math.max(0, Math.min(20, state.betScores[team]+delta));
+  document.getElementById('score-'+team).textContent = state.betScores[team];
+  const b = state.boloes.find(x=>x.id===state.betBolaoId);
+  if(!b) return;
+  const s = state.betScores;
+  const result = s.home>s.away?`Vitória do ${b.game.home.name}`:s.away>s.home?`Vitória do ${b.game.away.name}`:'Empate';
+  document.querySelector('.result-text').textContent = result;
+}
+
+function confirmBet() {
+  const b = state.boloes.find(x=>x.id===state.betBolaoId);
+  if(!b) return;
+  const s = state.betScores;
+  if(!confirm(`Confirmar palpite?\n${b.game.home.flag} ${b.game.home.name} ${s.home} × ${s.away} ${b.game.away.name} ${b.game.away.flag}`)) return;
+  let me = b.participants.find(p=>p.email===state.user.email);
+  if(!me) {
+    me = {email:state.user.email,name:state.user.name,paid:false};
+    b.participants.push(me);
+  }
+  me.homeScore = s.home;
+  me.awayScore = s.away;
+  showToast('✅ Palpite registrado!');
+  back();
+  setTimeout(()=>renderDetail(), 300);
+}
+
+// ===== PIX =====
+function openPix(id) {
+  state.pixBolaoId = id;
+  const b = state.boloes.find(x=>x.id===id);
+  document.getElementById('pix-content').innerHTML=`
+    <div class="pix-icon">🏦</div>
+    <div class="pix-title">Pagamento via Pix</div>
+    <div class="pix-amount">R$${b.amount}</div>
+    <div class="qr-mock">
+      <span style="font-size:80px;line-height:1">📱</span>
+    </div>
+    <div class="pix-key">Chave Pix: bolao@copa2026.com.br</div>
+    <div class="pix-info">Transfira exatamente <strong>R$${b.amount}</strong> para a chave Pix acima e depois toque em "Confirmar pagamento".<br><br>Em produção, o QR Code Pix real será gerado automaticamente.</div>
+    <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Confirmar pagamento</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
+  go('s-pix');
+}
+
+function confirmPix() {
+  const b = state.boloes.find(x=>x.id===state.pixBolaoId);
+  if(!b) return;
+  const me = b.participants.find(p=>p.email===state.user.email);
+  if(me) me.paid = true;
+  showToast('✅ Pagamento confirmado! Boa sorte!');
+  back();
+  setTimeout(()=>renderDetail(), 300);
+}
+
+// ===== PROFILE =====
+function updateProfileUI() {
+  const u = state.user;
+  if(!u) return;
+  document.getElementById('prof-avatar').textContent = u.name.charAt(0).toUpperCase();
+  document.getElementById('prof-name').textContent = u.name;
+  document.getElementById('prof-email').textContent = u.email;
+  document.getElementById('prof-phone').textContent = u.phone||'-';
+  document.getElementById('prof-pix').textContent = u.pix||'-';
+  const mine = state.boloes.filter(b=>b.creatorId===u.email||b.participants.find(p=>p.email===u.email));
+  const criados = mine.filter(b=>b.creatorId===u.email).length;
+  const partic = mine.filter(b=>b.creatorId!==u.email).length;
+  const total = mine.reduce((s,b)=>{const m=b.participants.find(p=>p.email===u.email);return s+(m?.paid?b.amount:0)},0);
+  document.getElementById('prof-criados').innerHTML=`<div class="stat-val">${criados}</div><div class="stat-lbl">Criados</div>`;
+  document.getElementById('prof-partic').innerHTML=`<div class="stat-val">${partic}</div><div class="stat-lbl">Particip.</div>`;
+  document.getElementById('prof-total').innerHTML=`<div class="stat-val">R$${total}</div><div class="stat-lbl">Apostado</div>`;
+}
+
+// ===== INIT =====
+document.querySelectorAll('.tab').forEach((t,i)=>{
+  if(i===2) t.addEventListener('click', ()=>{ go_create(); });
+});
+// Fix create tab
+document.querySelector('.create-tab').onclick = ()=>go_create();
+</script>
+</body>
+</html>
