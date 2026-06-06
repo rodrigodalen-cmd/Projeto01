@@ -199,6 +199,11 @@ input:checked+.slider:before{transform:translateX(18px)}
 /* HEADER with trophy */
 .home-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .trophy-badge{width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px}
+/* TERMS */
+.terms-section{margin-top:20px}
+.terms-title{color:var(--secondary);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.terms-text{color:var(--text2);font-size:12px;line-height:1.8}
+.terms-text strong{color:var(--text)}
 /* PIX QR SCREEN */
 .pix-screen-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px;text-align:center}
 .pix-icon{font-size:60px}
@@ -256,13 +261,199 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="field"><label>Nome completo</label><input id="rg-name" placeholder="Seu nome"></div>
     <div class="field"><label>E-mail</label><input id="rg-email" type="email" placeholder="seu@email.com"></div>
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
+    <div class="field"><label>Data de Nascimento</label><input id="rg-dob" type="date" placeholder="dd/mm/aaaa" style="color-scheme:dark"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
+      <span style="font-size:12px">🔞</span><span style="color:var(--warn);font-size:11px">Apenas maiores de 18 anos podem participar</span>
+    </div>
     <div class="field"><label>Chave Pix</label><input id="rg-pix" placeholder="CPF, e-mail, telefone..."></div>
     <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
       <span style="font-size:12px">🏦</span><span style="color:var(--pix);font-size:11px">Sua chave Pix será usada para receber prêmios</span>
     </div>
     <div class="field"><label>Senha</label><input id="rg-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
     <div class="field"><label>Confirmar senha</label><input id="rg-pass2" type="password" placeholder="Repita a senha"></div>
+
+    <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="rg-age" style="width:18px;height:18px;margin-top:2px;accent-color:var(--primary);flex-shrink:0">
+        <span style="color:var(--text2);font-size:13px;line-height:1.5">
+          <strong style="color:var(--text)">Declaro que sou maior de 18 anos</strong> e estou ciente de que o acesso a esta plataforma é proibido para menores de idade, conforme o Código Civil Brasileiro (Art. 5°) e a Lei 14.790/2023.
+        </span>
+      </label>
+    </div>
+
+    <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:20px;border:1px solid var(--border)">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="rg-terms" style="width:18px;height:18px;margin-top:2px;accent-color:var(--primary);flex-shrink:0">
+        <span style="color:var(--text2);font-size:13px;line-height:1.5">
+          Li e aceito os <button onclick="go('s-terms')" style="background:none;border:none;color:var(--primary);font-weight:700;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">Termos de Uso, Política de Privacidade e Regras do Bolão</button>
+        </span>
+      </label>
+    </div>
+
     <button class="btn btn-primary" onclick="doRegister()">Criar minha conta</button>
+  </div>
+</div>
+
+<!-- === TERMOS DE USO === -->
+<div class="screen" id="s-terms">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Termos de Uso e Privacidade</span></div>
+  <div class="scroll" id="terms-content" style="padding-bottom:40px">
+    <div style="background:var(--surface);border-radius:12px;padding:4px 16px 16px;border:1px solid var(--border)">
+
+      <div style="text-align:center;padding:20px 0 12px">
+        <div style="font-size:32px">🏆⚖️</div>
+        <div style="font-size:16px;font-weight:800;margin-top:8px">Bolão Copa</div>
+        <div style="color:var(--text3);font-size:11px;margin-top:4px">Termos de Uso · Política de Privacidade · Regras do Bolão</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px">Última atualização: Junho de 2026</div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">1. IDENTIFICAÇÃO E NATUREZA DO SERVIÇO</div>
+        <div class="terms-text">
+          O Bolão Copa é uma plataforma digital destinada exclusivamente à organização de bolões informais entre grupos de amigos, familiares ou colegas previamente conhecidos ("usuários"). O serviço <strong>não constitui casa de apostas, jogo de azar comercial ou operação de loteria</strong>, sendo classificado como entretenimento privado entre conhecidos, nos termos do § 2° do Art. 50 da Lei de Contravenções Penais (Decreto-Lei n° 3.688/1941), que isenta de punição os jogos realizados em âmbito privado, sem finalidade lucrativa pública.<br><br>
+          A plataforma não possui licença da Secretaria de Prêmios e Apostas (SPA/MF), razão pela qual seu uso deve se restringir a grupos fechados de pessoas físicas maiores de 18 anos.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">2. REQUISITOS DE ELEGIBILIDADE — RESTRIÇÃO DE IDADE</div>
+        <div class="terms-text">
+          <strong>2.1</strong> O uso desta plataforma é <strong>estritamente proibido a menores de 18 (dezoito) anos</strong>, conforme:<br>
+          • Art. 5° do Código Civil Brasileiro (Lei 10.406/2002) — maioridade civil;<br>
+          • Art. 2° da Lei n° 14.790/2023 — proibição de apostas a menores;<br>
+          • Art. 60 do Estatuto da Criança e do Adolescente (Lei 8.069/1990).<br><br>
+          <strong>2.2</strong> Ao se cadastrar, o usuário declara, sob as penas da lei, que possui 18 anos ou mais. A falsidade dessa declaração é de exclusiva responsabilidade do usuário, podendo resultar em cancelamento imediato da conta e comunicação às autoridades competentes.<br><br>
+          <strong>2.3</strong> Os responsáveis legais de menores que eventualmente acessarem a plataforma são inteiramente responsáveis pelos atos praticados.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">3. FUNCIONAMENTO DO BOLÃO E REGRAS</div>
+        <div class="terms-text">
+          <strong>3.1 Criação:</strong> Qualquer usuário cadastrado pode criar um bolão, definindo: jogo, valor da aposta (R$20 a R$1.000), limite de participantes (máximo 50) e senha opcional.<br><br>
+          <strong>3.2 Participação:</strong> A entrada no bolão ocorre mediante convite por código de 8 caracteres. O participante faz seu palpite do placar final e efetua o pagamento via Pix.<br><br>
+          <strong>3.3 Prêmio:</strong> O valor total arrecadado compõe o fundo de prêmio. Após encerramento do jogo:<br>
+          • Quem acertar o placar exato divide o prêmio igualmente;<br>
+          • Se ninguém acertar o placar exato, o prêmio vai para quem chegou mais próximo (menor diferença de gols);<br>
+          • Em caso de empate na aproximação, o prêmio é dividido igualmente entre os finalistas;<br>
+          • Sobre o valor total arrecadado, incide taxa de <strong>10% (dez por cento)</strong> retida pela plataforma para custeio operacional.<br><br>
+          <strong>3.4 Limite:</strong> O máximo de 50 participantes por bolão visa manter o caráter privado e informal da atividade.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">4. PAGAMENTOS E POLÍTICA DE PIX</div>
+        <div class="terms-text">
+          <strong>4.1</strong> Todos os pagamentos são realizados exclusivamente via Pix, sistema de pagamento instantâneo regulamentado pelo Banco Central do Brasil (Resolução BCB n° 1/2020).<br><br>
+          <strong>4.2</strong> O usuário é responsável por efetuar a transferência corretamente para a chave Pix informada pelo criador do bolão ou pela plataforma.<br><br>
+          <strong>4.3 Política de Reembolso:</strong><br>
+          • Antes do encerramento das apostas: reembolso integral mediante solicitação ao criador do bolão;<br>
+          • Após o encerramento: sem reembolso, exceto em caso de cancelamento do evento por motivo de força maior;<br>
+          • Jogo cancelado ou adiado: reembolso de 100% do valor apostado, descontadas eventuais taxas de transação Pix.<br><br>
+          <strong>4.4</strong> A plataforma não se responsabiliza por transferências Pix realizadas para chaves incorretas por erro do usuário.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">5. POLÍTICA DE PRIVACIDADE E PROTEÇÃO DE DADOS (LGPD)</div>
+        <div class="terms-text">
+          Em conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018 — LGPD)</strong>:<br><br>
+          <strong>5.1 Dados Coletados:</strong><br>
+          • Nome completo, e-mail, telefone, data de nascimento e chave Pix — necessários para cadastro e operação;<br>
+          • Palpites e histórico de bolões — para funcionamento da plataforma;<br>
+          • Dados de acesso (IP, dispositivo) — para segurança e prevenção a fraudes.<br><br>
+          <strong>5.2 Finalidade:</strong> Os dados são usados exclusivamente para:<br>
+          • Operação e melhoria da plataforma;<br>
+          • Processamento de prêmios e pagamentos;<br>
+          • Cumprimento de obrigações legais;<br>
+          • Prevenção a fraudes e proteção dos usuários.<br><br>
+          <strong>5.3 Compartilhamento:</strong> Os dados <strong>não são vendidos ou compartilhados</strong> com terceiros, exceto quando exigido por autoridade judicial ou administrativa competente.<br><br>
+          <strong>5.4 Seus Direitos (Art. 18 da LGPD):</strong><br>
+          • Confirmar a existência de tratamento de dados;<br>
+          • Acessar seus dados pessoais;<br>
+          • Corrigir dados incompletos, inexatos ou desatualizados;<br>
+          • Solicitar anonimização, bloqueio ou eliminação de dados desnecessários;<br>
+          • Revogar consentimento a qualquer momento;<br>
+          • Portabilidade dos dados.<br><br>
+          <strong>5.5 Retenção:</strong> Os dados são mantidos pelo prazo necessário à execução do serviço ou cumprimento de obrigação legal, sendo eliminados após solicitação do usuário ou encerramento da conta.<br><br>
+          <strong>5.6 Encarregado de Dados (DPO):</strong> Solicitações relacionadas à LGPD devem ser encaminhadas ao e-mail do administrador da conta criadora da plataforma.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">6. CONDUTA DO USUÁRIO E PROIBIÇÕES</div>
+        <div class="terms-text">
+          É expressamente proibido ao usuário:<br><br>
+          • Participar tendo menos de 18 anos ou permitir que menores utilizem sua conta;<br>
+          • Criar bolões com fins comerciais ou abertos ao público geral;<br>
+          • Efetuar pagamentos de terceiros sem autorização;<br>
+          • Tentar fraudar palpites, resultados ou pagamentos;<br>
+          • Compartilhar códigos de convite publicamente em redes sociais abertas;<br>
+          • Usar a plataforma para lavagem de dinheiro ou qualquer atividade ilícita;<br>
+          • Criar múltiplas contas para benefício próprio;<br>
+          • Insultar, ameaçar ou assediar outros participantes.<br><br>
+          O descumprimento destas regras resultará em banimento permanente e poderá ser comunicado às autoridades competentes.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">7. LIMITAÇÃO DE RESPONSABILIDADE</div>
+        <div class="terms-text">
+          <strong>7.1</strong> A plataforma Bolão Copa atua como intermediária tecnológica e não se responsabiliza por:<br>
+          • Resultados das apostas ou dos jogos;<br>
+          • Inadimplência de participantes no pagamento via Pix;<br>
+          • Problemas técnicos de conectividade ou nos sistemas do Banco Central;<br>
+          • Decisões tomadas pelos usuários com base em palpites ou informações da plataforma;<br>
+          • Prejuízos decorrentes de uso indevido da conta por terceiros.<br><br>
+          <strong>7.2</strong> O usuário reconhece que apostas envolvem risco financeiro e que pode perder o valor apostado. Jogue com responsabilidade.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">8. JOGO RESPONSÁVEL</div>
+        <div class="terms-text">
+          Em conformidade com o Art. 30 da Lei 14.790/2023 e diretrizes do Ministério da Fazenda:<br><br>
+          • Aposte apenas o que pode perder sem comprometer seu orçamento;<br>
+          • Não use dinheiro destinado a necessidades básicas (aluguel, alimentação, saúde);<br>
+          • Não aposte sob influência de álcool ou outras substâncias;<br>
+          • Se sentir que o jogo está causando problemas, procure ajuda:<br>
+          <strong>CAPS (Centro de Atenção Psicossocial)</strong> ou ligue <strong>188</strong> (CVV — apoio emocional gratuito).<br><br>
+          A plataforma se reserva o direito de suspender contas com padrão de apostas preocupante.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">9. PROPRIEDADE INTELECTUAL</div>
+        <div class="terms-text">
+          Todo o conteúdo da plataforma (código, design, textos, logotipo) é protegido pela Lei de Direitos Autorais (Lei 9.610/1998) e pela Lei de Software (Lei 9.609/1998). É proibida a reprodução, modificação ou distribuição sem autorização expressa.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">10. ALTERAÇÕES DOS TERMOS</div>
+        <div class="terms-text">
+          A plataforma reserva-se o direito de alterar estes Termos a qualquer momento, com aviso prévio de 10 dias úteis aos usuários cadastrados. O uso continuado da plataforma após as alterações constitui aceite tácito dos novos termos.
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-title">11. LEGISLAÇÃO APLICÁVEL E FORO</div>
+        <div class="terms-text">
+          Estes Termos são regidos pela legislação brasileira, em especial:<br>
+          • Código Civil (Lei 10.406/2002);<br>
+          • Código de Defesa do Consumidor (Lei 8.078/1990);<br>
+          • LGPD (Lei 13.709/2018);<br>
+          • Lei das Apostas (Lei 14.790/2023);<br>
+          • Marco Civil da Internet (Lei 12.965/2014);<br>
+          • ECA (Lei 8.069/1990).<br><br>
+          Fica eleito o foro do domicílio do usuário para resolução de conflitos, conforme Art. 101, inciso I, do CDC.
+        </div>
+      </div>
+
+      <div style="background:rgba(0,107,63,.1);border:1px solid rgba(0,107,63,.3);border-radius:10px;padding:14px;margin-top:8px;text-align:center">
+        <div style="font-size:11px;color:var(--text3)">Ao se cadastrar, você confirma ter lido, compreendido e concordado integralmente com todos os termos acima.</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -446,13 +637,29 @@ function doRegister() {
   const name = document.getElementById('rg-name').value.trim();
   const email = document.getElementById('rg-email').value.trim().toLowerCase();
   const phone = document.getElementById('rg-phone').value.trim();
+  const dob = document.getElementById('rg-dob').value;
   const pix = document.getElementById('rg-pix').value.trim();
   const pass = document.getElementById('rg-pass').value;
   const pass2 = document.getElementById('rg-pass2').value;
-  if(!name||!email||!phone||!pix||!pass) { showToast('⚠️ Preencha todos os campos'); return; }
+  const ageOk = document.getElementById('rg-age').checked;
+  const termsOk = document.getElementById('rg-terms').checked;
+
+  if(!name||!email||!phone||!dob||!pix||!pass) { showToast('⚠️ Preencha todos os campos'); return; }
+
+  // Verifica se tem 18 anos
+  const birth = new Date(dob);
+  const today = new Date();
+  const age = today.getFullYear() - birth.getFullYear() - (
+    today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0
+  );
+  if(age < 18) { showToast('🔞 Você precisa ter 18 anos ou mais'); return; }
+
+  if(!ageOk) { showToast('☑️ Confirme que você tem 18 anos ou mais'); return; }
+  if(!termsOk) { showToast('☑️ Aceite os Termos de Uso para continuar'); return; }
   if(pass!==pass2) { showToast('❌ As senhas não conferem'); return; }
   if(pass.length<6) { showToast('❌ Senha muito curta'); return; }
-  USERS.push({name,email,phone,pix,pass});
+
+  USERS.push({name,email,phone,dob,pix,pass});
   state.user = {name,email,phone,pix};
   loginSuccess();
 }
