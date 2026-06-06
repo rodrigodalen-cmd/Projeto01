@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Bolão Copa",
+    "slug": "bolao-copa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0D1B2A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.bolaocopa.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D1B2A"
+      },
+      "package": "com.bolaocopa.app"
+    },
+    "scheme": "bolaocopa"
+  }
+}
