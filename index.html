@@ -199,6 +199,21 @@ input:checked+.slider:before{transform:translateX(18px)}
 /* HEADER with trophy */
 .home-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .trophy-badge{width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px}
+/* PHOTO UPLOAD */
+.avatar-upload{position:relative;width:80px;height:80px;margin:0 auto 12px;cursor:pointer}
+.av-img{width:80px;height:80px;border-radius:40px;object-fit:cover;border:3px solid var(--primary)}
+.av-init{width:80px;height:80px;border-radius:40px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#fff}
+.av-edit-badge{position:absolute;bottom:0;right:0;background:var(--secondary);width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid var(--bg)}
+.photo-input{display:none}
+.part-av-img{width:38px;height:38px;border-radius:19px;object-fit:cover;flex-shrink:0;border:2px solid var(--primary)}
+.part-av-init{width:38px;height:38px;border-radius:19px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+/* LIVE SCORES */
+.live-pill{display:inline-flex;align-items:center;gap:4px;background:var(--err);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.5px}
+.live-dot{width:6px;height:6px;border-radius:3px;background:#fff;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.live-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid rgba(231,76,60,.25);margin-bottom:10px;cursor:default}
+.live-score-big{color:var(--secondary);font-size:28px;font-weight:900;text-align:center;letter-spacing:2px}
+.live-min{color:var(--err);font-size:11px;font-weight:700;text-align:center;margin-top:2px}
 /* TERMS */
 .terms-section{margin-top:20px}
 .terms-title{color:var(--secondary);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -244,7 +259,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <span class="auth-appname">Bolão Copa</span>
       <span class="auth-tagline">Aposte com os amigos. Ganhe junto.</span>
     </div>
-    <div class="field"><label>E-mail</label><input id="li-email" type="email" placeholder="seu@email.com" value="joao@email.com"></div>
+    <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" value="joao@email.com" oninput="fmtLoginCPF(this)"></div>
     <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" value="123456"></div>
     <button class="btn btn-primary" style="margin-top:8px;margin-bottom:20px" onclick="doLogin()">Entrar</button>
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
@@ -516,10 +531,16 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="topbar"><span class="topbar-title" style="flex:0;margin-right:auto">Perfil</span></div>
   <div class="scroll" style="padding-top:16px">
     <div class="avatar-card">
-      <div class="avatar-big" id="prof-avatar">J</div>
+      <div class="avatar-upload" onclick="document.getElementById('photo-input').click()">
+        <div id="prof-avatar-wrap"><div class="av-init" id="prof-avatar">J</div></div>
+        <div class="av-edit-badge">📷</div>
+      </div>
+      <input type="file" id="photo-input" class="photo-input" accept="image/*" onchange="uploadPhoto(this)">
       <div class="profile-name" id="prof-name">João Silva</div>
       <div class="profile-email" id="prof-email">joao@email.com</div>
+      <p style="color:var(--text3);font-size:11px;margin-top:4px">Toque na foto para alterar</p>
     </div>
+    <button class="btn btn-ghost" style="margin-bottom:16px" onclick="go('s-edit-profile')">✏️ Editar perfil</button>
     <div style="display:flex;background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:20px">
       <div class="stat" id="prof-criados"><div class="stat-val">0</div><div class="stat-lbl">Criados</div></div>
       <div class="stat-div"></div>
@@ -628,11 +649,28 @@ function showToast(msg) {
 }
 
 // ===== AUTH =====
+function fmtLoginCPF(input) {
+  const v = input.value;
+  // Only auto-format if it looks like CPF (only digits/dots/dashes and no @)
+  if(!v.includes('@') && /^[\d.\-]+$/.test(v)) {
+    let d = v.replace(/\D/g,'').slice(0,11);
+    if(d.length>9) d = d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+    else if(d.length>6) d = d.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+    else if(d.length>3) d = d.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+    input.value = d;
+  }
+}
+
 function doLogin() {
-  const email = document.getElementById('li-email').value.trim().toLowerCase();
+  const identifier = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
-  const u = USERS.find(u=>u.email===email && u.pass===pass);
-  if(!u) { showToast('❌ E-mail ou senha incorretos'); return; }
+  const isCPF = !identifier.includes('@');
+  const cleanCPF = identifier.replace(/\D/g,'');
+  const u = USERS.find(u =>
+    (isCPF ? u.cpf?.replace(/\D/g,'') === cleanCPF : u.email === identifier.toLowerCase())
+    && u.pass === pass
+  );
+  if(!u) { showToast('❌ Dados incorretos'); return; }
   state.user = {...u};
   loginSuccess();
 }
@@ -698,6 +736,7 @@ function loginSuccess() {
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-home').classList.add('active');
+  checkDeepLink();
 }
 
 function doLogout() {
@@ -723,6 +762,7 @@ function renderHome() {
   document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name.split(' ')[0]} 👋`;
   renderMyBoloes();
   renderGames();
+  renderLiveScores();
 }
 
 function renderMyBoloes() {
@@ -780,6 +820,30 @@ function renderGames() {
 
 function fmtPrize(b) {
   return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
+}
+
+const LIVE_SCORES = []; // populated when games are live
+let liveInterval = null;
+
+function renderLiveScores() {
+  // Simulate live scores for demo - in production connect to API
+  const liveGames = GAMES.filter(g => g.status === 'live');
+  const section = document.getElementById('live-section');
+  if(!section) return;
+  if(liveGames.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  document.getElementById('live-list').innerHTML = liveGames.map(g=>`
+    <div class="live-card">
+      <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>AO VIVO</div></div>
+      <div class="match-row" style="margin-top:8px">
+        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
+        <div class="vs-block"><div class="live-score-big">${g.liveHome??0} - ${g.liveAway??0}</div><div class="live-min">⏱ ${g.liveMin??0}'</div></div>
+        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
+      </div>
+    </div>`).join('');
 }
 
 // ===== CREATE BOLÃO =====
@@ -962,6 +1026,11 @@ function renderDetail() {
       <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">📤 Compartilhar convite</button>
     </div>
 
+    ${isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">✏️ Editar bolão</button>
+      <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">🗑️ Excluir</button>
+    </div>` : ''}
+
     <div class="action-box">
       ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">🏦 Pagar R$${b.amount} via Pix</button>` : ''}
       ${me ? (me.homeScore!=null ? `
@@ -996,9 +1065,10 @@ function copyCode(code) {
 
 function shareInvite(id) {
   const b = state.boloes.find(x=>x.id===id);
-  const msg = `🏆 Entre no meu bolão "${b.title}"!\n\nCódigo: ${b.code}\n\nJogo: ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\nValor: R$${b.amount} por pessoa`;
-  if(navigator.share) navigator.share({text:msg});
-  else { if(navigator.clipboard) navigator.clipboard.writeText(msg); showToast('✅ Texto copiado para compartilhar!'); }
+  const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
+  const msg = `🏆 Entre no meu bolão "${b.title}"!\n\n🔗 Clique para entrar:\n${link}\n\nOu abra o Bolão Copa e use o código: *${b.code}*\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n💰 Valor: R$${b.amount} por pessoa`;
+  if(navigator.share) navigator.share({title:'Bolão Copa',text:msg,url:link});
+  else { if(navigator.clipboard) navigator.clipboard.writeText(msg); showToast('✅ Link copiado!'); }
 }
 
 function joinAndBet(id) {
@@ -1173,7 +1243,13 @@ function confirmPix() {
 function updateProfileUI() {
   const u = state.user;
   if(!u) return;
-  document.getElementById('prof-avatar').textContent = u.name.charAt(0).toUpperCase();
+  // Update avatar (photo or initials)
+  const wrap = document.getElementById('prof-avatar-wrap');
+  if(wrap) {
+    wrap.innerHTML = u.photo
+      ? `<img class="av-img" src="${u.photo}" alt="foto">`
+      : `<div class="av-init" id="prof-avatar">${u.name.charAt(0).toUpperCase()}</div>`;
+  }
   document.getElementById('prof-name').textContent = u.name;
   document.getElementById('prof-email').textContent = u.email;
   document.getElementById('prof-phone').textContent = u.phone||'-';
@@ -1185,6 +1261,97 @@ function updateProfileUI() {
   document.getElementById('prof-criados').innerHTML=`<div class="stat-val">${criados}</div><div class="stat-lbl">Criados</div>`;
   document.getElementById('prof-partic').innerHTML=`<div class="stat-val">${partic}</div><div class="stat-lbl">Particip.</div>`;
   document.getElementById('prof-total').innerHTML=`<div class="stat-val">R$${total}</div><div class="stat-lbl">Apostado</div>`;
+}
+
+function uploadPhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024) { showToast('❌ Imagem muito grande (máx 5MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.user.photo = e.target.result;
+    // Also update the user in USERS array
+    const u = USERS.find(x=>x.email===state.user.email);
+    if(u) u.photo = e.target.result;
+    updateProfileUI();
+    showToast('✅ Foto atualizada!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function openEditProfile() {
+  const u = state.user;
+  document.getElementById('ep-name').value = u.name||'';
+  document.getElementById('ep-phone').value = u.phone||'';
+  document.getElementById('ep-pix').value = u.pix||'';
+  document.getElementById('ep-cpf-email').textContent = `${u.cpf||''} · ${u.email||''}`;
+  const wrap = document.getElementById('edit-avatar-wrap');
+  wrap.innerHTML = u.photo
+    ? `<img class="av-img" src="${u.photo}" alt="foto">`
+    : `<div class="av-init">${u.name.charAt(0).toUpperCase()}</div>`;
+  go('s-edit-profile');
+}
+
+function saveProfile() {
+  const name = document.getElementById('ep-name').value.trim();
+  const phone = document.getElementById('ep-phone').value.trim();
+  const pix = document.getElementById('ep-pix').value.trim();
+  const pass = document.getElementById('ep-pass').value;
+  const pass2 = document.getElementById('ep-pass2').value;
+  if(!name||!phone||!pix) { showToast('⚠️ Preencha todos os campos'); return; }
+  if(pass && pass.length < 6) { showToast('❌ Senha muito curta'); return; }
+  if(pass && pass !== pass2) { showToast('❌ Senhas não conferem'); return; }
+  state.user.name = name;
+  state.user.phone = phone;
+  state.user.pix = pix;
+  if(pass) state.user.pass = pass;
+  const u = USERS.find(x=>x.email===state.user.email);
+  if(u) { u.name=name; u.phone=phone; u.pix=pix; if(pass) u.pass=pass; }
+  updateProfileUI();
+  showToast('✅ Perfil atualizado!');
+  back();
+}
+
+// ===== EDIT / DELETE BOLÃO =====
+function editBolao(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  const newTitle = prompt('Novo título do bolão:', b.title);
+  if(newTitle===null) return;
+  if(!newTitle.trim()) { showToast('⚠️ Título não pode ser vazio'); return; }
+  b.title = newTitle.trim();
+  const newMax = prompt('Limite de participantes (atual: '+b.maxPart+', máx 50):', b.maxPart);
+  if(newMax!==null) {
+    const m = parseInt(newMax);
+    if(m>=b.participants.length && m<=50) b.maxPart=m;
+    else showToast('⚠️ Limite inválido ou menor que participantes atuais');
+  }
+  showToast('✅ Bolão atualizado!');
+  renderDetail();
+}
+
+function deleteBolao(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  if(!confirm(`Excluir o bolão "${b.title}"?\n\nEsta ação não pode ser desfeita. Todos os participantes serão notificados.`)) return;
+  state.boloes = state.boloes.filter(x=>x.id!==id);
+  showToast('🗑️ Bolão excluído');
+  back();
+  setTimeout(()=>renderHome(), 300);
+}
+
+// ===== DEEP LINK =====
+function checkDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const joinCode = params.get('join');
+  if(joinCode && state.user) {
+    const input = document.getElementById('join-code');
+    if(input) {
+      input.value = joinCode.toUpperCase();
+      checkJoinCode(joinCode.toUpperCase());
+    }
+    go('s-join');
+  }
 }
 
 // ===== INIT =====
