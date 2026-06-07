@@ -702,6 +702,43 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="t-chip" onclick="setTG('L',this)">L</button>
     </div>
     <div id="t-list"></div>
+    <div style="padding:0 16px 8px">
+      <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px">Fase Eliminatória</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:28px;line-height:1">🏆</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Oitavas de Final</div>
+            <div style="font-size:11px;color:var(--secondary);font-weight:600;margin-top:2px">28 Jun – 3 Jul · 16 jogos</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Disponível após encerramento dos grupos</div>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:28px;line-height:1">⚔️</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Quartas de Final</div>
+            <div style="font-size:11px;color:var(--secondary);font-weight:600;margin-top:2px">6 – 8 Jul · 8 jogos</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Disponível após as oitavas</div>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:28px;line-height:1">🔥</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Semifinal</div>
+            <div style="font-size:11px;color:var(--secondary);font-weight:600;margin-top:2px">14 – 15 Jul · 2 jogos</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Disponível após as quartas</div>
+          </div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,160,0,.1));border:1px solid rgba(255,215,0,.4);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:28px;line-height:1">🥇</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Final</div>
+            <div style="font-size:11px;color:#FFD700;font-weight:700;margin-top:2px">19 Jul · MetLife Stadium, Nova York</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">O grande jogo da Copa 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1010,6 +1047,7 @@ let state = {
   betScores: {home:0, away:0},
   betBolaoId: null,
   pixBolaoId: null,
+  editingBet: {},
 };
 
 const GAMES = [
@@ -1312,6 +1350,8 @@ async function loginSuccess() {
   if(window._liveInterval) clearInterval(window._liveInterval);
   window._liveInterval = setInterval(()=>{ fetchTabelaScores(); renderLiveScores(); }, 60000);
   setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
+  requestNotificationPermission();
+  scheduleGameNotifications();
   // Clear stack and go home
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
@@ -1703,6 +1743,10 @@ function renderDetail() {
         <button class="copy-btn" onclick="copyCode('${b.code}')">Copiar</button>
       </div>
       <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">Compartilhar convite</button>
+      <button class="btn btn-outline" style="gap:6px;margin-top:8px;background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.4);color:#25d366" onclick="shareWhatsApp('${b.id}')">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar via WhatsApp
+      </button>
       <button class="btn btn-outline" style="gap:6px;margin-top:8px" onclick="showQRCode('${b.id}')">QR Code de convite</button>
     </div>` : '';
 
@@ -1728,37 +1772,58 @@ function renderDetail() {
   let actionBox = '';
   const locked = betClosed || !!b.result;
   if(!locked && me) {
-    // Inline editable score selector
-    const resText = sh>sa?`Vitória do ${b.game.home.name}`:sa>sh?`Vitória do ${b.game.away.name}`:'Empate';
-    const isEdit = me.homeScore != null;
-    actionBox = `<div class="inline-bet">
-      <div class="inline-bet-lbl">${isEdit ? 'Alterar palpite' : 'Meu palpite'}</div>
-      ${isEdit ? `<div class="inline-prev">Atual: ${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>` : ''}
-      <div class="inline-score-row">
-        <div class="inline-team">
-          <span style="font-size:36px;line-height:1">${b.game.home.flag}</span>
-          <span class="team-code">${b.game.home.code}</span>
+    const hasExistingBet = me.homeScore != null;
+    const isEditing = !hasExistingBet || state.editingBet[b.id];
+    if(isEditing) {
+      const resText = sh>sa?`Vitória do ${b.game.home.name}`:sa>sh?`Vitória do ${b.game.away.name}`:'Empate';
+      actionBox = `<div class="inline-bet">
+        <div class="inline-bet-lbl">${hasExistingBet ? 'Alterar palpite' : 'Meu palpite'}</div>
+        ${hasExistingBet ? `<div class="inline-prev">Atual: ${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>` : ''}
+        <div class="inline-score-row">
+          <div class="inline-team">
+            <span style="font-size:36px;line-height:1">${b.game.home.flag}</span>
+            <span class="team-code">${b.game.home.code}</span>
+          </div>
+          <div class="inline-sel">
+            <button class="inline-btn" onclick="adjInline('home',1)">+</button>
+            <div class="inline-num" id="inline-score-home">${sh}</div>
+            <button class="inline-btn" onclick="adjInline('home',-1)">−</button>
+          </div>
+          <div class="inline-x">×</div>
+          <div class="inline-sel">
+            <button class="inline-btn" onclick="adjInline('away',1)">+</button>
+            <div class="inline-num" id="inline-score-away">${sa}</div>
+            <button class="inline-btn" onclick="adjInline('away',-1)">−</button>
+          </div>
+          <div class="inline-team" style="align-items:flex-end">
+            <span style="font-size:36px;line-height:1">${b.game.away.flag}</span>
+            <span class="team-code">${b.game.away.code}</span>
+          </div>
         </div>
-        <div class="inline-sel">
-          <button class="inline-btn" onclick="adjInline('home',1)">+</button>
-          <div class="inline-num" id="inline-score-home">${sh}</div>
-          <button class="inline-btn" onclick="adjInline('home',-1)">−</button>
+        <div class="inline-result" id="inline-result">${resText}</div>
+        <button class="btn btn-secondary" onclick="confirmInlineBet('${b.id}')">Confirmar palpite</button>
+        ${!me.paid ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
+      </div>`;
+    } else {
+      const resLabel = me.homeScore>me.awayScore?`Vitória do ${b.game.home.name}`:me.awayScore>me.homeScore?`Vitória do ${b.game.away.name}`:'Empate';
+      actionBox = `<div class="inline-bet">
+        <div class="inline-bet-lbl" style="color:var(--ok)">✅ Palpite confirmado</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin:14px 0">
+          <div class="inline-team" style="align-items:center">
+            <span style="font-size:36px;line-height:1">${b.game.home.flag}</span>
+            <span class="team-code">${b.game.home.code}</span>
+          </div>
+          <div style="font-size:32px;font-weight:900;color:var(--text);letter-spacing:2px">${me.homeScore} × ${me.awayScore}</div>
+          <div class="inline-team" style="align-items:center">
+            <span style="font-size:36px;line-height:1">${b.game.away.flag}</span>
+            <span class="team-code">${b.game.away.code}</span>
+          </div>
         </div>
-        <div class="inline-x">×</div>
-        <div class="inline-sel">
-          <button class="inline-btn" onclick="adjInline('away',1)">+</button>
-          <div class="inline-num" id="inline-score-away">${sa}</div>
-          <button class="inline-btn" onclick="adjInline('away',-1)">−</button>
-        </div>
-        <div class="inline-team" style="align-items:flex-end">
-          <span style="font-size:36px;line-height:1">${b.game.away.flag}</span>
-          <span class="team-code">${b.game.away.code}</span>
-        </div>
-      </div>
-      <div class="inline-result" id="inline-result">${resText}</div>
-      <button class="btn btn-secondary" onclick="confirmInlineBet('${b.id}')">Confirmar palpite</button>
-      ${!me.paid ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
-    </div>`;
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">${resLabel}</div>
+        <button class="btn btn-ghost" onclick="editBet('${b.id}')">✏️ Editar palpite</button>
+        ${!me.paid ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
+      </div>`;
+    }
   } else if(!locked && !me) {
     // Non-participant: join button
     actionBox = `<div class="action-box">
@@ -1844,6 +1909,14 @@ function shareInvite(id) {
   else { if(navigator.clipboard) navigator.clipboard.writeText(msg); showToast('✅ Link copiado!'); }
 }
 
+function shareWhatsApp(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
+  const msg = `🏆 *${esc(b.title)}* — Bolão Copa 2026!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 function joinAndBet(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
@@ -1909,7 +1982,16 @@ function confirmInlineBet(bolaoId) {
     : `⚽ ${state.user.name} apostou: ${b.game.home.flag} ${s.home} × ${s.away} ${b.game.away.flag}`;
   addSystemMessage(b.id, msg);
   saveBoloes(b);
+  state.editingBet[bolaoId] = false;
   showToast(isEdit ? 'Palpite atualizado!' : 'Palpite registrado!');
+  renderDetail();
+}
+
+function editBet(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  const me = b?.participants.find(p=>p.email===state.user?.email);
+  if(me?.homeScore != null) state.betScores = {home: me.homeScore, away: me.awayScore};
+  state.editingBet[bolaoId] = true;
   renderDetail();
 }
 
@@ -2058,6 +2140,50 @@ function confirmBet() {
   showToast('✅ Palpite registrado!');
   back();
   setTimeout(()=>renderDetail(), 300);
+}
+
+// ===== NOTIFICAÇÕES =====
+function requestNotificationPermission() {
+  if(!('Notification' in window) || Notification.permission !== 'default') return;
+  setTimeout(() => Notification.requestPermission(), 4000);
+}
+
+function scheduleGameNotifications() {
+  if(!('Notification' in window) || Notification.permission !== 'granted' || !state.user) return;
+  const now = new Date();
+  state.boloes.forEach(b => {
+    if(b.result || isBetClosed(b.game)) return;
+    const dt = gameDateTime(b.game);
+    const msToKickoff = dt - now;
+    if(msToKickoff <= 0 || msToKickoff > 48 * 3600000) return;
+    const msTo1h = msToKickoff - 3600000;
+    if(msTo1h > 0) {
+      setTimeout(() => {
+        const me = state.boloes.find(x=>x.id===b.id)?.participants.find(p=>p.email===state.user?.email);
+        if(me?.homeScore == null) {
+          new Notification('⚽ Bolão Copa — faltam 1h!', {
+            body: `${b.game.home.name} × ${b.game.away.name} começa em 1h. Registre seu palpite em "${b.title}"!`,
+            icon: './icon.svg',
+            tag: `bet-1h-${b.id}`
+          });
+        }
+      }, msTo1h);
+    }
+    // 15 min reminder
+    const msTo15 = msToKickoff - 15 * 60000;
+    if(msTo15 > 0) {
+      setTimeout(() => {
+        const me = state.boloes.find(x=>x.id===b.id)?.participants.find(p=>p.email===state.user?.email);
+        if(me?.homeScore == null) {
+          new Notification('⏰ Último aviso — 15 minutos!', {
+            body: `Apostas para ${b.game.home.name} × ${b.game.away.name} fecham em 15 minutos!`,
+            icon: './icon.svg',
+            tag: `bet-15m-${b.id}`
+          });
+        }
+      }, msTo15);
+    }
+  });
 }
 
 // ===== PIX =====
@@ -2451,8 +2577,20 @@ async function fetchTabelaScores() {
         min: comp.status?.displayClock||''
       };
     });
+    // Auto-apply finished results to bolões that don't have one yet
+    state.boloes.forEach(b => {
+      if(b.result || !b.game?.id) return;
+      const sc = _ls[b.game.id];
+      if(sc?.status !== 'FT') return;
+      b.result = {home: sc.h, away: sc.a};
+      b.status = 'finished';
+      const g = GAMES.find(x=>x.id===b.game.id);
+      if(g) addSystemMessage(b.id, `🤖 Resultado automático via ESPN: ${g.home.flag} ${sc.h} × ${sc.a} ${g.away.flag}`);
+      saveBoloes(b);
+    });
     renderTabela();
     renderLiveScores();
+    if(state.currentBolaoId) renderDetail();
   } catch(e) {}
 }
 
