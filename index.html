@@ -297,6 +297,12 @@ input:checked+.slider:before{transform:translateX(18px)}
 .t-meta{display:flex;align-items:center;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--text3);font-weight:600}
 .t-live-pill{display:flex;align-items:center;gap:3px;color:var(--err);font-weight:800}
 .t-live-dot{width:5px;height:5px;border-radius:50%;background:var(--err);animation:pulse 1.2s infinite}
+/* tabela grid */
+.t-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.t-gcell{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 8px;cursor:pointer;transition:transform .1s;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center}
+.t-gcell:active{transform:scale(.97)}
+.t-gcell.bra{border-left:3px solid #009B3A}
+.t-gcell.live{border-color:var(--err)}
 .t-done{color:var(--ok);font-weight:700}
 /* TERMS */
 .terms-section{margin-top:20px}
@@ -2684,33 +2690,46 @@ function renderTabela() {
       const isBra=g.home.code==='BRA'||g.away.code==='BRA';
       const grpL=(g.group||'').replace('Grupo ','');
 
-      let mid='';
-      if(isDone||isLive){
-        const hs=sc?.h??'?', as=sc?.a??'?';
-        mid=`<div class="t-score">${hs}–${as}</div>`;
-      } else {
-        mid=`<div class="t-time">${g.time}</div>`;
-      }
+      // top row: group + status
+      const topStatus = isLive
+        ? `<span class="t-live-pill" style="font-size:9px"><span class="t-live-dot"></span>${sc?.min||'LIVE'}</span>`
+        : isDone
+          ? `<span style="color:var(--ok);font-size:9px;font-weight:800">✓ FIM</span>`
+          : `<span style="color:var(--text2);font-size:9px;font-weight:700">${g.time}</span>`;
 
-      let meta='';
-      if(isLive){
-        meta=`<div class="t-meta"><span>Grupo ${grpL}</span><span class="t-live-pill"><span class="t-live-dot"></span>AO VIVO${sc?.min?' '+sc.min:''}</span></div>`;
-      } else if(isDone){
-        meta=`<div class="t-meta"><span>Grupo ${grpL}</span><span class="t-done">✓ Encerrado</span></div>`;
-      } else {
+      // middle score or VS
+      const midContent = (isDone||isLive)
+        ? `<div style="font-size:18px;font-weight:900;color:${isLive?'var(--err)':'var(--text)'};letter-spacing:1px">${sc?.h??'?'}–${sc?.a??'?'}</div>`
+        : `<div style="font-size:10px;font-weight:800;color:var(--text3)">VS</div>`;
+
+      // bottom: venue or countdown
+      let bottom='';
+      if(!isDone&&!isLive){
         const diff=dt2-now,d=Math.floor(diff/86400000),h2=Math.floor((diff%86400000)/3600000),m2=Math.floor((diff%3600000)/60000);
-        const cd=d>0?`em ${d}d ${h2}h`:h2>0?`em ${h2}h ${m2}min`:`em ${m2}min`;
-        meta=`<div class="t-meta"><span>Grupo ${grpL} · ${g.venue.split(',')[0]}</span><span>${cd}</span></div>`;
+        const cd=d>0?`${d}d ${h2}h`:h2>0?`${h2}h ${m2}min`:`${m2}min`;
+        bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px;line-height:1.2">📍 ${g.venue.split(',')[0]}<br>em ${cd}</div>`;
       }
 
-      return `<div class="t-game${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}')">
-        <div class="t-game-row">
-          <div class="t-team"><span class="t-flag">${g.home.flag}</span><span class="t-name">${g.home.name}</span></div>
-          <div class="t-mid">${mid}</div>
-          <div class="t-team r"><span class="t-flag">${g.away.flag}</span><span class="t-name">${g.away.name}</span></div>
-        </div>${meta}</div>`;
+      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
+          <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px">Gr. ${grpL}</span>
+          ${topStatus}
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-around;width:100%;gap:4px">
+          <div style="text-align:center;flex:1;min-width:0">
+            <div style="font-size:26px;line-height:1">${g.home.flag}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.home.name}</div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;padding:0 2px">${midContent}</div>
+          <div style="text-align:center;flex:1;min-width:0">
+            <div style="font-size:26px;line-height:1">${g.away.flag}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.away.name}</div>
+          </div>
+        </div>
+        ${bottom}
+      </div>`;
     }).join('');
-    return `<div class="t-date-hdr">${dayPt}</div>${cards}`;
+    return `<div class="t-date-hdr">${dayPt}</div><div class="t-grid">${cards}</div>`;
   }).join('');
 }
 
