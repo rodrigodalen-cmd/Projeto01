@@ -1028,7 +1028,7 @@ async function doLogin() {
     if(!profile) { showToast('❌ Perfil não encontrado'); return; }
     state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
     if(remember) saveSession(state.user); else clearSession();
-    loginSuccess();
+    await loginSuccess();
     return;
   }
 
@@ -1042,7 +1042,7 @@ async function doLogin() {
   if(!u) { showToast('❌ Dados incorretos'); return; }
   state.user = {...u};
   if(remember) saveSession(state.user); else clearSession();
-  loginSuccess();
+  await loginSuccess();
 }
 
 function fmtCPF(input) {
@@ -1066,7 +1066,7 @@ function validCPF(cpf) {
   return r===parseInt(cpf[10]);
 }
 
-function doRegister() {
+async function doRegister() {
   const name = document.getElementById('rg-name').value.trim();
   const email = document.getElementById('rg-email').value.trim().toLowerCase();
   const phone = document.getElementById('rg-phone').value.trim();
@@ -1109,7 +1109,7 @@ function doRegister() {
     if(profErr) { showToast('❌ Erro ao criar perfil. Tente novamente.'); return; }
     state.user = {id: data.user.id, email, name, phone, pix, cpf};
     saveSession(state.user);
-    loginSuccess();
+    await loginSuccess();
     return;
   }
 
@@ -1117,7 +1117,7 @@ function doRegister() {
   saveUsers();
   state.user = {name,email,phone,cpf,pix};
   saveSession(state.user);
-  loginSuccess();
+  await loginSuccess();
 }
 
 async function loginSuccess() {
@@ -1357,12 +1357,12 @@ function renderCreateStep() {
       <div class="section-sub">Defina quantos pontos cada acerto vale</div>
       <div class="score-rule-row">
         <div class="score-rule-lbl">⚽ Placar exato</div>
-        <input class="score-rule-input" type="number" min="1" max="10" value="${s.pointsExact}" oninput="createState.pointsExact=Math.max(1,parseInt(this.value)||3)">
+        <input class="score-rule-input" type="number" min="1" max="10" value="${s.pointsExact}" oninput="createState.pointsExact=Math.max(1,isNaN(parseInt(this.value))?1:parseInt(this.value))">
         <span class="score-rule-pts">pts</span>
       </div>
       <div class="score-rule-row">
         <div class="score-rule-lbl">✅ Resultado certo (V/E/D)</div>
-        <input class="score-rule-input" type="number" min="0" max="9" value="${s.pointsResult}" oninput="createState.pointsResult=Math.max(0,parseInt(this.value)||1)">
+        <input class="score-rule-input" type="number" min="0" max="9" value="${s.pointsResult}" oninput="createState.pointsResult=Math.max(0,isNaN(parseInt(this.value))?0:parseInt(this.value))">
         <span class="score-rule-pts">pts</span>
       </div>
       <div class="btn-row">
@@ -1669,9 +1669,25 @@ function joinAndBet(id) {
   if(isBetClosed(b.game)) { showToast('⏰ Apostas encerradas para este jogo'); return; }
   if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado!'); return; }
   if(b.hasPw) {
-    const pw = prompt('Digite a senha do bolão:');
-    if(pw !== b.pw) { showToast('❌ Senha incorreta'); return; }
+    document.getElementById('join-pw-modal-input').value = '';
+    document.getElementById('join-pw-modal').dataset.id = id;
+    document.getElementById('join-pw-modal').style.display = 'flex';
+    setTimeout(()=>document.getElementById('join-pw-modal-input').focus(), 100);
+    return;
   }
+  _doJoinAndBet(id);
+}
+function _confirmJoinPw() {
+  const id = document.getElementById('join-pw-modal').dataset.id;
+  const b = state.boloes.find(x=>x.id===id);
+  const pw = document.getElementById('join-pw-modal-input').value;
+  document.getElementById('join-pw-modal').style.display = 'none';
+  if(!b || pw !== b.pw) { showToast('❌ Senha incorreta'); return; }
+  _doJoinAndBet(id);
+}
+function _doJoinAndBet(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
   if(!b.participants.find(p=>p.email===state.user.email)) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
     addSystemMessage(id, `${state.user.name} entrou no bolão`);
@@ -1841,7 +1857,6 @@ function confirmBet() {
   const b = state.boloes.find(x=>x.id===state.betBolaoId);
   if(!b) return;
   const s = state.betScores;
-  if(!confirm(`Confirmar palpite?\n${b.game.home.flag} ${b.game.home.name} ${s.home} × ${s.away} ${b.game.away.name} ${b.game.away.flag}`)) return;
   let me = b.participants.find(p=>p.email===state.user.email);
   if(!me) {
     me = {email:state.user.email,name:state.user.name,paid:false};
@@ -1929,7 +1944,7 @@ function updateProfileUI() {
     const pts=calcPoints(me2,b.result,b);
     const ptExact=b.pointsExact??3;
     totalPts+=pts;
-    if(pts===ptExact) exactHits++;
+    if(me2.homeScore===b.result.home && me2.awayScore===b.result.away) exactHits++;
     const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
     const rank=ranked.findIndex(p=>p.email===u.email)+1;
     if(rank>0&&(bestRank===null||rank<bestRank)) bestRank=rank;
@@ -2111,8 +2126,8 @@ function buildRanking(b) {
   const maxPts = ranked[0].pts;
   // Show confetti if current user is among the winners
   const myRank = ranked.findIndex(p=>p.email===state.user?.email);
-  if(myRank===0 && maxPts>0 && !b._confettiShown) {
-    b._confettiShown = true;
+  if(myRank===0 && maxPts>0 && !_confettiShownIds.has(b.id)) {
+    _confettiShownIds.add(b.id);
     setTimeout(showConfetti, 300);
   }
   const rows = ranked.map((p,i)=>{
@@ -2168,10 +2183,19 @@ function saveEditBolao() {
   renderDetail();
 }
 
-async function deleteBolao(id) {
+function deleteBolao(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
-  if(!confirm(`Excluir o bolão "${b.title}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  document.getElementById('delete-bolao-name').textContent = `"${b.title}"`;
+  document.getElementById('delete-bolao-modal').dataset.id = id;
+  document.getElementById('delete-bolao-modal').style.display = 'flex';
+}
+function cancelDeleteBolao() {
+  document.getElementById('delete-bolao-modal').style.display = 'none';
+}
+async function confirmDeleteBolao() {
+  const id = document.getElementById('delete-bolao-modal').dataset.id;
+  document.getElementById('delete-bolao-modal').style.display = 'none';
   state.boloes = state.boloes.filter(x=>x.id!==id);
   saveBoloes();
   if(_sb) await _sb.from('boloes').delete().eq('id', id);
@@ -2466,18 +2490,23 @@ function sendMessage(bolaoId) {
   },100);
 }
 
+const _confettiShownIds = new Set();
+
 // ===== CONFETTI =====
 function showConfetti() {
   const canvas = document.getElementById('confetti-canvas');
   if(!canvas) return;
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  const W = window.innerWidth, H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   canvas.style.display = 'block';
   const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
   const COLORS = ['#F4D03F','#006B3F','#ffffff','#00A651','#FFD700','#32BCAD'];
   const particles = Array.from({length:130}, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height - canvas.height,
+    x: Math.random() * W,
+    y: Math.random() * H - H,
     r: Math.random() * 7 + 4,
     color: COLORS[Math.floor(Math.random()*COLORS.length)],
     vx: (Math.random()-0.5)*3,
@@ -2487,12 +2516,12 @@ function showConfetti() {
   }));
   let frame = 0;
   function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0,0,W,H);
     particles.forEach(p => {
       p.tiltAngle += p.tiltSpeed;
       p.x += p.vx + Math.sin(p.tiltAngle)*1.2;
       p.y += p.vy;
-      if(p.y > canvas.height+10) { p.y=-10; p.x=Math.random()*canvas.width; }
+      if(p.y > H+10) { p.y=-10; p.x=Math.random()*W; }
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.tiltAngle);
@@ -2502,7 +2531,7 @@ function showConfetti() {
     });
     frame++;
     if(frame < 220) requestAnimationFrame(draw);
-    else { ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display='none'; }
+    else { ctx.clearRect(0,0,W,H); canvas.style.display='none'; }
   }
   draw();
 }
@@ -2554,7 +2583,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       const { data: profile } = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
       if(profile) {
         state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
-        loginSuccess();
+        await loginSuccess();
         if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
@@ -2569,7 +2598,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       const found = USERS.find(x=>x.email===parsed.email);
       if(found) {
         state.user = {...found};
-        loginSuccess();
+        await loginSuccess();
         if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
@@ -2591,6 +2620,32 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="cancelLogout()">Cancelar</button>
       <button class="btn" style="background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3);font-weight:700" onclick="confirmLogout()">Sair da conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- SENHA BOLÃO MODAL (joinAndBet) -->
+<div class="edit-bolao-modal" id="join-pw-modal" onclick="if(event.target===this)document.getElementById('join-pw-modal').style.display='none'">
+  <div class="edit-bolao-sheet">
+    <div style="font-size:17px;font-weight:800;margin-bottom:6px">Bolão protegido 🔒</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Digite a senha para entrar</div>
+    <div class="field" style="margin-bottom:20px"><input type="password" id="join-pw-modal-input" placeholder="Senha do bolão" oninput="" onkeydown="if(event.key==='Enter')_confirmJoinPw()"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="document.getElementById('join-pw-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary" onclick="_confirmJoinPw()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE BOLÃO MODAL -->
+<div class="edit-bolao-modal" id="delete-bolao-modal" onclick="if(event.target===this)cancelDeleteBolao()">
+  <div class="edit-bolao-sheet">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px">Excluir bolão?</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:6px" id="delete-bolao-name"></div>
+    <div style="font-size:13px;color:var(--err);margin-bottom:24px">Esta ação não pode ser desfeita.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="cancelDeleteBolao()">Cancelar</button>
+      <button class="btn" style="background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3);font-weight:700" onclick="confirmDeleteBolao()">Excluir</button>
     </div>
   </div>
 </div>
