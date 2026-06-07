@@ -1728,7 +1728,7 @@ function _doJoinAndBet(id) {
   if(!b) return;
   if(!b.participants.find(p=>p.email===state.user.email)) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
-    addSystemMessage(id, `${state.user.name} entrou no bolão`);
+    addSystemMessage(id, `🎉 ${state.user.name} entrou no bolão!`);
     saveBoloes(b);
   }
   state.betScores = {home:0, away:0};
@@ -1761,6 +1761,10 @@ function confirmInlineBet(bolaoId) {
   const isEdit = me.homeScore != null;
   me.homeScore = s.home;
   me.awayScore = s.away;
+  const msg = isEdit
+    ? `✏️ ${state.user.name} alterou o palpite: ${b.game.home.flag} ${s.home} × ${s.away} ${b.game.away.flag}`
+    : `⚽ ${state.user.name} apostou: ${b.game.home.flag} ${s.home} × ${s.away} ${b.game.away.flag}`;
+  addSystemMessage(b.id, msg);
   saveBoloes(b);
   showToast(isEdit ? 'Palpite atualizado!' : 'Palpite registrado!');
   renderDetail();
@@ -1814,7 +1818,7 @@ function doJoin(id) {
   const isNew = !b.participants.find(p=>p.email===state.user.email);
   if(isNew) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
-    addSystemMessage(id, `${state.user.name} entrou no bolão`);
+    addSystemMessage(id, `🎉 ${state.user.name} entrou no bolão!`);
   }
   saveBoloes(b);
   document.getElementById('join-code').value='';
@@ -1900,8 +1904,13 @@ function confirmBet() {
     me = {email:state.user.email,name:state.user.name,paid:false};
     b.participants.push(me);
   }
+  const isEdit = me.homeScore != null;
   me.homeScore = s.home;
   me.awayScore = s.away;
+  const msg = isEdit
+    ? `✏️ ${state.user.name} alterou o palpite: ${b.game.home.flag} ${s.home} × ${s.away} ${b.game.away.flag}`
+    : `⚽ ${state.user.name} apostou: ${b.game.home.flag} ${s.home} × ${s.away} ${b.game.away.flag}`;
+  addSystemMessage(b.id, msg);
   saveBoloes(b);
   showToast('✅ Palpite registrado!');
   back();
@@ -1938,6 +1947,7 @@ function confirmPix() {
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
   if(me) me.paid = true;
+  addSystemMessage(b.id, `💸 ${state.user.name} confirmou o pagamento · R$${b.amount}`);
   saveBoloes(b);
   showToast('✅ Pagamento confirmado! Boa sorte!');
   back();
