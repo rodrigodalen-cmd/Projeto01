@@ -1125,10 +1125,28 @@ async function doRegister() {
 
   if(_sb) {
     const { data, error } = await _sb.auth.signUp({email, password: pass});
-    if(error) { showToast(`❌ ${error.message}`); return; }
-    const { error: profErr } = await _sb.from('profiles').insert({id: data.user.id, email, name, phone, cpf, pix, dob});
-    if(profErr) { showToast('❌ Erro ao criar perfil. Tente novamente.'); return; }
-    state.user = {id: data.user.id, email, name, phone, pix, cpf};
+    if(error) {
+      if(error.message?.toLowerCase().includes('already registered')) {
+        showToast('❌ E-mail já cadastrado. Faça login.');
+      } else {
+        showToast(`❌ ${error.message}`);
+      }
+      return;
+    }
+    const userId = data.user?.id;
+    if(!userId) { showToast('❌ Erro inesperado. Tente novamente.'); return; }
+    // Use SECURITY DEFINER function — works even without active session
+    const { error: profErr } = await _sb.rpc('create_profile', {
+      p_id: userId, p_email: email, p_name: name,
+      p_phone: phone, p_cpf: cpf, p_pix: pix, p_dob: dob || ''
+    });
+    if(profErr) { showToast(`❌ ${profErr.message}`); return; }
+    // If email confirmation is required, session may be null
+    if(!data.session) {
+      showToast('📧 Conta criada! Confirme seu e-mail para entrar.');
+      return;
+    }
+    state.user = {id: userId, email, name, phone, pix, cpf};
     saveSession(state.user);
     await loginSuccess();
     return;

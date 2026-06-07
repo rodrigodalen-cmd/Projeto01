@@ -1,7 +1,7 @@
 -- ============================================================
--- Bolão Copa 2026 — Supabase Schema
+-- Bolão Copa 2026 — Supabase Schema v2
 -- Execute no SQL Editor do seu projeto Supabase
--- https://app.supabase.com → SQL Editor
+-- https://app.supabase.com → SQL Editor → New query → Run
 -- ============================================================
 
 -- ===== PROFILES (extends auth.users) =====
@@ -19,16 +19,47 @@ create table if not exists profiles (
 
 alter table profiles enable row level security;
 
+-- Drop old policies to avoid conflicts on re-run
+drop policy if exists "Users can view own profile" on profiles;
+drop policy if exists "Users can update own profile" on profiles;
+drop policy if exists "Users can insert own profile" on profiles;
+
 create policy "Users can view own profile"
   on profiles for select using (auth.uid() = id);
 
 create policy "Users can update own profile"
   on profiles for update using (auth.uid() = id);
 
-create policy "Users can insert own profile"
-  on profiles for insert with check (auth.uid() = id);
+-- Insert is handled by the create_profile function below (SECURITY DEFINER)
+-- so no direct insert policy needed from clients.
 
--- Function to get email by CPF (used for login via CPF)
+-- ===== FUNCTION: create_profile =====
+-- SECURITY DEFINER: runs as DB owner, bypasses RLS.
+-- Works even when email confirmation is enabled (no session yet).
+create or replace function create_profile(
+  p_id    uuid,
+  p_email text,
+  p_name  text,
+  p_phone text,
+  p_cpf   text,
+  p_pix   text,
+  p_dob   text
+) returns void language plpgsql security definer as $$
+begin
+  insert into profiles (id, email, name, phone, cpf, pix, dob)
+  values (
+    p_id, p_email, p_name, p_phone, p_cpf, p_pix,
+    case when p_dob = '' then null else p_dob::date end
+  )
+  on conflict (id) do nothing;
+end;
+$$;
+
+-- Grant execute to anon and authenticated roles
+grant execute on function create_profile to anon, authenticated;
+
+-- ===== FUNCTION: get_email_by_cpf =====
+-- Used for login via CPF.
 create or replace function get_email_by_cpf(p_cpf text)
 returns text language plpgsql security definer as $$
 declare
@@ -44,9 +75,9 @@ begin
 end;
 $$;
 
+grant execute on function get_email_by_cpf to anon, authenticated;
+
 -- ===== BOLOES =====
--- Stores the entire bolão state including participants and messages as JSONB.
--- This matches the localStorage structure exactly for easy sync.
 create table if not exists boloes (
   id text primary key,
   title text not null,
@@ -70,15 +101,18 @@ create table if not exists boloes (
 
 alter table boloes enable row level security;
 
--- Anyone authenticated can read any bolão (needed for join-by-code)
+drop policy if exists "Authenticated users can view boloes" on boloes;
+drop policy if exists "Authenticated users can create boloes" on boloes;
+drop policy if exists "Creator can update bolao" on boloes;
+drop policy if exists "Creator can delete bolao" on boloes;
+drop policy if exists "Participants can update bolao" on boloes;
+
 create policy "Authenticated users can view boloes"
   on boloes for select using (auth.role() = 'authenticated');
 
--- Only authenticated users can create bolões
 create policy "Authenticated users can create boloes"
   on boloes for insert with check (auth.role() = 'authenticated');
 
--- Only creator can update/delete a bolão
 create policy "Creator can update bolao"
   on boloes for update using (
     creator_id = (select email from profiles where id = auth.uid())
@@ -89,9 +123,6 @@ create policy "Creator can delete bolao"
     creator_id = (select email from profiles where id = auth.uid())
   );
 
--- Participants can also update the bolão (to add themselves, post bets, messages)
--- We use a permissive policy here: any authenticated user can update any bolão.
--- In production you'd restrict this further, but for a friends-only app this is fine.
 create policy "Participants can update bolao"
   on boloes for update using (auth.role() = 'authenticated');
 
@@ -99,13 +130,3 @@ create policy "Participants can update bolao"
 create index if not exists boloes_code_idx on boloes(code);
 create index if not exists boloes_creator_id_idx on boloes(creator_id);
 create index if not exists boloes_created_at_idx on boloes(created_at desc);
-
--- ============================================================
--- IMPORTANT: After running this schema, copy your project's
--- URL and anon key into index.html:
---
---   const SUPABASE_URL = 'https://your-project.supabase.co';
---   const SUPABASE_ANON_KEY = 'eyJ...';
---
--- Find them at: Settings → API in your Supabase dashboard
--- ============================================================
