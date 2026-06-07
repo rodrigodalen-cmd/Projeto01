@@ -1,12 +1,15 @@
 {
-  "name": "Bolão Copa",
-  "short_name": "Bolão Copa",
-  "description": "Bolão da Copa do Mundo 2026 para grupos de amigos",
+  "name": "Bolão Copa 2026",
+  "short_name": "Bolão",
+  "description": "Bolão da Copa do Mundo 2026 · Aposte com seus amigos",
   "start_url": "/Projeto01/?pwa=1",
+  "scope": "/Projeto01/",
   "display": "standalone",
-  "background_color": "#0D1B2A",
+  "background_color": "#071525",
   "theme_color": "#006B3F",
   "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["sports", "games", "social"],
   "icons": [
     {
       "src": "icon.svg",

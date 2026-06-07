@@ -1,7 +1,90 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#006B3F" rx="80"/>
-  <circle cx="256" cy="256" r="140" fill="#fff"/>
-  <circle cx="256" cy="256" r="140" fill="none" stroke="#006B3F" stroke-width="12"/>
-  <polygon points="256,136 286,220 376,220 306,272 332,356 256,304 180,356 206,272 136,220 226,220" fill="#006B3F"/>
-  <text x="256" y="460" font-size="48" font-family="Arial,sans-serif" font-weight="900" fill="#F4D03F" text-anchor="middle" letter-spacing="2">COPA 2026</text>
+  <defs>
+    <clipPath id="r"><rect width="512" height="512" rx="90"/></clipPath>
+    <radialGradient id="bg" cx="35%" cy="25%" r="75%">
+      <stop offset="0%" stop-color="#1B3A6B"/>
+      <stop offset="100%" stop-color="#071525"/>
+    </radialGradient>
+    <radialGradient id="ball" cx="36%" cy="30%" r="68%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="75%" stop-color="#f2f2f2"/>
+      <stop offset="100%" stop-color="#d5d5d5"/>
+    </radialGradient>
+    <radialGradient id="green" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#00803A"/>
+      <stop offset="100%" stop-color="#004520"/>
+    </radialGradient>
+    <filter id="bshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="tshadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#r)">
+    <!-- Dark sky background -->
+    <rect width="512" height="512" fill="url(#bg)"/>
+
+    <!-- Stars (subtle) -->
+    <circle cx="60"  cy="50"  r="1.5" fill="white" opacity="0.5"/>
+    <circle cx="140" cy="30"  r="1"   fill="white" opacity="0.4"/>
+    <circle cx="380" cy="45"  r="1.5" fill="white" opacity="0.5"/>
+    <circle cx="460" cy="70"  r="1"   fill="white" opacity="0.4"/>
+    <circle cx="90"  cy="100" r="1"   fill="white" opacity="0.3"/>
+    <circle cx="430" cy="120" r="1.5" fill="white" opacity="0.4"/>
+
+    <!-- Green field bottom section -->
+    <path d="M0,344 L512,344 L512,512 L0,512 Z" fill="url(#green)"/>
+
+    <!-- Field center circle (subtle) -->
+    <ellipse cx="256" cy="512" rx="180" ry="60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+
+    <!-- Yellow stripe separator -->
+    <rect x="0" y="336" width="512" height="14" fill="#F4D03F"/>
+    <!-- Yellow stripe shine -->
+    <rect x="0" y="336" width="512" height="5" fill="rgba(255,255,255,0.25)"/>
+
+    <!-- Ball shadow on field -->
+    <ellipse cx="256" cy="338" rx="100" ry="14" fill="rgba(0,0,0,0.35)"/>
+
+    <!-- Soccer ball -->
+    <circle cx="256" cy="192" r="130" fill="url(#ball)" filter="url(#bshadow)"/>
+
+    <!-- Ball pentagon patches — classic Telstar pattern -->
+    <!-- Top center pentagon -->
+    <path d="M256,82 L302,110 L287,160 L225,160 L210,110 Z" fill="#111111" opacity="0.88"/>
+    <!-- Top-left pentagon -->
+    <path d="M210,110 L162,105 L138,152 L168,196 L210,160 Z" fill="#111111" opacity="0.88"/>
+    <!-- Top-right pentagon -->
+    <path d="M302,110 L350,105 L374,152 L344,196 L302,160 Z" fill="#111111" opacity="0.88"/>
+    <!-- Bottom-left pentagon -->
+    <path d="M168,196 L138,238 L160,284 L210,292 L230,248 L210,160 Z" fill="#111111" opacity="0.88"/>
+    <!-- Bottom-right pentagon -->
+    <path d="M344,196 L374,238 L352,284 L302,292 L282,248 L302,160 Z" fill="#111111" opacity="0.88"/>
+    <!-- Bottom center pentagon -->
+    <path d="M230,248 L210,292 L256,312 L302,292 L282,248 L256,262 Z" fill="#111111" opacity="0.88"/>
+
+    <!-- Ball outline -->
+    <circle cx="256" cy="192" r="130" fill="none" stroke="rgba(180,180,180,0.45)" stroke-width="2.5"/>
+
+    <!-- "Bolão" text -->
+    <text x="256" y="423"
+      font-size="86"
+      font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+      font-weight="900"
+      fill="#F4D03F"
+      text-anchor="middle"
+      filter="url(#tshadow)"
+      letter-spacing="-1">Bolão</text>
+
+    <!-- "Copa 2026" subtitle -->
+    <text x="256" y="471"
+      font-size="26"
+      font-family="Arial, Helvetica, sans-serif"
+      font-weight="700"
+      fill="rgba(255,255,255,0.85)"
+      text-anchor="middle"
+      letter-spacing="6">COPA 2026</text>
+  </g>
 </svg>
