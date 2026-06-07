@@ -731,7 +731,7 @@ const GAMES = [
 const USERS = [{name:'João Silva',email:'joao@email.com',phone:'(11) 99999-9999',pix:'joao@email.com',pass:'123456'}];
 
 // ===== NAV =====
-function go(screenId, push=true) {
+function _navCore(screenId, push=true) {
   const cur = state.screenStack[state.screenStack.length-1];
   if(cur === screenId) return;
   document.getElementById(cur).classList.remove('active');
@@ -741,6 +741,11 @@ function go(screenId, push=true) {
   setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{if(s.id!==screenId)s.classList.remove('prev')}),400);
 }
 
+function go(screenId, push=true) {
+  _navCore(screenId, push);
+  updateGlobalNav(screenId);
+}
+
 function back() {
   if(state.screenStack.length <= 1) return;
   const cur = state.screenStack.pop();
@@ -748,6 +753,7 @@ function back() {
   document.getElementById(cur).classList.remove('active');
   document.getElementById(prev).classList.remove('prev');
   document.getElementById(prev).classList.add('active');
+  updateGlobalNav(prev);
 }
 
 function showToast(msg) {
@@ -1663,16 +1669,7 @@ function checkDeepLink() {
 }
 
 // ===== NAV GLOBAL =====
-// Telas que mostram a nav global (todas exceto auth e termos)
-const NAV_SCREENS = ['s-home','s-join','s-profile','s-detail','s-bet','s-pix','s-create','s-edit-profile'];
 const AUTH_SCREENS = ['s-login','s-register','s-terms'];
-
-// Sobrescreve go() para controlar visibilidade da nav
-const _go = go;
-function go(screenId, push=true) {
-  _go(screenId, push);
-  updateGlobalNav(screenId);
-}
 
 function updateGlobalNav(screenId) {
   const nav = document.getElementById('global-nav');
