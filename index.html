@@ -619,8 +619,8 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div id="home-av-badge" class="trophy-badge" onclick="gnavTo('profile')" style="cursor:pointer;overflow:hidden;padding:0"></div>
     </div>
     <div class="banner">
-      <h3>Brasil na Copa 2026</h3>
-      <p>Crie seu bolão e aposte com os amigos!</p>
+      <h3>🇧🇷 Brasil no Grupo C</h3>
+      <p>Marrocos · Haiti · Escócia — Crie seu bolão!</p>
       <button class="btn btn-secondary btn-sm" onclick="go_create()">Criar Bolão</button>
     </div>
     <div id="pwa-install-banner" class="pwa-banner" style="display:none">
@@ -954,13 +954,47 @@ let state = {
 };
 
 const GAMES = [
-  {id:'1',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'México',code:'MEX',flag:'🇲🇽'},date:'14 Jun',time:'16:00',stage:'Fase de Grupos',group:'Grupo E',venue:'SoFi Stadium, Los Angeles'},
-  {id:'2',home:{name:'Argentina',code:'ARG',flag:'🇦🇷'},away:{name:'EUA',code:'USA',flag:'🇺🇸'},date:'15 Jun',time:'19:00',stage:'Fase de Grupos',group:'Grupo A',venue:'MetLife Stadium, Nova York'},
-  {id:'3',home:{name:'Portugal',code:'POR',flag:'🇵🇹'},away:{name:'França',code:'FRA',flag:'🇫🇷'},date:'16 Jun',time:'13:00',stage:'Fase de Grupos',group:'Grupo B',venue:'AT&T Stadium, Dallas'},
-  {id:'4',home:{name:'Alemanha',code:'GER',flag:'🇩🇪'},away:{name:'Espanha',code:'ESP',flag:'🇪🇸'},date:'17 Jun',time:'16:00',stage:'Fase de Grupos',group:'Grupo C',venue:"Levi's Stadium, San Francisco"},
-  {id:'5',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'Croácia',code:'CRO',flag:'🇭🇷'},date:'20 Jun',time:'13:00',stage:'Fase de Grupos',group:'Grupo E',venue:'Rose Bowl, Pasadena'},
-  {id:'6',home:{name:'Inglaterra',code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},away:{name:'Japão',code:'JPN',flag:'🇯🇵'},date:'18 Jun',time:'19:00',stage:'Fase de Grupos',group:'Grupo D',venue:'Arrowhead Stadium, Kansas City'},
-  {id:'7',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'Argentina',code:'ARG',flag:'🇦🇷'},date:'01 Jul',time:'20:00',stage:'Oitavas de Final',venue:'MetLife Stadium, Nova York'},
+  // === GRUPO A: México, África do Sul, Coreia do Sul, Rep. Tcheca ===
+  {id:'1', home:{name:'México',code:'MEX',flag:'🇲🇽'}, away:{name:'África do Sul',code:'RSA',flag:'🇿🇦'}, date:'11 Jun', time:'16:00', stage:'Fase de Grupos', group:'Grupo A', venue:'Estadio Azteca, Cidade do México'},
+  {id:'2', home:{name:'Coreia do Sul',code:'KOR',flag:'🇰🇷'}, away:{name:'Rep. Tcheca',code:'CZE',flag:'🇨🇿'}, date:'11 Jun', time:'23:00', stage:'Fase de Grupos', group:'Grupo A', venue:'Estadio Akron, Zapopan'},
+  {id:'3', home:{name:'México',code:'MEX',flag:'🇲🇽'}, away:{name:'Coreia do Sul',code:'KOR',flag:'🇰🇷'}, date:'18 Jun', time:'22:00', stage:'Fase de Grupos', group:'Grupo A', venue:'Estadio Akron, Zapopan'},
+  // === GRUPO B: Canadá, Bósnia, Catar, Suíça ===
+  {id:'4', home:{name:'Canadá',code:'CAN',flag:'🇨🇦'}, away:{name:'Bósnia',code:'BIH',flag:'🇧🇦'}, date:'12 Jun', time:'16:00', stage:'Fase de Grupos', group:'Grupo B', venue:'BMO Field, Toronto'},
+  // === GRUPO C: Brasil, Marrocos, Escócia, Haiti ===
+  {id:'5', home:{name:'Brasil',code:'BRA',flag:'🇧🇷'}, away:{name:'Marrocos',code:'MAR',flag:'🇲🇦'}, date:'13 Jun', time:'19:00', stage:'Fase de Grupos', group:'Grupo C', venue:'MetLife Stadium, Nova York'},
+  {id:'6', home:{name:'Brasil',code:'BRA',flag:'🇧🇷'}, away:{name:'Haiti',code:'HAI',flag:'🇭🇹'}, date:'19 Jun', time:'21:30', stage:'Fase de Grupos', group:'Grupo C', venue:'Lincoln Financial Field, Philadelphia'},
+  {id:'7', home:{name:'Escócia',code:'SCO',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'}, away:{name:'Brasil',code:'BRA',flag:'🇧🇷'}, date:'24 Jun', time:'19:00', stage:'Fase de Grupos', group:'Grupo C', venue:'Hard Rock Stadium, Miami'},
+  // === GRUPO D: EUA, Paraguai, Turquia, Austrália ===
+  {id:'8', home:{name:'EUA',code:'USA',flag:'🇺🇸'}, away:{name:'Paraguai',code:'PAR',flag:'🇵🇾'}, date:'12 Jun', time:'22:00', stage:'Fase de Grupos', group:'Grupo D', venue:'SoFi Stadium, Los Angeles'},
+  // === GRUPO E: Alemanha, Curaçao, Costa do Marfim, Equador ===
+  {id:'9', home:{name:'Alemanha',code:'GER',flag:'🇩🇪'}, away:{name:'Curaçao',code:'CUW',flag:'🇨🇼'}, date:'14 Jun', time:'14:00', stage:'Fase de Grupos', group:'Grupo E', venue:'NRG Stadium, Houston'},
+  {id:'10', home:{name:'Costa do Marfim',code:'CIV',flag:'🇨🇮'}, away:{name:'Equador',code:'ECU',flag:'🇪🇨'}, date:'14 Jun', time:'20:00', stage:'Fase de Grupos', group:'Grupo E', venue:'Lincoln Financial Field, Philadelphia'},
+  {id:'11', home:{name:'Alemanha',code:'GER',flag:'🇩🇪'}, away:{name:'Costa do Marfim',code:'CIV',flag:'🇨🇮'}, date:'20 Jun', time:'17:00', stage:'Fase de Grupos', group:'Grupo E', venue:'BMO Field, Toronto'},
+  // === GRUPO F: Holanda, Japão, Suécia, Tunísia ===
+  {id:'12', home:{name:'Holanda',code:'NED',flag:'🇳🇱'}, away:{name:'Japão',code:'JPN',flag:'🇯🇵'}, date:'14 Jun', time:'17:00', stage:'Fase de Grupos', group:'Grupo F', venue:'AT&T Stadium, Arlington'},
+  // === GRUPO G: Bélgica, Egito, Irã, Nova Zelândia ===
+  {id:'13', home:{name:'Bélgica',code:'BEL',flag:'🇧🇪'}, away:{name:'Egito',code:'EGY',flag:'🇪🇬'}, date:'15 Jun', time:'16:00', stage:'Fase de Grupos', group:'Grupo G', venue:'Lumen Field, Seattle'},
+  // === GRUPO H: Espanha, Cabo Verde, Arábia Saudita, Uruguai ===
+  {id:'14', home:{name:'Espanha',code:'ESP',flag:'🇪🇸'}, away:{name:'Cabo Verde',code:'CPV',flag:'🇨🇻'}, date:'15 Jun', time:'13:00', stage:'Fase de Grupos', group:'Grupo H', venue:'Mercedes-Benz Stadium, Atlanta'},
+  {id:'15', home:{name:'Arábia Saudita',code:'KSA',flag:'🇸🇦'}, away:{name:'Uruguai',code:'URU',flag:'🇺🇾'}, date:'15 Jun', time:'19:00', stage:'Fase de Grupos', group:'Grupo H', venue:'Hard Rock Stadium, Miami'},
+  {id:'16', home:{name:'Espanha',code:'ESP',flag:'🇪🇸'}, away:{name:'Arábia Saudita',code:'KSA',flag:'🇸🇦'}, date:'21 Jun', time:'13:00', stage:'Fase de Grupos', group:'Grupo H', venue:'Mercedes-Benz Stadium, Atlanta'},
+  {id:'17', home:{name:'Uruguai',code:'URU',flag:'🇺🇾'}, away:{name:'Espanha',code:'ESP',flag:'🇪🇸'}, date:'26 Jun', time:'21:00', stage:'Fase de Grupos', group:'Grupo H', venue:'Estadio Akron, Zapopan'},
+  // === GRUPO I: França, Senegal, Iraque, Noruega ===
+  {id:'18', home:{name:'França',code:'FRA',flag:'🇫🇷'}, away:{name:'Senegal',code:'SEN',flag:'🇸🇳'}, date:'16 Jun', time:'16:00', stage:'Fase de Grupos', group:'Grupo I', venue:'MetLife Stadium, Nova York'},
+  {id:'19', home:{name:'França',code:'FRA',flag:'🇫🇷'}, away:{name:'Iraque',code:'IRQ',flag:'🇮🇶'}, date:'22 Jun', time:'18:00', stage:'Fase de Grupos', group:'Grupo I', venue:'Lincoln Financial Field, Philadelphia'},
+  {id:'20', home:{name:'Noruega',code:'NOR',flag:'🇳🇴'}, away:{name:'França',code:'FRA',flag:'🇫🇷'}, date:'26 Jun', time:'16:00', stage:'Fase de Grupos', group:'Grupo I', venue:'Gillette Stadium, Boston'},
+  // === GRUPO J: Argentina, Argélia, Áustria, Jordânia ===
+  {id:'21', home:{name:'Argentina',code:'ARG',flag:'🇦🇷'}, away:{name:'Argélia',code:'ALG',flag:'🇩🇿'}, date:'16 Jun', time:'22:00', stage:'Fase de Grupos', group:'Grupo J', venue:'Arrowhead Stadium, Kansas City'},
+  {id:'22', home:{name:'Argentina',code:'ARG',flag:'🇦🇷'}, away:{name:'Áustria',code:'AUT',flag:'🇦🇹'}, date:'22 Jun', time:'14:00', stage:'Fase de Grupos', group:'Grupo J', venue:'AT&T Stadium, Arlington'},
+  {id:'23', home:{name:'Jordânia',code:'JOR',flag:'🇯🇴'}, away:{name:'Argentina',code:'ARG',flag:'🇦🇷'}, date:'27 Jun', time:'23:00', stage:'Fase de Grupos', group:'Grupo J', venue:'AT&T Stadium, Arlington'},
+  // === GRUPO K: Portugal, Congo RD, Colômbia, Uzbequistão ===
+  {id:'24', home:{name:'Portugal',code:'POR',flag:'🇵🇹'}, away:{name:'Congo RD',code:'COD',flag:'🇨🇩'}, date:'17 Jun', time:'14:00', stage:'Fase de Grupos', group:'Grupo K', venue:'NRG Stadium, Houston'},
+  {id:'25', home:{name:'Portugal',code:'POR',flag:'🇵🇹'}, away:{name:'Uzbequistão',code:'UZB',flag:'🇺🇿'}, date:'23 Jun', time:'14:00', stage:'Fase de Grupos', group:'Grupo K', venue:'NRG Stadium, Houston'},
+  {id:'26', home:{name:'Colômbia',code:'COL',flag:'🇨🇴'}, away:{name:'Portugal',code:'POR',flag:'🇵🇹'}, date:'27 Jun', time:'20:30', stage:'Fase de Grupos', group:'Grupo K', venue:'Hard Rock Stadium, Miami'},
+  // === GRUPO L: Inglaterra, Croácia, Gana, Panamá ===
+  {id:'27', home:{name:'Inglaterra',code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}, away:{name:'Croácia',code:'CRO',flag:'🇭🇷'}, date:'17 Jun', time:'17:00', stage:'Fase de Grupos', group:'Grupo L', venue:'AT&T Stadium, Arlington'},
+  {id:'28', home:{name:'Inglaterra',code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}, away:{name:'Gana',code:'GHA',flag:'🇬🇭'}, date:'23 Jun', time:'17:00', stage:'Fase de Grupos', group:'Grupo L', venue:'Gillette Stadium, Boston'},
+  {id:'29', home:{name:'Panamá',code:'PAN',flag:'🇵🇦'}, away:{name:'Inglaterra',code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}, date:'27 Jun', time:'18:00', stage:'Fase de Grupos', group:'Grupo L', venue:'MetLife Stadium, Nova York'},
 ];
 
 const USERS = [];
