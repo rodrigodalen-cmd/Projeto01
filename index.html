@@ -304,6 +304,18 @@ input:checked+.slider:before{transform:translateX(18px)}
 .editing-notice{background:rgba(0,107,63,.12);border:1px solid rgba(0,107,63,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--primary-light);text-align:center}
 .pix-creator-card{background:rgba(50,188,173,.08);border:1px solid rgba(50,188,173,.3);border-radius:14px;padding:14px;margin-bottom:12px}
 .sys-msg{text-align:center;font-size:11px;color:var(--text3);background:var(--surface2);border-radius:8px;padding:4px 12px;margin:6px 32px}
+/* INLINE BET SELECTOR */
+.inline-bet{background:var(--surface2);border-radius:18px;padding:18px;border:1px solid var(--border);margin-bottom:12px}
+.inline-bet-lbl{font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;text-align:center;margin-bottom:6px}
+.inline-prev{font-size:12px;color:var(--text2);text-align:center;margin-bottom:14px;background:rgba(255,255,255,.05);border-radius:8px;padding:5px}
+.inline-score-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px}
+.inline-team{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.inline-sel{display:flex;flex-direction:column;align-items:center;gap:4px}
+.inline-btn{width:38px;height:38px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.inline-btn:active{opacity:.7}
+.inline-num{font-size:40px;font-weight:900;color:var(--secondary);min-width:50px;text-align:center;line-height:1.1}
+.inline-x{font-size:20px;font-weight:900;color:var(--text3);align-self:center}
+.inline-result{text-align:center;font-size:12px;color:var(--primary-light);background:rgba(0,107,63,.15);border-radius:8px;padding:6px;margin-bottom:14px;font-weight:700}
 .chat-section{margin-top:16px}
 .chat-msg{display:flex;gap:8px;margin-bottom:12px}
 .chat-av{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
@@ -1283,6 +1295,15 @@ function renderDetail() {
   const hoursUntil = msUntil / 3600000;
   const countdown = timeUntilGame(b.game);
 
+  // Initialize inline bet scores when switching bolões
+  if(state._betDetailId !== b.id) {
+    state.betScores = {home: me?.homeScore??0, away: me?.awayScore??0};
+    state._betDetailId = b.id;
+    state.betBolaoId = b.id;
+  }
+  const sh = state.betScores.home;
+  const sa = state.betScores.away;
+
   // 1. DEADLINE BADGE
   let deadlineBadge;
   if(b.result) {
@@ -1345,26 +1366,57 @@ function renderDetail() {
        </div>`
     : '';
 
-  // 7. ACTION BOX (bet/pay — only while open)
+  // 7. INLINE BET SELECTOR
   let actionBox = '';
-  if(!betClosed && !b.result) {
-    actionBox = `<div class="action-box">
-      ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
-      ${me ? (me.homeScore!=null
-        ? `<div class="my-bet-box">
-             <div class="my-bet-lbl">Meu palpite</div>
-             <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
-             <button class="my-bet-edit" onclick="openBet('${b.id}')">Alterar palpite</button>
-           </div>`
-        : `<button class="btn btn-secondary" onclick="openBet('${b.id}')">Fazer meu palpite</button>`)
-      : `<button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>`}
-    </div>`;
-  } else if(me?.homeScore!=null) {
-    actionBox = `<div class="action-box">
-      <div class="my-bet-box">
-        <div class="my-bet-lbl">Meu palpite registrado</div>
-        <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+  const locked = betClosed || !!b.result;
+  if(!locked && me) {
+    // Inline editable score selector
+    const resText = sh>sa?`Vitória do ${b.game.home.name}`:sa>sh?`Vitória do ${b.game.away.name}`:'Empate';
+    const isEdit = me.homeScore != null;
+    actionBox = `<div class="inline-bet">
+      <div class="inline-bet-lbl">${isEdit ? 'Alterar palpite' : 'Meu palpite'}</div>
+      ${isEdit ? `<div class="inline-prev">Atual: ${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>` : ''}
+      <div class="inline-score-row">
+        <div class="inline-team">
+          <span style="font-size:36px;line-height:1">${b.game.home.flag}</span>
+          <span class="team-code">${b.game.home.code}</span>
+        </div>
+        <div class="inline-sel">
+          <button class="inline-btn" onclick="adjInline('home',1)">+</button>
+          <div class="inline-num" id="inline-score-home">${sh}</div>
+          <button class="inline-btn" onclick="adjInline('home',-1)">−</button>
+        </div>
+        <div class="inline-x">×</div>
+        <div class="inline-sel">
+          <button class="inline-btn" onclick="adjInline('away',1)">+</button>
+          <div class="inline-num" id="inline-score-away">${sa}</div>
+          <button class="inline-btn" onclick="adjInline('away',-1)">−</button>
+        </div>
+        <div class="inline-team" style="align-items:flex-end">
+          <span style="font-size:36px;line-height:1">${b.game.away.flag}</span>
+          <span class="team-code">${b.game.away.code}</span>
+        </div>
       </div>
+      <div class="inline-result" id="inline-result">${resText}</div>
+      <button class="btn btn-secondary" onclick="confirmInlineBet('${b.id}')">Confirmar palpite</button>
+      ${!me.paid ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
+    </div>`;
+  } else if(!locked && !me) {
+    // Non-participant: join button
+    actionBox = `<div class="action-box">
+      <button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>
+    </div>`;
+  } else if(locked && me) {
+    // Locked: read-only view + pix if needed
+    actionBox = `<div class="action-box">
+      ${me.homeScore!=null
+        ? `<div class="my-bet-box">
+             <div class="my-bet-lbl">Meu palpite registrado</div>
+             <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+             <div style="font-size:11px;color:var(--err);font-weight:600;margin-top:4px">Apostas encerradas</div>
+           </div>`
+        : `<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Você não registrou um palpite</div>`}
+      ${!me.paid && !b.result ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
     </div>`;
   }
 
@@ -1440,7 +1492,8 @@ function shareInvite(id) {
 
 function joinAndBet(id) {
   const b = state.boloes.find(x=>x.id===id);
-  if(b && isBetClosed(b.game)) { showToast('⏰ Apostas encerradas para este jogo'); return; }
+  if(!b) return;
+  if(isBetClosed(b.game)) { showToast('⏰ Apostas encerradas para este jogo'); return; }
   if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado!'); return; }
   if(b.hasPw) {
     const pw = prompt('Digite a senha do bolão:');
@@ -1448,8 +1501,42 @@ function joinAndBet(id) {
   }
   if(!b.participants.find(p=>p.email===state.user.email)) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
+    addSystemMessage(id, `${state.user.name} entrou no bolão`);
+    saveBoloes();
   }
-  openBet(id);
+  state.betScores = {home:0, away:0};
+  state._betDetailId = id;
+  state.betBolaoId = id;
+  renderDetail();
+}
+
+function adjInline(team, delta) {
+  state.betScores[team] = Math.max(0, Math.min(20, (state.betScores[team]||0) + delta));
+  const numEl = document.getElementById('inline-score-' + team);
+  if(numEl) numEl.textContent = state.betScores[team];
+  const b = state.boloes.find(x=>x.id===state.betBolaoId);
+  if(!b) return;
+  const s = state.betScores;
+  const res = s.home>s.away?`Vitória do ${b.game.home.name}`:s.away>s.home?`Vitória do ${b.game.away.name}`:'Empate';
+  const resEl = document.getElementById('inline-result');
+  if(resEl) resEl.textContent = res;
+}
+
+function confirmInlineBet(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b||!state.user) return;
+  const s = state.betScores;
+  let me = b.participants.find(p=>p.email===state.user.email);
+  if(!me) {
+    me = {email:state.user.email,name:state.user.name,paid:false};
+    b.participants.push(me);
+  }
+  const isEdit = me.homeScore != null;
+  me.homeScore = s.home;
+  me.awayScore = s.away;
+  saveBoloes();
+  showToast(isEdit ? 'Palpite atualizado!' : 'Palpite registrado!');
+  renderDetail();
 }
 
 // ===== JOIN BOLÃO =====
