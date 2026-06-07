@@ -330,6 +330,12 @@ input:checked+.slider:before{transform:translateX(18px)}
 .pwa-banner{background:var(--surface2);border-radius:12px;padding:12px 14px;border:1px solid var(--border);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .pwa-banner-text{flex:1;font-size:12px;color:var(--text2);line-height:1.4}
 .pwa-banner-btn{padding:7px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+.ios-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+.ios-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:28px 24px calc(32px + env(safe-area-inset-bottom,0px));position:relative}
+.ios-arrow{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);font-size:28px;line-height:1}
+.ios-step{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.ios-step-num{width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ios-step-text{font-size:13px;color:var(--text2);line-height:1.5;padding-top:4px}
 .editing-notice{background:rgba(0,107,63,.12);border:1px solid rgba(0,107,63,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--primary-light);text-align:center}
 .pix-creator-card{background:rgba(50,188,173,.08);border:1px solid rgba(50,188,173,.3);border-radius:14px;padding:14px;margin-bottom:12px}
 .sys-msg{text-align:center;font-size:11px;color:var(--text3);background:var(--surface2);border-radius:8px;padding:4px 12px;margin:6px 32px}
@@ -647,7 +653,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div id="pwa-install-banner" class="pwa-banner" style="display:none">
       <div class="pwa-banner-text">Instale o Bolão Copa no celular para acesso rápido como um app</div>
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
-      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none'">×</button>
+      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
     <div class="section-title">Meus Bolões</div>
     <div class="filter-chips" id="home-filters">
@@ -2589,6 +2595,13 @@ function addSystemMessage(bolaoId, text) {
 
 // ===== PWA INSTALL =====
 let _pwaPrompt = null;
+const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const _isStandalone = window.navigator.standalone === true ||
+                      window.matchMedia('(display-mode: standalone)').matches;
+const _isSafari = /safari/i.test(navigator.userAgent) &&
+                  !/chrome|crios|fxios/i.test(navigator.userAgent);
+
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault();
   _pwaPrompt = e;
@@ -2600,10 +2613,41 @@ window.addEventListener('appinstalled', ()=>{
   if(banner) banner.style.display='none';
   _pwaPrompt = null;
 });
+
+// Show install banner on iOS Safari (if not already installed and not dismissed)
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(_isIOS && !_isStandalone && !localStorage.getItem('ios_banner_dismissed')) {
+    const banner = document.getElementById('pwa-install-banner');
+    if(banner) {
+      banner.querySelector('.pwa-banner-text').textContent = 'Instale o Bolão Copa na tela de início do iPhone/iPad';
+      banner.style.display = 'flex';
+    }
+  }
+});
+
 function installPWA() {
-  if(!_pwaPrompt) { showToast('Para instalar: use o menu do navegador → "Adicionar à tela inicial"'); return; }
+  if(_isIOS) {
+    openIOSModal();
+    return;
+  }
+  if(!_pwaPrompt) {
+    showToast('Para instalar: use o menu do navegador → "Adicionar à tela inicial"');
+    return;
+  }
   _pwaPrompt.prompt();
   _pwaPrompt.userChoice.then(()=>{ _pwaPrompt=null; });
+}
+
+function openIOSModal() {
+  const m = document.getElementById('ios-modal');
+  if(m) m.style.display='flex';
+}
+function closeIOSModal() {
+  const m = document.getElementById('ios-modal');
+  if(m) m.style.display='none';
+  localStorage.setItem('ios_banner_dismissed','1');
+  const banner = document.getElementById('pwa-install-banner');
+  if(banner) banner.style.display='none';
 }
 
 // ===== FORGOT PASSWORD =====
@@ -2951,6 +2995,31 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       <button class="btn btn-ghost" onclick="cancelDeleteBolao()">Cancelar</button>
       <button class="btn" style="background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3);font-weight:700" onclick="confirmDeleteBolao()">Excluir</button>
     </div>
+  </div>
+</div>
+
+<!-- iOS INSTALL MODAL -->
+<div class="ios-modal" id="ios-modal" onclick="if(event.target===this)closeIOSModal()">
+  <div class="ios-sheet">
+    <div style="font-size:18px;font-weight:900;margin-bottom:4px">Instalar Bolão Copa</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Adicione à tela de início do iPhone/iPad</div>
+    <div class="ios-step">
+      <div class="ios-step-num">1</div>
+      <div class="ios-step-text">Toque no botão <strong>Compartilhar</strong> <span style="font-size:16px">⎋</span> na barra inferior do Safari</div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">2</div>
+      <div class="ios-step-text">Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong> <span style="font-size:14px">＋</span></div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">3</div>
+      <div class="ios-step-text">Toque em <strong>"Adicionar"</strong> no canto superior direito</div>
+    </div>
+    <div style="background:rgba(244,208,63,.08);border:1px solid rgba(244,208,63,.2);border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:11px;color:var(--text2)">
+      💡 O app precisa estar aberto no <strong>Safari</strong>. Chrome e Firefox no iOS não suportam instalação.
+    </div>
+    <button class="btn btn-primary" onclick="closeIOSModal()">Entendi</button>
+    <div class="ios-arrow">▼</div>
   </div>
 </div>
 
