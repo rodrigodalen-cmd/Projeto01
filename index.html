@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bolão Copa</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#006B3F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bolão Copa">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -283,6 +291,18 @@ input:checked+.slider:before{transform:translateX(18px)}
 .hint-text{color:var(--text3);font-size:11px;text-align:center;margin-top:24px}
 .btn-link{background:none;border:none;color:var(--primary-light);font-size:13px;cursor:pointer;text-decoration:underline}
 .history-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer}
+.filter-chips{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.filter-chips::-webkit-scrollbar{display:none}
+.chip-btn{flex-shrink:0;padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.chip-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.edit-bolao-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:950;display:none;align-items:flex-end;justify-content:center}
+.edit-bolao-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:24px;padding-bottom:40px}
+.pwa-banner{background:var(--surface2);border-radius:12px;padding:12px 14px;border:1px solid var(--border);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.pwa-banner-text{flex:1;font-size:12px;color:var(--text2);line-height:1.4}
+.pwa-banner-btn{padding:7px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+.editing-notice{background:rgba(0,107,63,.12);border:1px solid rgba(0,107,63,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--primary-light);text-align:center}
+.pix-creator-card{background:rgba(50,188,173,.08);border:1px solid rgba(50,188,173,.3);border-radius:14px;padding:14px;margin-bottom:12px}
+.sys-msg{text-align:center;font-size:11px;color:var(--text3);background:var(--surface2);border-radius:8px;padding:4px 12px;margin:6px 32px}
 .chat-section{margin-top:16px}
 .chat-msg{display:flex;gap:8px;margin-bottom:12px}
 .chat-av{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
@@ -556,7 +576,18 @@ input:checked+.slider:before{transform:translateX(18px)}
       <p>Crie seu bolão e aposte com os amigos!</p>
       <button class="btn btn-secondary btn-sm" onclick="go_create()">Criar Bolão</button>
     </div>
+    <div id="pwa-install-banner" class="pwa-banner" style="display:none">
+      <div class="pwa-banner-text">Instale o Bolão Copa no celular para acesso rápido como um app</div>
+      <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
+      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none'">×</button>
+    </div>
     <div class="section-title">Meus Bolões</div>
+    <div class="filter-chips" id="home-filters">
+      <button class="chip-btn active" onclick="setHomeFilter('all',this)">Todos</button>
+      <button class="chip-btn" onclick="setHomeFilter('mine',this)">Meus</button>
+      <button class="chip-btn" onclick="setHomeFilter('open',this)">Abertos</button>
+      <button class="chip-btn" onclick="setHomeFilter('closed',this)">Encerrados</button>
+    </div>
     <div id="my-boloes-list"></div>
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
@@ -627,7 +658,15 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="info-row">
       <div><div class="info-lbl">Chave Pix</div><div class="info-val" style="color:var(--pix)" id="prof-pix">-</div></div>
     </div>
-    <div class="section-title" style="margin-top:20px">Sobre o app</div>
+    <div class="section-title" style="margin-top:20px">Desempenho</div>
+    <div style="display:flex;background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:20px">
+      <div class="stat" id="perf-pts"><div class="stat-val">0</div><div class="stat-lbl">Pontos totais</div></div>
+      <div class="stat-div"></div>
+      <div class="stat" id="perf-acerto"><div class="stat-val">0%</div><div class="stat-lbl">% Acerto</div></div>
+      <div class="stat-div"></div>
+      <div class="stat" id="perf-melhor"><div class="stat-val">-</div><div class="stat-lbl">Melhor lugar</div></div>
+    </div>
+    <div class="section-title" style="margin-top:4px">Sobre o app</div>
     <div class="about-card">
       <div class="about-item">Bolão Copa v1.0.0</div>
       <div class="about-item">Feito para a Copa do Mundo 2026</div>
@@ -955,16 +994,30 @@ function renderHome() {
   renderLiveScores();
 }
 
+function setHomeFilter(filter, btn) {
+  state.homeFilter = filter;
+  document.querySelectorAll('#home-filters .chip-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderMyBoloes();
+}
+
 function renderMyBoloes() {
   const el = document.getElementById('my-boloes-list');
-  const mine = state.boloes.filter(b=> b.creatorId===state.user?.email || b.participants.find(p=>p.email===state.user?.email));
+  const allMine = state.boloes.filter(b=> b.creatorId===state.user?.email || b.participants.find(p=>p.email===state.user?.email));
+  const f = state.homeFilter||'all';
+  const mine = f==='mine' ? allMine.filter(b=>b.creatorId===state.user?.email)
+    : f==='open' ? allMine.filter(b=>b.status==='open')
+    : f==='closed' ? allMine.filter(b=>b.status==='finished')
+    : allMine;
   if(mine.length===0) {
-    el.innerHTML = `<div class="empty-box">
-      <div class="empty-icon">🎯</div>
-      <div class="empty-title">Nenhum bolão ainda</div>
-      <div class="empty-text">Crie um bolão ou entre com um código de convite</div>
-      <button class="btn btn-ghost btn-sm" onclick="showTab('join')">Entrar com código</button>
-    </div>`;
+    el.innerHTML = f==='all'
+      ? `<div class="empty-box">
+           <div class="empty-icon">🎯</div>
+           <div class="empty-title">Nenhum bolão ainda</div>
+           <div class="empty-text">Crie um bolão ou entre com um código de convite</div>
+           <button class="btn btn-ghost btn-sm" onclick="showTab('join')">Entrar com código</button>
+         </div>`
+      : `<div class="empty-box"><div class="empty-text">Nenhum bolão nesta categoria</div></div>`;
     return;
   }
   el.innerHTML = mine.map(b=>{
@@ -1170,6 +1223,7 @@ function finishCreate() {
     game: s.game,
     creatorId: state.user.email,
     creatorName: state.user.name,
+    creatorPixKey: state.user.pix||'',
     amount: s.amount,
     maxPart: s.maxPart,
     hasPw: s.hasPw,
@@ -1263,7 +1317,19 @@ function renderDetail() {
     <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">Excluir</button>
   </div>` : '';
 
-  // 6. ACTION BOX (bet/pay — only while open)
+  // 6. PIX CREATOR CARD (for participants who haven't paid yet)
+  const creator = USERS.find(x=>x.email===b.creatorId);
+  const creatorPix = b.creatorPixKey || creator?.pix || '';
+  const pixCard = (!isCreator && me && !me.paid && !betClosed && !b.result && creatorPix)
+    ? `<div class="pix-creator-card">
+         <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pagamento via Pix</div>
+         <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Pague para: <strong style="color:var(--text)">${b.creatorName}</strong></div>
+         <div style="font-size:15px;color:var(--pix);font-weight:700;margin-bottom:6px;word-break:break-all">${creatorPix}</div>
+         <div style="font-size:12px;color:var(--text3)">Valor: <strong style="color:var(--secondary)">R$${b.amount}</strong> · Após pagar, toque em "Pagar via Pix" para confirmar</div>
+       </div>`
+    : '';
+
+  // 7. ACTION BOX (bet/pay — only while open)
   let actionBox = '';
   if(!betClosed && !b.result) {
     actionBox = `<div class="action-box">
@@ -1286,17 +1352,17 @@ function renderDetail() {
     </div>`;
   }
 
-  // 7. RANKING (if result exists)
+  // 8. RANKING (if result exists)
   const rankingSection = buildRanking(b);
 
   const exportBtn = b.result
     ? `<button class="btn btn-outline" style="margin-bottom:12px" onclick="exportResult('${b.id}')">Exportar resultado</button>`
     : '';
 
-  // 8. CHAT
+  // 9. CHAT
   const chatHTML = buildChat(b);
 
-  // 9. PARTICIPANTS with confirm payment buttons
+  // 10. PARTICIPANTS with confirm payment buttons
   const participantsHTML = b.participants.length===0
     ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
     : b.participants.map(p => {
@@ -1335,6 +1401,7 @@ function renderDetail() {
     ${exportBtn}
     ${insertBtn}
     ${inviteCard}
+    ${pixCard}
     ${creatorBtns}
     ${actionBox}
     <div class="section-title" style="margin-top:4px">Participantes (${b.participants.length}/${b.maxPart})</div>
@@ -1406,9 +1473,12 @@ function doJoin(id) {
     if(pw!==b.pw) { showToast('❌ Senha incorreta'); return; }
   }
   if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado'); return; }
-  if(!b.participants.find(p=>p.email===state.user.email)) {
+  const isNew = !b.participants.find(p=>p.email===state.user.email);
+  if(isNew) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
+    addSystemMessage(id, `${state.user.name} entrou no bolão`);
   }
+  saveBoloes();
   document.getElementById('join-code').value='';
   document.getElementById('join-result').innerHTML='';
   openDetail(id);
@@ -1430,8 +1500,11 @@ function renderBet() {
   if(!b) return;
   const s = state.betScores;
   const result = s.home>s.away?`Vitória do ${b.game.home.name}`:s.away>s.home?`Vitória do ${b.game.away.name}`:'Empate';
+  const me = b.participants.find(p=>p.email===state.user?.email);
+  const isEditing = me?.homeScore!=null;
   document.getElementById('bet-content').innerHTML=`
-    <p style="color:var(--text2);font-size:13px;text-align:center;margin-bottom:20px">${b.title}</p>
+    <p style="color:var(--text2);font-size:13px;text-align:center;margin-bottom:12px">${b.title}</p>
+    ${isEditing ? `<div class="editing-notice">Editando palpite atual: ${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>` : ''}
     <div class="bet-card">
       <div class="bet-teams">
         <div class="bet-team">
@@ -1502,15 +1575,22 @@ function confirmBet() {
 function openPix(id) {
   state.pixBolaoId = id;
   const b = state.boloes.find(x=>x.id===id);
+  const creator = USERS.find(x=>x.email===b.creatorId);
+  const pixKey = b.creatorPixKey || creator?.pix || '';
   document.getElementById('pix-content').innerHTML=`
     <div class="pix-icon">🏦</div>
     <div class="pix-title">Pagamento via Pix</div>
     <div class="pix-amount">R$${b.amount}</div>
-    <div class="qr-mock">
-      <span style="font-size:80px;line-height:1">📱</span>
-    </div>
-    <div class="pix-key">Chave Pix: bolao@copa2026.com.br</div>
-    <div class="pix-info">Transfira exatamente <strong>R$${b.amount}</strong> para a chave Pix acima e depois toque em "Confirmar pagamento".<br><br>Em produção, o QR Code Pix real será gerado automaticamente.</div>
+    ${pixKey ? `
+    <div style="background:rgba(50,188,173,.1);border:1px solid rgba(50,188,173,.3);border-radius:14px;padding:16px;text-align:center;margin:16px 0">
+      <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Chave Pix do organizador</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Para: <strong style="color:var(--text)">${b.creatorName}</strong></div>
+      <div style="font-size:16px;color:var(--pix);font-weight:700;word-break:break-all;margin-bottom:8px">${pixKey}</div>
+      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard&&navigator.clipboard.writeText('${pixKey}').then(()=>showToast('Chave copiada!'))">Copiar chave</button>
+    </div>` : `
+    <div class="qr-mock"><span style="font-size:80px;line-height:1">📱</span></div>
+    <div class="pix-key">Entre em contato com ${b.creatorName} para obter a chave Pix</div>`}
+    <div class="pix-info">Transfira exatamente <strong>R$${b.amount}</strong> para a chave Pix acima e depois toque em "Confirmar pagamento".</div>
     <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">Confirmar pagamento</button>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   go('s-pix');
@@ -1556,6 +1636,26 @@ function updateProfileUI() {
   document.getElementById('prof-criados').innerHTML=`<div class="stat-val">${criados}</div><div class="stat-lbl">Criados</div>`;
   document.getElementById('prof-partic').innerHTML=`<div class="stat-val">${partic}</div><div class="stat-lbl">Particip.</div>`;
   document.getElementById('prof-total').innerHTML=`<div class="stat-val">R$${total}</div><div class="stat-lbl">Apostado</div>`;
+  // Performance stats
+  const withResult = mine.filter(b=>b.result);
+  let totalPts=0, exactHits=0, bestRank=null;
+  withResult.forEach(b=>{
+    const me2=b.participants.find(p=>p.email===u.email);
+    if(!me2) return;
+    const pts=calcPoints(me2,b.result);
+    totalPts+=pts;
+    if(pts===3) exactHits++;
+    const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result)})).sort((a,c)=>c.pts-a.pts);
+    const rank=ranked.findIndex(p=>p.email===u.email)+1;
+    if(rank>0&&(bestRank===null||rank<bestRank)) bestRank=rank;
+  });
+  const acerto=withResult.length>0?Math.round(exactHits/withResult.length*100):0;
+  const perfPts=document.getElementById('perf-pts');
+  const perfAcerto=document.getElementById('perf-acerto');
+  const perfMelhor=document.getElementById('perf-melhor');
+  if(perfPts) perfPts.innerHTML=`<div class="stat-val" style="color:var(--secondary)">${totalPts}</div><div class="stat-lbl">Pontos totais</div>`;
+  if(perfAcerto) perfAcerto.innerHTML=`<div class="stat-val" style="color:var(--ok)">${acerto}%</div><div class="stat-lbl">% Acerto</div>`;
+  if(perfMelhor) perfMelhor.innerHTML=`<div class="stat-val" style="color:var(--gold)">${bestRank?bestRank+'°':'-'}</div><div class="stat-lbl">Melhor lugar</div>`;
   renderBetHistory();
 }
 
@@ -1675,6 +1775,8 @@ function submitResult() {
   if(!b) return;
   b.result = {home, away};
   b.status = 'finished';
+  const resultText = home>away?`Vitória de ${b.game.home.name}`:away>home?`Vitória de ${b.game.away.name}`:'Empate';
+  addSystemMessage(bolaoId, `Resultado definido: ${b.game.home.flag} ${home} × ${away} ${b.game.away.flag} · ${resultText}`);
   saveBoloes();
   closeResultModal();
   renderDetail();
@@ -1746,17 +1848,28 @@ function buildRanking(b) {
 function editBolao(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
-  const newTitle = prompt('Novo título do bolão:', b.title);
-  if(newTitle===null) return;
-  if(!newTitle.trim()) { showToast('⚠️ Título não pode ser vazio'); return; }
-  b.title = newTitle.trim();
-  const newMax = prompt('Limite de participantes (atual: '+b.maxPart+', máx 50):', b.maxPart);
-  if(newMax!==null) {
-    const m = parseInt(newMax);
-    if(m>=b.participants.length && m<=50) b.maxPart=m;
-    else showToast('⚠️ Limite inválido ou menor que participantes atuais');
+  document.getElementById('edit-bolao-id').value = id;
+  document.getElementById('edit-bolao-title').value = b.title;
+  document.getElementById('edit-bolao-max').value = b.maxPart;
+  document.getElementById('edit-bolao-modal').style.display = 'flex';
+}
+function closeEditBolao() {
+  document.getElementById('edit-bolao-modal').style.display = 'none';
+}
+function saveEditBolao() {
+  const id = document.getElementById('edit-bolao-id').value;
+  const title = document.getElementById('edit-bolao-title').value.trim();
+  const max = parseInt(document.getElementById('edit-bolao-max').value);
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  if(!title) { showToast('Título não pode ser vazio'); return; }
+  if(isNaN(max)||max<Math.max(b.participants.length,1)||max>50) {
+    showToast(`Limite entre ${Math.max(b.participants.length,1)} e 50`); return;
   }
+  b.title = title;
+  b.maxPart = max;
   saveBoloes();
+  closeEditBolao();
   showToast('Bolão atualizado!');
   renderDetail();
 }
@@ -1836,6 +1949,33 @@ function updateFloatingAvatar() {
       ? `<img src="${photo2}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial2}</div>`;
   }
+}
+
+// ===== SYSTEM MESSAGES =====
+function addSystemMessage(bolaoId, text) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b) return;
+  if(!b.messages) b.messages=[];
+  b.messages.push({email:'__system__',name:'Sistema',text,time:new Date().toISOString(),system:true});
+}
+
+// ===== PWA INSTALL =====
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  _pwaPrompt = e;
+  const banner = document.getElementById('pwa-install-banner');
+  if(banner) banner.style.display='flex';
+});
+window.addEventListener('appinstalled', ()=>{
+  const banner = document.getElementById('pwa-install-banner');
+  if(banner) banner.style.display='none';
+  _pwaPrompt = null;
+});
+function installPWA() {
+  if(!_pwaPrompt) { showToast('Para instalar: use o menu do navegador → "Adicionar à tela inicial"'); return; }
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(()=>{ _pwaPrompt=null; });
 }
 
 // ===== FORGOT PASSWORD =====
@@ -1967,6 +2107,7 @@ function exportResult(bolaoId) {
 function buildChat(b) {
   const msgs = (b.messages||[]);
   const rows = msgs.slice(-50).map(m=>{
+    if(m.system) return `<div class="sys-msg">${m.text.replace(/</g,'&lt;')}</div>`;
     const isMine = m.email===state.user?.email;
     const ur = USERS.find(u=>u.email===m.email);
     const photo = ur?.photo||m.photo;
@@ -2034,7 +2175,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
   } catch(e) {}
   updateGlobalNav('s-login');
   updateFloatingAvatar();
+  // Service Worker
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
 });
 </script>
+
+<!-- EDIT BOLÃO MODAL -->
+<div class="edit-bolao-modal" id="edit-bolao-modal" onclick="if(event.target===this)closeEditBolao()">
+  <div class="edit-bolao-sheet">
+    <div style="font-size:17px;font-weight:800;margin-bottom:20px">Editar Bolão</div>
+    <input type="hidden" id="edit-bolao-id">
+    <div class="field"><label>Título do bolão</label><input id="edit-bolao-title" placeholder="Nome do bolão" maxlength="60"></div>
+    <div class="field"><label>Limite de participantes (máx. 50)</label><input id="edit-bolao-max" type="number" placeholder="Ex: 20" min="1" max="50"></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn btn-ghost" onclick="closeEditBolao()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditBolao()">Salvar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

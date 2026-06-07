@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#006B3F"/>
+  <circle cx="256" cy="240" r="130" fill="#fff"/>
+  <polygon points="256,130 282,208 364,208 298,256 322,334 256,286 190,334 214,256 148,208 230,208" fill="#006B3F"/>
+  <text x="256" y="430" font-size="44" font-family="Arial,sans-serif" font-weight="900" fill="#F4D03F" text-anchor="middle">COPA 2026</text>
+</svg>
