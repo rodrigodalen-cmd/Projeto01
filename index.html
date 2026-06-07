@@ -75,6 +75,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .vs-block{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 8px}
 .vs-text{color:var(--text3);font-size:16px;font-weight:900}
 .match-venue{color:var(--text3);font-size:10px;text-align:center;margin-top:8px}
+/* GAME CAROUSEL */
+.games-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.games-carousel::-webkit-scrollbar{display:none}
+.snap-card{flex:0 0 calc(50% - 5px);scroll-snap-align:start;background:var(--surface);border-radius:14px;padding:12px;border:1px solid var(--border);cursor:pointer;transition:border-color .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.snap-card:active{transform:scale(.97);opacity:.9}
+.snap-card.selected{border:2px solid var(--primary);background:rgba(94,114,228,.08)}
+.carousel-hint{font-size:10px;color:var(--text3);text-align:center;padding:2px 0 6px;letter-spacing:.3px}
+.sel-game-bar{background:rgba(94,114,228,.1);border:1px solid rgba(94,114,228,.3);border-radius:12px;padding:10px 14px;margin:8px 0 4px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
 /* HOME */
 .greeting{font-size:20px;font-weight:800}
 .sub-greeting{color:var(--text3);font-size:11px;margin-top:2px}
@@ -1453,17 +1461,22 @@ function renderMyBoloes() {
 
 function renderGames() {
   const now_rg = new Date();
-  const upcomingGames = GAMES.filter(g=>gameDateTime(g)>now_rg).sort((a,b)=>gameDateTime(a)-gameDateTime(b)).slice(0,5);
-  document.getElementById('games-list').innerHTML = upcomingGames.map(g=>`
-    <div class="match-card" onclick="go_create()">
-      <div class="match-stage"><span>${g.stage}${g.group?` · ${g.group}`:''}</span><span>${g.date} · ${g.time}</span></div>
-      <div class="match-row">
-        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div><div class="team-code">${g.home.code}</div></div>
-        <div class="vs-block"><div class="vs-text">VS</div></div>
-        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div><div class="team-code">${g.away.code}</div></div>
-      </div>
-      <div class="match-venue">📍 ${g.venue}</div>
-    </div>`).join('');
+  const upcoming = GAMES.filter(g=>gameDateTime(g)>now_rg).sort((a,b)=>gameDateTime(a)-gameDateTime(b)).slice(0,12);
+  if(!upcoming.length) { document.getElementById('games-list').innerHTML=''; return; }
+  document.getElementById('games-list').innerHTML = `
+    <div class="games-carousel">
+      ${upcoming.map(g=>`
+        <div class="snap-card" onclick="go_create_from_game('${g.id}')">
+          <div class="match-stage"><span>${g.group||g.stage}</span><span>${g.date}</span></div>
+          <div class="match-row" style="margin-top:6px">
+            <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
+            <div class="vs-block"><div class="vs-text" style="font-size:12px">VS</div></div>
+            <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
+          </div>
+          <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">🕐 ${g.time} BRT</div>
+        </div>`).join('')}
+    </div>
+    <div class="carousel-hint">← arraste para ver mais →</div>`;
 }
 
 function esc(s) {
@@ -1524,9 +1537,46 @@ function renderLiveScores() {
 
 // ===== CREATE BOLÃO =====
 let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1};
+let _createGroupFilter = 'all';
+
+function setCreateGroupFilter(g, el) {
+  _createGroupFilter = g;
+  document.querySelectorAll('#cg-filter .t-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderCreateGamesCarousel();
+}
+
+function renderCreateGamesCarousel() {
+  const carousel = document.getElementById('create-carousel');
+  if(!carousel) return;
+  const games = _createGroupFilter==='all' ? GAMES : GAMES.filter(g=>(g.group||'').replace('Grupo ','')===_createGroupFilter);
+  carousel.innerHTML = games.map(g=>`
+    <div class="snap-card${createState.game?.id===g.id?' selected':''}" onclick="selectCreateGame(this,'${g.id}')">
+      <div class="match-stage"><span>${g.group||g.stage}</span><span>${g.date}</span></div>
+      <div class="match-row" style="margin-top:6px">
+        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
+        <div class="vs-block"><div class="vs-text" style="font-size:12px">VS</div></div>
+        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px">🕐 ${g.time} BRT</div>
+    </div>`).join('');
+}
+
+function selectCreateGame(el, gameId) {
+  const g = GAMES.find(x=>x.id===gameId);
+  if(!g) return;
+  createState.game = g;
+  document.querySelectorAll('#create-carousel .snap-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  const bar = document.getElementById('sel-game-bar');
+  const label = document.getElementById('sel-game-label');
+  if(bar) bar.style.display = 'flex';
+  if(label) label.textContent = `${g.home.flag} ${g.home.name}  ×  ${g.away.name} ${g.away.flag}  ·  ${g.date} ${g.time}`;
+}
 
 function go_create() {
   createState = {step:1,title:'',game:null,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1};
+  _createGroupFilter = 'all';
   renderCreateStep();
   go('s-create');
 }
@@ -1542,22 +1592,23 @@ function renderCreateStep() {
     ${n<3?`<div class="step-line${s.step>n?' done':''}"></div>`:''}`).join('');
 
   if(s.step===1) {
+    const groupChips = ['all','A','B','C','D','E','F','G','H','I','J','K','L'];
     el.innerHTML = `
       <div class="steps">${dots}</div>
       <div class="section-title" style="margin-bottom:4px">Nome do Bolão</div>
       <div class="field"><input id="c-title" placeholder='"Bolão dos Amigos da Firma"' value="${s.title}" oninput="createState.title=this.value"></div>
-      <div class="section-title" style="margin-top:16px;margin-bottom:4px">Escolha o Jogo</div>
-      <div class="section-sub">Selecione qual jogo da Copa</div>
-      ${GAMES.map(g=>`
-        <div class="match-card${s.game?.id===g.id?' selected':''}" onclick="createState.game=${JSON.stringify(g).replace(/"/g,'&quot;')};renderCreateStep()">
-          <div class="match-stage"><span>${g.stage}${g.group?` · ${g.group}`:''}</span><span>${g.date} · ${g.time}</span></div>
-          <div class="match-row">
-            <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div><div class="team-code">${g.home.code}</div></div>
-            <div class="vs-block"><div class="vs-text">VS</div></div>
-            <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div><div class="team-code">${g.away.code}</div></div>
-          </div>
-        </div>`).join('')}
-      <button class="btn btn-primary" style="margin-top:8px" onclick="nextCreateStep()">Próximo →</button>`;
+      <div class="section-title" style="margin-top:16px;margin-bottom:6px">Escolha o Jogo</div>
+      <div class="t-filter-row" id="cg-filter" style="margin-bottom:10px">
+        ${groupChips.map(g=>`<button class="t-chip${_createGroupFilter===g?' active':''}" onclick="setCreateGroupFilter('${g}',this)">${g==='all'?'Todos':g==='C'?'C 🇧🇷':g}</button>`).join('')}
+      </div>
+      <div class="games-carousel" id="create-carousel"></div>
+      <div class="carousel-hint">← arraste para ver mais jogos →</div>
+      <div class="sel-game-bar" id="sel-game-bar" style="${s.game?'display:flex':'display:none'}">
+        <span style="font-size:18px">⚽</span>
+        <span id="sel-game-label" style="flex:1">${s.game?`${s.game.home.flag} ${s.game.home.name} × ${s.game.away.name} ${s.game.away.flag} · ${s.game.date} ${s.game.time}`:''}</span>
+      </div>
+      <button class="btn btn-primary" style="margin-top:4px" onclick="nextCreateStep()">Próximo →</button>`;
+    renderCreateGamesCarousel();
   } else if(s.step===2) {
     el.innerHTML = `
       <div class="steps">${dots}</div>
@@ -2667,6 +2718,7 @@ function go_create_from_game(gameId) {
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
   createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1};
+  _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
   renderCreateStep();
   go('s-create');
 }
