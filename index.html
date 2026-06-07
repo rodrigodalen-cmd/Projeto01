@@ -214,6 +214,34 @@ input:checked+.slider:before{transform:translateX(18px)}
 .live-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid rgba(231,76,60,.25);margin-bottom:10px;cursor:default}
 .live-score-big{color:var(--secondary);font-size:28px;font-weight:900;text-align:center;letter-spacing:2px}
 .live-min{color:var(--err);font-size:11px;font-weight:700;text-align:center;margin-top:2px}
+/* DEADLINE BADGE */
+.deadline-badge{border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.deadline-open{background:rgba(39,174,96,.12);color:#2ecc71;border:1px solid rgba(39,174,96,.25)}
+.deadline-closed{background:rgba(231,76,60,.1);color:var(--err);border:1px solid rgba(231,76,60,.2)}
+.deadline-soon{background:rgba(243,156,18,.12);color:var(--warn);border:1px solid rgba(243,156,18,.25)}
+/* RESULT FINAL CARD */
+.result-final{background:linear-gradient(135deg,#1a5c36,var(--primary));border-radius:16px;padding:20px;margin-bottom:16px;text-align:center}
+.result-final-score{font-size:40px;font-weight:900;color:#fff;letter-spacing:4px;margin:8px 0}
+.result-final-lbl{font-size:10px;color:rgba(255,255,255,.65);font-weight:800;text-transform:uppercase;letter-spacing:1px}
+/* RANKING */
+.rank-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:10px 14px;margin-bottom:6px;border:1px solid var(--border)}
+.rank-row.winner{border-color:var(--gold);background:rgba(255,215,0,.06)}
+.rank-pos{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-bet{font-size:11px;color:var(--text3)}
+.rank-pts{font-size:16px;font-weight:900;color:var(--primary-light);flex-shrink:0}
+.rank-pts.gold{color:var(--gold)}
+/* CONFIRM PAYMENT BUTTONS */
+.conf-pay-btn{font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid #2ecc71;background:rgba(39,174,96,.12);color:#2ecc71;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.rev-pay-btn{font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid var(--warn);background:rgba(243,156,18,.12);color:var(--warn);cursor:pointer;white-space:nowrap;flex-shrink:0}
+/* RESULT MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:2000;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:var(--surface);border-radius:20px;padding:24px;width:100%;max-width:340px;border:1px solid var(--border)}
+.modal-scores-row{display:flex;align-items:flex-end;justify-content:center;gap:12px;margin:16px 0}
+.modal-score-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+.modal-input{width:72px;height:72px;font-size:32px;font-weight:900;text-align:center;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);outline:none}
+.modal-input:focus{border-color:var(--primary)}
 /* GLOBAL FIXED NAV */
 .global-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 20px;z-index:999}
 .global-nav .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;padding:4px 0}
@@ -650,6 +678,32 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 </div><!-- #app -->
 
+<!-- RESULT MODAL -->
+<div id="result-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div style="font-size:18px;font-weight:900;color:var(--text);text-align:center;margin-bottom:4px">🏆 Resultado Final</div>
+    <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:4px">Informe o placar oficial do jogo</div>
+    <input type="hidden" id="res-modal-bolao-id">
+    <div class="modal-scores-row">
+      <div class="modal-score-col">
+        <div style="font-size:32px" id="res-modal-home-flag">🇧🇷</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;max-width:80px" id="res-modal-home-name">Brasil</div>
+        <input class="modal-input" type="number" id="res-home-input" min="0" max="30" placeholder="0">
+      </div>
+      <div style="font-size:28px;font-weight:900;color:var(--text3);padding-bottom:12px">×</div>
+      <div class="modal-score-col">
+        <div style="font-size:32px" id="res-modal-away-flag">🇲🇽</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;max-width:80px" id="res-modal-away-name">México</div>
+        <input class="modal-input" type="number" id="res-away-input" min="0" max="30" placeholder="0">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeResultModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitResult()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== STATE =====
 let state = {
@@ -1054,9 +1108,112 @@ function renderDetail() {
   if(!b) return;
   document.getElementById('detail-title').textContent = b.title;
   const paidCount = b.participants.filter(p=>p.paid).length;
-  const prize = paidCount * b.amount * 0.9;
+  const prize = Math.floor(paidCount * b.amount * 0.9);
   const me = b.participants.find(p=>p.email===state.user?.email);
   const isCreator = b.creatorId===state.user?.email;
+  const betClosed = isBetClosed(b.game);
+  const msUntil = gameDateTime(b.game) - new Date();
+  const hoursUntil = msUntil / 3600000;
+  const countdown = timeUntilGame(b.game);
+
+  // 1. DEADLINE BADGE
+  let deadlineBadge;
+  if(b.result) {
+    deadlineBadge = `<div class="deadline-badge deadline-closed">🏁 Jogo encerrado — resultado inserido</div>`;
+  } else if(betClosed) {
+    deadlineBadge = `<div class="deadline-badge deadline-closed">⏰ Apostas encerradas — aguardando resultado</div>`;
+  } else if(hoursUntil < 2) {
+    deadlineBadge = `<div class="deadline-badge deadline-soon">⚡ Apostas fecham em ${countdown}</div>`;
+  } else {
+    deadlineBadge = `<div class="deadline-badge deadline-open">✅ Apostas abertas — fecha em ${countdown}</div>`;
+  }
+
+  // 2. PRIZE CARD or RESULT CARD
+  const prizeSection = b.result
+    ? buildResultCard(b, prize)
+    : `<div class="prize-card">
+        <div class="prize-main">
+          <div class="prize-lbl">💰 Prêmio Acumulado</div>
+          <div class="prize-val">R$${prize}</div>
+          <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 10% do app descontado</div>
+        </div>
+        <div class="prize-proj">
+          <span class="proj-lbl">Potencial máximo</span>
+          <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.9)}</span>
+        </div>
+      </div>`;
+
+  // 3. INSERT RESULT BUTTON (creator, game closed, no result yet)
+  const insertBtn = (isCreator && betClosed && !b.result)
+    ? `<button class="btn btn-primary" style="margin-bottom:12px" onclick="showResultModal('${b.id}')">🏆 Inserir resultado final</button>`
+    : '';
+
+  // 4. INVITE CARD (only while open)
+  const inviteCard = !betClosed && !b.result ? `
+    <div class="invite-card">
+      <div class="invite-title">🔗 Código de Convite</div>
+      <div class="code-row">
+        <span class="code-text">${b.code}</span>
+        <button class="copy-btn" onclick="copyCode('${b.code}')">📋 Copiar</button>
+      </div>
+      <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">📤 Compartilhar convite</button>
+    </div>` : '';
+
+  // 5. CREATOR EDIT/DELETE BUTTONS
+  const creatorBtns = isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">✏️ Editar bolão</button>
+    <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">🗑️ Excluir</button>
+  </div>` : '';
+
+  // 6. ACTION BOX (bet/pay — only while open)
+  let actionBox = '';
+  if(!betClosed && !b.result) {
+    actionBox = `<div class="action-box">
+      ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">🏦 Pagar R$${b.amount} via Pix</button>` : ''}
+      ${me ? (me.homeScore!=null
+        ? `<div class="my-bet-box">
+             <div class="my-bet-lbl">Meu palpite</div>
+             <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+             <button class="my-bet-edit" onclick="openBet('${b.id}')">Alterar palpite</button>
+           </div>`
+        : `<button class="btn btn-secondary" onclick="openBet('${b.id}')">⚽ Fazer meu palpite</button>`)
+      : `<button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>`}
+    </div>`;
+  } else if(me?.homeScore!=null) {
+    actionBox = `<div class="action-box">
+      <div class="my-bet-box">
+        <div class="my-bet-lbl">Meu palpite registrado</div>
+        <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+      </div>
+    </div>`;
+  }
+
+  // 7. RANKING (if result exists)
+  const rankingSection = buildRanking(b);
+
+  // 8. PARTICIPANTS with confirm payment buttons
+  const participantsHTML = b.participants.length===0
+    ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
+    : b.participants.map(p => {
+        const ur = USERS.find(u=>u.email===p.email);
+        const photo = ur?.photo || p.photo;
+        const av = photo
+          ? `<img class="part-av-img" src="${photo}" alt="${p.name}">`
+          : `<div class="part-av-init">${p.name.charAt(0).toUpperCase()}</div>`;
+        const payCtrl = isCreator
+          ? p.paid
+            ? `<button class="rev-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">↩️ Reverter</button>`
+            : `<button class="conf-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">✅ Confirmar</button>`
+          : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
+        return `<div class="part-row">
+          ${av}
+          <div style="flex:1;min-width:0">
+            <div class="part-name">${p.name}</div>
+            <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
+          </div>
+          ${payCtrl}
+        </div>`;
+      }).join('');
 
   document.getElementById('detail-content').innerHTML = `
     <div class="match-card" style="cursor:default">
@@ -1067,64 +1224,15 @@ function renderDetail() {
         <div class="team-block right"><div class="flag">${b.game.away.flag}</div><div class="team-name">${b.game.away.name}</div><div class="team-code">${b.game.away.code}</div></div>
       </div>
     </div>
-
-    <div class="prize-card">
-      <div class="prize-main">
-        <div class="prize-lbl">💰 Prêmio Acumulado</div>
-        <div class="prize-val">R$${Math.floor(prize)}</div>
-        <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 10% do app descontado</div>
-      </div>
-      <div class="prize-proj">
-        <span class="proj-lbl">Potencial máximo</span>
-        <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.9)}</span>
-      </div>
-    </div>
-
-    <div class="invite-card">
-      <div class="invite-title">🔗 Código de Convite</div>
-      <div class="code-row">
-        <span class="code-text">${b.code}</span>
-        <button class="copy-btn" onclick="copyCode('${b.code}')">📋 Copiar</button>
-      </div>
-      <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">📤 Compartilhar convite</button>
-    </div>
-
-    ${isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">✏️ Editar bolão</button>
-      <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">🗑️ Excluir</button>
-    </div>` : ''}
-
-    <div class="action-box">
-      ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">🏦 Pagar R$${b.amount} via Pix</button>` : ''}
-      ${me ? (me.homeScore!=null ? `
-        <div class="my-bet-box">
-          <div class="my-bet-lbl">Meu palpite</div>
-          <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
-          <button class="my-bet-edit" onclick="openBet('${b.id}')">Alterar palpite</button>
-        </div>` :
-        `<button class="btn btn-secondary" onclick="openBet('${b.id}')">⚽ Fazer meu palpite</button>`)
-      : `<button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>`}
-    </div>
-
-    <div class="section-title">Participantes (${b.participants.length}/${b.maxPart})</div>
-    ${b.participants.length===0
-      ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
-      : b.participants.map(p=>{
-          const ur = USERS.find(u=>u.email===p.email);
-          const photo = ur?.photo || p.photo;
-          const av = photo
-            ? `<img class="part-av-img" src="${photo}" alt="${p.name}">`
-            : `<div class="part-av-init">${p.name.charAt(0).toUpperCase()}</div>`;
-          return `<div class="part-row">
-            ${av}
-            <div style="flex:1">
-              <div class="part-name">${p.name}</div>
-              <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
-            </div>
-            <div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>
-          </div>`;
-        }).join('')
-    }`;
+    ${deadlineBadge}
+    ${prizeSection}
+    ${rankingSection}
+    ${insertBtn}
+    ${inviteCard}
+    ${creatorBtns}
+    ${actionBox}
+    <div class="section-title" style="margin-top:4px">Participantes (${b.participants.length}/${b.maxPart})</div>
+    ${participantsHTML}`;
 }
 
 function copyCode(code) {
@@ -1142,6 +1250,7 @@ function shareInvite(id) {
 
 function joinAndBet(id) {
   const b = state.boloes.find(x=>x.id===id);
+  if(b && isBetClosed(b.game)) { showToast('⏰ Apostas encerradas para este jogo'); return; }
   if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado!'); return; }
   if(b.hasPw) {
     const pw = prompt('Digite a senha do bolão:');
@@ -1200,8 +1309,9 @@ function doJoin(id) {
 
 // ===== BET =====
 function openBet(id) {
-  state.betBolaoId = id;
   const b = state.boloes.find(x=>x.id===id);
+  if(b && isBetClosed(b.game)) { showToast('⏰ Apostas encerradas para este jogo'); return; }
+  state.betBolaoId = id;
   const me = b?.participants.find(p=>p.email===state.user?.email);
   state.betScores = {home: me?.homeScore??0, away: me?.awayScore??0};
   renderBet();
@@ -1379,6 +1489,135 @@ function saveProfile() {
   updateProfileUI();
   showToast('✅ Perfil atualizado!');
   back();
+}
+
+// ===== DEADLINE =====
+function gameDateTime(game) {
+  const months = {Jan:0,Fev:1,Mar:2,Abr:3,Mai:4,Jun:5,Jul:6,Ago:7,Set:8,Out:9,Nov:10,Dez:11};
+  const parts = (game.date||'').split(' ');
+  const day = parseInt(parts[0])||1;
+  const mon = months[parts[1]] ?? 5;
+  const [h, m] = (game.time||'00:00').split(':');
+  return new Date(2026, mon, day, parseInt(h), parseInt(m));
+}
+
+function isBetClosed(game) {
+  return new Date() >= gameDateTime(game);
+}
+
+function timeUntilGame(game) {
+  const diff = gameDateTime(game) - new Date();
+  if(diff <= 0) return null;
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor((diff%86400000)/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  if(d > 0) return `${d}d ${h}h`;
+  if(h > 0) return `${h}h ${m}min`;
+  return `${m}min`;
+}
+
+// ===== CONFIRM PAYMENT (creator) =====
+function confirmPayment(bolaoId, email) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  const p = b?.participants.find(x=>x.email===email);
+  if(!p) return;
+  p.paid = !p.paid;
+  renderDetail();
+  showToast(p.paid ? '✅ Pagamento confirmado!' : '↩️ Pagamento revertido');
+}
+
+// ===== RESULT MODAL =====
+function showResultModal(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b) return;
+  const ex = b.result||{};
+  document.getElementById('res-modal-home-flag').textContent = b.game.home.flag;
+  document.getElementById('res-modal-home-name').textContent = b.game.home.name;
+  document.getElementById('res-modal-away-flag').textContent = b.game.away.flag;
+  document.getElementById('res-modal-away-name').textContent = b.game.away.name;
+  document.getElementById('res-home-input').value = ex.home ?? '';
+  document.getElementById('res-away-input').value = ex.away ?? '';
+  document.getElementById('res-modal-bolao-id').value = bolaoId;
+  document.getElementById('result-modal').style.display = 'flex';
+}
+
+function closeResultModal() {
+  document.getElementById('result-modal').style.display = 'none';
+}
+
+function submitResult() {
+  const bolaoId = document.getElementById('res-modal-bolao-id').value;
+  const home = parseInt(document.getElementById('res-home-input').value);
+  const away = parseInt(document.getElementById('res-away-input').value);
+  if(isNaN(home)||isNaN(away)||home<0||away<0) { showToast('⚠️ Insira o placar dos dois times'); return; }
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b) return;
+  b.result = {home, away};
+  b.status = 'finished';
+  closeResultModal();
+  renderDetail();
+  showToast('🏆 Resultado registrado! Classificação atualizada.');
+}
+
+// ===== POINTS & RANKING =====
+function calcPoints(p, result) {
+  if(p.homeScore==null||p.awayScore==null) return 0;
+  if(p.homeScore===result.home && p.awayScore===result.away) return 3;
+  const pRes = p.homeScore>p.awayScore?'h':p.homeScore<p.awayScore?'a':'d';
+  const rRes = result.home>result.away?'h':result.home<result.away?'a':'d';
+  return pRes===rRes ? 1 : 0;
+}
+
+function buildResultCard(b, prize) {
+  const h = b.result.home, a = b.result.away;
+  const resultText = h>a?`Vitória de ${b.game.home.name}`:a>h?`Vitória de ${b.game.away.name}`:'Empate';
+  const winners = b.participants.filter(p=>calcPoints(p,b.result)===3);
+  const prizeEach = winners.length>0 ? Math.floor(prize/winners.length) : 0;
+  return `<div class="result-final">
+    <div class="result-final-lbl">Resultado Oficial</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px">
+      <span style="font-size:36px">${b.game.home.flag}</span>
+      <div class="result-final-score">${h} × ${a}</div>
+      <span style="font-size:36px">${b.game.away.flag}</span>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:4px">${resultText}</div>
+    ${winners.length>0
+      ? `<div style="margin-top:12px;padding:8px 12px;background:rgba(255,255,255,.12);border-radius:10px;font-size:13px;color:#fff;font-weight:700">
+           🏆 ${winners.map(w=>w.name).join(' & ')} ${winners.length===1?'ganhou':'ganharam'} R$${prizeEach} cada!
+         </div>`
+      : `<div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.65)">Ninguém acertou o placar exato</div>`}
+  </div>`;
+}
+
+function buildRanking(b) {
+  if(!b.result) return '';
+  const medals = ['🥇','🥈','🥉'];
+  const ranked = b.participants
+    .map(p=>({...p, pts: calcPoints(p, b.result)}))
+    .sort((a,b)=>b.pts-a.pts);
+  if(ranked.length===0) return '';
+  const maxPts = ranked[0].pts;
+  const rows = ranked.map((p,i)=>{
+    const isWinner = p.pts===maxPts && maxPts>0;
+    const ur = USERS.find(u=>u.email===p.email);
+    const photo = ur?.photo||p.photo;
+    const av = photo
+      ? `<img class="part-av-img" src="${photo}" alt="${p.name}" style="width:32px;height:32px">`
+      : `<div class="part-av-init" style="width:32px;height:32px;font-size:13px">${p.name.charAt(0).toUpperCase()}</div>`;
+    return `<div class="rank-row${isWinner?' winner':''}">
+      <div class="rank-pos">${medals[i]||`${i+1}°`}</div>
+      ${av}
+      <div class="rank-info">
+        <div class="rank-name">${p.name}</div>
+        <div class="rank-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite'}</div>
+      </div>
+      <div class="rank-pts${isWinner?' gold':''}">${p.pts}pt${p.pts!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+  return `<div style="margin-bottom:16px">
+    <div class="section-title">🏅 Classificação Final</div>
+    ${rows}
+  </div>`;
 }
 
 // ===== EDIT / DELETE BOLÃO =====
