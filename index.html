@@ -1236,6 +1236,9 @@ async function doLogin() {
     const { data: profile } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
     if(!profile) { showToast('❌ Perfil não encontrado'); return; }
     state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+    if(!state.user.photo) {
+      try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
+    }
     if(remember) saveSession(state.user); else clearSession();
     await loginSuccess();
     return;
@@ -2339,11 +2342,18 @@ function uploadPhoto(input) {
   if(file.size > 5*1024*1024) { showToast('❌ Imagem muito grande (máx 5MB)'); return; }
   const reader = new FileReader();
   reader.onload = (e) => {
-    state.user.photo = e.target.result;
+    const photo = e.target.result;
+    state.user.photo = photo;
+    // Persist keyed by email so it survives logout/login cycles
+    try { localStorage.setItem(`bolao_photo_${state.user.email}`, photo); } catch(_) {}
     const u = USERS.find(x=>x.email===state.user.email);
-    if(u) u.photo = e.target.result;
+    if(u) u.photo = photo;
     saveUsers();
     saveSession(state.user);
+    // Save to Supabase profiles table if connected
+    if(_sb && state.user.id) {
+      _sb.from('profiles').update({photo}).eq('id', state.user.id).catch(()=>{});
+    }
     updateProfileUI();
     showToast('✅ Foto atualizada!');
   };
@@ -3141,6 +3151,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       const { data: profile } = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
       if(profile) {
         state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+        if(!state.user.photo) {
+          try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
+        }
         await loginSuccess();
         if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
