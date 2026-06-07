@@ -767,6 +767,14 @@ function doRegister() {
 
   if(!validCPF(cpf)) { showToast('❌ CPF inválido. Verifique o número'); return; }
 
+  const cleanCPF = cpf.replace(/\D/g,'');
+  if(USERS.find(u => u.cpf?.replace(/\D/g,'') === cleanCPF)) {
+    showToast('❌ Já existe uma conta com esse CPF'); return;
+  }
+  if(USERS.find(u => u.email === email)) {
+    showToast('❌ Já existe uma conta com esse e-mail'); return;
+  }
+
   const birth = new Date(dob);
   const today = new Date();
   const age = today.getFullYear() - birth.getFullYear() - (
