@@ -1545,8 +1545,14 @@ function renderLiveScores() {
 }
 
 // ===== CREATE BOLÃO =====
-let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1};
+let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false};
 let _createGroupFilter = 'all';
+
+function selectCustomAmount() {
+  createState._customAmt = true;
+  renderCreateStep();
+  setTimeout(()=>document.getElementById('c-custom-amount')?.focus(), 80);
+}
 
 function setCreateGroupFilter(g, el) {
   _createGroupFilter = g;
@@ -1624,8 +1630,20 @@ function renderCreateStep() {
       <div class="section-title" style="margin-bottom:4px">Valor da Aposta</div>
       <div class="section-sub">Cada participante paga via Pix</div>
       <div class="amounts">
-        ${[20,50,100,200,500,1000].map(a=>`<div class="amount-btn${s.amount===a?' selected':''}" onclick="createState.amount=${a};renderCreateStep()">R$${a}</div>`).join('')}
+        ${[20,50,100,200,500,1000].map(a=>`<div class="amount-btn${s.amount===a&&!s._customAmt?' selected':''}" onclick="createState.amount=${a};createState._customAmt=false;renderCreateStep()">R$${a}</div>`).join('')}
+        <div class="amount-btn${s._customAmt?' selected':''}" onclick="selectCustomAmount()">✏️ Outro</div>
       </div>
+      ${s._customAmt?`
+      <div class="field" style="margin-top:10px">
+        <label>Valor personalizado</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text2);font-weight:700;pointer-events:none">R$</span>
+          <input id="c-custom-amount" type="number" min="5" max="10000" placeholder="Ex: 30"
+            value="${s._customAmt&&![20,50,100,200,500,1000].includes(s.amount)?s.amount:''}"
+            style="padding-left:36px"
+            oninput="createState.amount=Math.max(1,parseInt(this.value)||1);const pv=document.querySelector('.prize-preview-val');if(pv)pv.textContent='R$'+Math.floor(createState.amount*10*.9)">
+        </div>
+      </div>`:``}
       <div class="prize-preview">
         <span style="font-size:20px">🏆</span>
         <span class="prize-preview-text">Com 10 participantes → prêmio de <span class="prize-preview-val">R$${Math.floor(s.amount*10*0.9)}</span> (após 10% do app)</span>
@@ -1690,6 +1708,7 @@ function nextCreateStep() {
     if(!s.game) { showToast('⚠️ Escolha um jogo'); return; }
     s.step=2;
   } else if(s.step===2) {
+    if(s._customAmt&&(!s.amount||s.amount<5)) { showToast('⚠️ Digite um valor mínimo de R$5'); return; }
     if(!s.maxPart||s.maxPart<2||s.maxPart>50) { showToast('⚠️ Limite deve ser entre 2 e 50'); return; }
     if(s.hasPw&&!s.pw.trim()) { showToast('⚠️ Digite uma senha'); return; }
     s.step=3;
