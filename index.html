@@ -199,6 +199,28 @@ input:checked+.slider:before{transform:translateX(18px)}
 /* HEADER with trophy */
 .home-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .trophy-badge{width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px}
+/* PHOTO UPLOAD */
+.avatar-upload{position:relative;width:80px;height:80px;margin:0 auto 12px;cursor:pointer}
+.av-img{width:80px;height:80px;border-radius:40px;object-fit:cover;border:3px solid var(--primary)}
+.av-init{width:80px;height:80px;border-radius:40px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#fff}
+.av-edit-badge{position:absolute;bottom:0;right:0;background:var(--secondary);width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid var(--bg)}
+.photo-input{display:none}
+.part-av-img{width:38px;height:38px;border-radius:19px;object-fit:cover;flex-shrink:0;border:2px solid var(--primary)}
+.part-av-init{width:38px;height:38px;border-radius:19px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+/* LIVE SCORES */
+.live-pill{display:inline-flex;align-items:center;gap:4px;background:var(--err);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.5px}
+.live-dot{width:6px;height:6px;border-radius:3px;background:#fff;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.live-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid rgba(231,76,60,.25);margin-bottom:10px;cursor:default}
+.live-score-big{color:var(--secondary);font-size:28px;font-weight:900;text-align:center;letter-spacing:2px}
+.live-min{color:var(--err);font-size:11px;font-weight:700;text-align:center;margin-top:2px}
+/* GLOBAL FIXED NAV */
+.global-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 20px;z-index:999}
+.global-nav .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;padding:4px 0}
+.global-nav .tab.active{color:var(--primary)}
+.global-nav .tab svg{width:22px;height:22px}
+.global-nav .tab.create-tab svg{width:32px;height:32px;color:var(--secondary)}
+.global-nav .tab.create-tab{color:var(--secondary)}
 /* TERMS */
 .terms-section{margin-top:20px}
 .terms-title{color:var(--secondary);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -244,7 +266,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <span class="auth-appname">Bolão Copa</span>
       <span class="auth-tagline">Aposte com os amigos. Ganhe junto.</span>
     </div>
-    <div class="field"><label>E-mail</label><input id="li-email" type="email" placeholder="seu@email.com" value="joao@email.com"></div>
+    <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" value="joao@email.com" oninput="fmtLoginCPF(this)"></div>
     <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" value="123456"></div>
     <button class="btn btn-primary" style="margin-top:8px;margin-bottom:20px" onclick="doLogin()">Entrar</button>
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
@@ -481,6 +503,13 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
+    <div id="live-section" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div class="section-title" style="margin-bottom:0">Placares ao Vivo</div>
+        <div class="live-pill"><div class="live-dot"></div>AO VIVO</div>
+      </div>
+      <div id="live-list"></div>
+    </div>
   </div>
   <div class="tabs" id="main-tabs">
     <button class="tab active" onclick="showTab('home')">
@@ -516,10 +545,16 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="topbar"><span class="topbar-title" style="flex:0;margin-right:auto">Perfil</span></div>
   <div class="scroll" style="padding-top:16px">
     <div class="avatar-card">
-      <div class="avatar-big" id="prof-avatar">J</div>
+      <div class="avatar-upload" onclick="document.getElementById('photo-input').click()">
+        <div id="prof-avatar-wrap"><div class="av-init" id="prof-avatar">J</div></div>
+        <div class="av-edit-badge">📷</div>
+      </div>
+      <input type="file" id="photo-input" class="photo-input" accept="image/*" onchange="uploadPhoto(this)">
       <div class="profile-name" id="prof-name">João Silva</div>
       <div class="profile-email" id="prof-email">joao@email.com</div>
+      <p style="color:var(--text3);font-size:11px;margin-top:4px">Toque na foto para alterar</p>
     </div>
+    <button class="btn btn-ghost" style="margin-bottom:16px" onclick="go('s-edit-profile')">✏️ Editar perfil</button>
     <div style="display:flex;background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:20px">
       <div class="stat" id="prof-criados"><div class="stat-val">0</div><div class="stat-lbl">Criados</div></div>
       <div class="stat-div"></div>
@@ -548,6 +583,31 @@ input:checked+.slider:before{transform:translateX(18px)}
   </div>
 </div>
 
+<!-- === EDIT PROFILE === -->
+<div class="screen" id="s-edit-profile">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Editar Perfil</span></div>
+  <div class="scroll" style="padding-bottom:100px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div class="avatar-upload" onclick="document.getElementById('photo-input2').click()" style="margin:0 auto 8px">
+        <div id="edit-avatar-wrap"><div class="av-init">?</div></div>
+        <div class="av-edit-badge">📷</div>
+      </div>
+      <input type="file" id="photo-input2" class="photo-input" accept="image/*" onchange="uploadPhoto(this)">
+      <p style="color:var(--text3);font-size:11px;margin-top:4px">Toque para trocar a foto</p>
+    </div>
+    <div class="field"><label>Nome completo</label><input id="ep-name" placeholder="Seu nome"></div>
+    <div class="field"><label>WhatsApp / Telefone</label><input id="ep-phone" type="tel" placeholder="(11) 99999-9999"></div>
+    <div class="field"><label>Chave Pix</label><input id="ep-pix" placeholder="CPF, e-mail, telefone..."></div>
+    <div style="background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:16px">
+      <p style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">⚠️ Não editáveis (identidade)</p>
+      <p style="color:var(--text2);font-size:13px" id="ep-cpf-email">-</p>
+    </div>
+    <div class="field"><label>Nova senha (deixe vazio para manter)</label><input id="ep-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar nova senha</label><input id="ep-pass2" type="password" placeholder="Repita a nova senha"></div>
+    <button class="btn btn-primary" onclick="saveProfile()">💾 Salvar alterações</button>
+  </div>
+</div>
+
 <!-- === CREATE BOLÃO === -->
 <div class="screen" id="s-create">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar Bolão</span></div>
@@ -571,6 +631,22 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Pagamento Pix</span></div>
   <div class="pix-screen-content" id="pix-content"></div>
 </div>
+
+<!-- BARRA DE NAVEGAÇÃO GLOBAL FIXA -->
+<nav class="global-nav" id="global-nav">
+  <button class="tab active" id="gnav-home" onclick="gnavTo('home')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
+  </button>
+  <button class="tab" id="gnav-join" onclick="gnavTo('join')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar
+  </button>
+  <button class="tab create-tab" id="gnav-create" onclick="go_create()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar
+  </button>
+  <button class="tab" id="gnav-profile" onclick="gnavTo('profile')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Perfil
+  </button>
+</nav>
 
 </div><!-- #app -->
 
@@ -628,11 +704,28 @@ function showToast(msg) {
 }
 
 // ===== AUTH =====
+function fmtLoginCPF(input) {
+  const v = input.value;
+  // Only auto-format if it looks like CPF (only digits/dots/dashes and no @)
+  if(!v.includes('@') && /^[\d.\-]+$/.test(v)) {
+    let d = v.replace(/\D/g,'').slice(0,11);
+    if(d.length>9) d = d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+    else if(d.length>6) d = d.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+    else if(d.length>3) d = d.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+    input.value = d;
+  }
+}
+
 function doLogin() {
-  const email = document.getElementById('li-email').value.trim().toLowerCase();
+  const identifier = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
-  const u = USERS.find(u=>u.email===email && u.pass===pass);
-  if(!u) { showToast('❌ E-mail ou senha incorretos'); return; }
+  const isCPF = !identifier.includes('@');
+  const cleanCPF = identifier.replace(/\D/g,'');
+  const u = USERS.find(u =>
+    (isCPF ? u.cpf?.replace(/\D/g,'') === cleanCPF : u.email === identifier.toLowerCase())
+    && u.pass === pass
+  );
+  if(!u) { showToast('❌ Dados incorretos'); return; }
   state.user = {...u};
   loginSuccess();
 }
@@ -698,6 +791,7 @@ function loginSuccess() {
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-home').classList.add('active');
+  checkDeepLink();
 }
 
 function doLogout() {
@@ -723,6 +817,7 @@ function renderHome() {
   document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name.split(' ')[0]} 👋`;
   renderMyBoloes();
   renderGames();
+  renderLiveScores();
 }
 
 function renderMyBoloes() {
@@ -780,6 +875,30 @@ function renderGames() {
 
 function fmtPrize(b) {
   return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
+}
+
+const LIVE_SCORES = []; // populated when games are live
+let liveInterval = null;
+
+function renderLiveScores() {
+  // Simulate live scores for demo - in production connect to API
+  const liveGames = GAMES.filter(g => g.status === 'live');
+  const section = document.getElementById('live-section');
+  if(!section) return;
+  if(liveGames.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  document.getElementById('live-list').innerHTML = liveGames.map(g=>`
+    <div class="live-card">
+      <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>AO VIVO</div></div>
+      <div class="match-row" style="margin-top:8px">
+        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
+        <div class="vs-block"><div class="live-score-big">${g.liveHome??0} - ${g.liveAway??0}</div><div class="live-min">⏱ ${g.liveMin??0}'</div></div>
+        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
+      </div>
+    </div>`).join('');
 }
 
 // ===== CREATE BOLÃO =====
@@ -962,6 +1081,11 @@ function renderDetail() {
       <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">📤 Compartilhar convite</button>
     </div>
 
+    ${isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">✏️ Editar bolão</button>
+      <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">🗑️ Excluir</button>
+    </div>` : ''}
+
     <div class="action-box">
       ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">🏦 Pagar R$${b.amount} via Pix</button>` : ''}
       ${me ? (me.homeScore!=null ? `
@@ -977,15 +1101,21 @@ function renderDetail() {
     <div class="section-title">Participantes (${b.participants.length}/${b.maxPart})</div>
     ${b.participants.length===0
       ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
-      : b.participants.map(p=>`
-        <div class="part-row">
-          <div class="part-avatar">${p.name.charAt(0).toUpperCase()}</div>
-          <div style="flex:1">
-            <div class="part-name">${p.name}</div>
-            <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
-          </div>
-          <div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>
-        </div>`).join('')
+      : b.participants.map(p=>{
+          const ur = USERS.find(u=>u.email===p.email);
+          const photo = ur?.photo || p.photo;
+          const av = photo
+            ? `<img class="part-av-img" src="${photo}" alt="${p.name}">`
+            : `<div class="part-av-init">${p.name.charAt(0).toUpperCase()}</div>`;
+          return `<div class="part-row">
+            ${av}
+            <div style="flex:1">
+              <div class="part-name">${p.name}</div>
+              <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
+            </div>
+            <div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>
+          </div>`;
+        }).join('')
     }`;
 }
 
@@ -996,9 +1126,10 @@ function copyCode(code) {
 
 function shareInvite(id) {
   const b = state.boloes.find(x=>x.id===id);
-  const msg = `🏆 Entre no meu bolão "${b.title}"!\n\nCódigo: ${b.code}\n\nJogo: ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\nValor: R$${b.amount} por pessoa`;
-  if(navigator.share) navigator.share({text:msg});
-  else { if(navigator.clipboard) navigator.clipboard.writeText(msg); showToast('✅ Texto copiado para compartilhar!'); }
+  const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
+  const msg = `🏆 Entre no meu bolão "${b.title}"!\n\n🔗 Clique para entrar:\n${link}\n\nOu abra o Bolão Copa e use o código: *${b.code}*\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n💰 Valor: R$${b.amount} por pessoa`;
+  if(navigator.share) navigator.share({title:'Bolão Copa',text:msg,url:link});
+  else { if(navigator.clipboard) navigator.clipboard.writeText(msg); showToast('✅ Link copiado!'); }
 }
 
 function joinAndBet(id) {
@@ -1173,7 +1304,13 @@ function confirmPix() {
 function updateProfileUI() {
   const u = state.user;
   if(!u) return;
-  document.getElementById('prof-avatar').textContent = u.name.charAt(0).toUpperCase();
+  // Update avatar (photo or initials)
+  const wrap = document.getElementById('prof-avatar-wrap');
+  if(wrap) {
+    wrap.innerHTML = u.photo
+      ? `<img class="av-img" src="${u.photo}" alt="foto">`
+      : `<div class="av-init" id="prof-avatar">${u.name.charAt(0).toUpperCase()}</div>`;
+  }
   document.getElementById('prof-name').textContent = u.name;
   document.getElementById('prof-email').textContent = u.email;
   document.getElementById('prof-phone').textContent = u.phone||'-';
@@ -1187,8 +1324,139 @@ function updateProfileUI() {
   document.getElementById('prof-total').innerHTML=`<div class="stat-val">R$${total}</div><div class="stat-lbl">Apostado</div>`;
 }
 
+function uploadPhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024) { showToast('❌ Imagem muito grande (máx 5MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.user.photo = e.target.result;
+    // Also update the user in USERS array
+    const u = USERS.find(x=>x.email===state.user.email);
+    if(u) u.photo = e.target.result;
+    updateProfileUI();
+    showToast('✅ Foto atualizada!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function openEditProfile() {
+  const u = state.user;
+  document.getElementById('ep-name').value = u.name||'';
+  document.getElementById('ep-phone').value = u.phone||'';
+  document.getElementById('ep-pix').value = u.pix||'';
+  document.getElementById('ep-cpf-email').textContent = `${u.cpf||''} · ${u.email||''}`;
+  const wrap = document.getElementById('edit-avatar-wrap');
+  wrap.innerHTML = u.photo
+    ? `<img class="av-img" src="${u.photo}" alt="foto">`
+    : `<div class="av-init">${u.name.charAt(0).toUpperCase()}</div>`;
+  go('s-edit-profile');
+}
+
+function saveProfile() {
+  const name = document.getElementById('ep-name').value.trim();
+  const phone = document.getElementById('ep-phone').value.trim();
+  const pix = document.getElementById('ep-pix').value.trim();
+  const pass = document.getElementById('ep-pass').value;
+  const pass2 = document.getElementById('ep-pass2').value;
+  if(!name||!phone||!pix) { showToast('⚠️ Preencha todos os campos'); return; }
+  if(pass && pass.length < 6) { showToast('❌ Senha muito curta'); return; }
+  if(pass && pass !== pass2) { showToast('❌ Senhas não conferem'); return; }
+  state.user.name = name;
+  state.user.phone = phone;
+  state.user.pix = pix;
+  if(pass) state.user.pass = pass;
+  const u = USERS.find(x=>x.email===state.user.email);
+  if(u) { u.name=name; u.phone=phone; u.pix=pix; if(pass) u.pass=pass; }
+  updateProfileUI();
+  showToast('✅ Perfil atualizado!');
+  back();
+}
+
+// ===== EDIT / DELETE BOLÃO =====
+function editBolao(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  const newTitle = prompt('Novo título do bolão:', b.title);
+  if(newTitle===null) return;
+  if(!newTitle.trim()) { showToast('⚠️ Título não pode ser vazio'); return; }
+  b.title = newTitle.trim();
+  const newMax = prompt('Limite de participantes (atual: '+b.maxPart+', máx 50):', b.maxPart);
+  if(newMax!==null) {
+    const m = parseInt(newMax);
+    if(m>=b.participants.length && m<=50) b.maxPart=m;
+    else showToast('⚠️ Limite inválido ou menor que participantes atuais');
+  }
+  showToast('✅ Bolão atualizado!');
+  renderDetail();
+}
+
+function deleteBolao(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  if(!confirm(`Excluir o bolão "${b.title}"?\n\nEsta ação não pode ser desfeita. Todos os participantes serão notificados.`)) return;
+  state.boloes = state.boloes.filter(x=>x.id!==id);
+  showToast('🗑️ Bolão excluído');
+  back();
+  setTimeout(()=>renderHome(), 300);
+}
+
+// ===== DEEP LINK =====
+function checkDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const joinCode = params.get('join');
+  if(joinCode && state.user) {
+    const input = document.getElementById('join-code');
+    if(input) {
+      input.value = joinCode.toUpperCase();
+      checkJoinCode(joinCode.toUpperCase());
+    }
+    go('s-join');
+  }
+}
+
+// ===== NAV GLOBAL =====
+// Telas que mostram a nav global (todas exceto auth e termos)
+const NAV_SCREENS = ['s-home','s-join','s-profile','s-detail','s-bet','s-pix','s-create','s-edit-profile'];
+const AUTH_SCREENS = ['s-login','s-register','s-terms'];
+
+// Sobrescreve go() para controlar visibilidade da nav
+const _go = go;
+function go(screenId, push=true) {
+  _go(screenId, push);
+  updateGlobalNav(screenId);
+}
+
+function updateGlobalNav(screenId) {
+  const nav = document.getElementById('global-nav');
+  if(!nav) return;
+  nav.style.display = AUTH_SCREENS.includes(screenId) ? 'none' : 'flex';
+  // Atualiza tab ativa
+  document.querySelectorAll('#global-nav .tab').forEach(t=>t.classList.remove('active'));
+  if(screenId==='s-home') document.getElementById('gnav-home')?.classList.add('active');
+  else if(screenId==='s-join') document.getElementById('gnav-join')?.classList.add('active');
+  else if(screenId==='s-create') document.getElementById('gnav-create')?.classList.add('active');
+  else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('gnav-profile')?.classList.add('active');
+}
+
+function gnavTo(tab) {
+  if(tab==='home') { renderHome(); go('s-home'); }
+  else if(tab==='join') { go('s-join'); }
+  else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
+}
+
+// Esconde a antiga barra de tabs inline do home (agora temos a global)
+function hideOldTabs() {
+  const oldTabs = document.querySelector('#s-home .tabs');
+  if(oldTabs) oldTabs.style.display='none';
+}
+
 // ===== INIT =====
-// nada extra — tabs já têm onclick inline corretamente
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Esconde nav global nas telas de auth ao iniciar
+  updateGlobalNav('s-login');
+  hideOldTabs();
+});
 </script>
 </body>
 </html>
