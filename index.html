@@ -14,6 +14,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -328,6 +329,22 @@ input:checked+.slider:before{transform:translateX(18px)}
 .chat-input-row{display:flex;gap:8px;margin-top:8px}
 .chat-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:13px;outline:none}
 .chat-send{background:var(--primary);border:none;border-radius:12px;padding:10px 18px;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+/* CONFETTI */
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:9999;display:none}
+/* ONBOARDING */
+.ob-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px}
+.ob-modal{background:var(--surface);border-radius:24px;width:100%;max-width:360px;padding:32px 24px;text-align:center}
+.ob-icon{font-size:56px;margin-bottom:16px}
+.ob-title{font-size:22px;font-weight:900;margin-bottom:8px}
+.ob-text{color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:24px}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin-bottom:24px}
+.ob-dot{width:8px;height:8px;border-radius:4px;background:var(--border);transition:width .2s}
+.ob-dot.active{background:var(--primary);width:20px}
+/* SCORING INPUTS */
+.score-rule-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--border)}
+.score-rule-lbl{flex:1;font-size:13px;color:var(--text)}
+.score-rule-input{width:54px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--secondary);font-size:16px;font-weight:800;text-align:center;outline:none}
+.score-rule-pts{font-size:11px;color:var(--text3);margin-left:4px}
 </style>
 </head>
 <body>
@@ -762,7 +779,26 @@ input:checked+.slider:before{transform:translateX(18px)}
 <!-- FLOATING AVATAR -->
 <div id="float-av" onclick="gnavTo('profile')" title="Meu perfil"></div>
 
+<!-- CONFETTI -->
+<canvas id="confetti-canvas"></canvas>
+
 </div><!-- #app -->
+
+<!-- ONBOARDING MODAL -->
+<div class="ob-overlay" id="ob-overlay">
+  <div class="ob-modal">
+    <div id="ob-icon" class="ob-icon">🏆</div>
+    <div id="ob-title" class="ob-title">Bem-vindo ao Bolão Copa!</div>
+    <div id="ob-text" class="ob-text">Aposte com amigos nos jogos da Copa do Mundo 2026. Crie bolões privados e torça junto!</div>
+    <div class="ob-dots" id="ob-dots">
+      <div class="ob-dot active"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+    </div>
+    <button class="btn btn-primary" id="ob-next-btn" onclick="obNext()">Próximo →</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="obClose()">Pular tutorial</button>
+  </div>
+</div>
 
 <!-- QR CODE MODAL -->
 <div id="qr-modal" class="modal-overlay" style="display:none">
@@ -802,6 +838,86 @@ input:checked+.slider:before{transform:translateX(18px)}
 </div>
 
 <script>
+// ===== SUPABASE CONFIG =====
+// Preencha com sua URL e chave anon do Supabase:
+// https://app.supabase.com → seu projeto → Settings → API
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+
+let _sb = null;
+
+function initSupabase() {
+  if(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+    _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+    _sb.auth.onAuthStateChange((event) => {
+      if(event === 'SIGNED_OUT' && state.user) {
+        state.user = null; clearSession();
+        state.screenStack = ['s-login'];
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
+        document.getElementById('s-login').classList.add('active');
+        updateGlobalNav('s-login'); updateFloatingAvatar();
+      }
+    });
+  }
+}
+
+// Convert Supabase row → local bolão object
+function _sbRowToBolao(row) {
+  return {
+    id: row.id, title: row.title, game: row.game,
+    creatorId: row.creator_id, creatorName: row.creator_name,
+    creatorPixKey: row.creator_pix_key||'', amount: row.amount,
+    maxPart: row.max_part, hasPw: row.has_pw, pw: row.pw||'',
+    status: row.status, participants: row.participants||[],
+    code: row.code, createdAt: row.created_at,
+    result: row.result||null,
+    pointsExact: row.points_exact??3,
+    pointsResult: row.points_result??1,
+    messages: row.messages||[]
+  };
+}
+
+// Convert local bolão object → Supabase row
+function _bolaoToSbRow(b) {
+  return {
+    id: b.id, title: b.title, game: b.game,
+    creator_id: b.creatorId, creator_name: b.creatorName,
+    creator_pix_key: b.creatorPixKey||'', amount: b.amount,
+    max_part: b.maxPart, has_pw: b.hasPw, pw: b.pw||'',
+    status: b.status, participants: b.participants,
+    code: b.code, created_at: b.createdAt,
+    result: b.result||null,
+    points_exact: b.pointsExact??3,
+    points_result: b.pointsResult??1,
+    messages: b.messages||[]
+  };
+}
+
+async function _loadBoloesFromSupabase() {
+  if(!_sb || !state.user) return;
+  try {
+    const { data, error } = await _sb.from('boloes').select('*').order('created_at', {ascending:false});
+    if(error || !data) return;
+    // Filter: user is creator or participant
+    const mine = data.filter(row =>
+      row.creator_id === state.user.email ||
+      (row.participants||[]).some(p => p.email === state.user.email)
+    );
+    const sbBoloes = mine.map(_sbRowToBolao);
+    // Merge: Supabase wins on matching IDs
+    const localOnly = state.boloes.filter(b => !sbBoloes.find(s => s.id === b.id));
+    state.boloes = [...sbBoloes, ...localOnly];
+    try { localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes)); } catch(e) {}
+  } catch(e) {}
+}
+
+async function _syncBolaoToSupabase(b) {
+  if(!_sb) return;
+  try { await _sb.from('boloes').upsert(_bolaoToSbRow(b), {onConflict:'id'}); } catch(e) {}
+}
+
 // ===== STATE =====
 let state = {
   user: null,
@@ -837,7 +953,11 @@ function loadPersistedData() {
   } catch(e) {}
 }
 function saveUsers()   { try{localStorage.setItem('bolao_users',  JSON.stringify(USERS));}catch(e){} }
-function saveBoloes()  { try{localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes));}catch(e){} }
+function saveBoloes(bolaoToSync)  {
+  try{localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes));}catch(e){}
+  if(_sb && bolaoToSync) _syncBolaoToSupabase(bolaoToSync);
+}
+function saveBolao(b) { saveBoloes(b); }
 function saveSession(u){ try{localStorage.setItem('bolao_session',JSON.stringify(u));}catch(e){} }
 function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){} }
 
@@ -889,9 +1009,31 @@ function fmtLoginCPF(input) {
   }
 }
 
-function doLogin() {
+async function doLogin() {
   const identifier = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
+  const remember = document.getElementById('li-remember')?.checked;
+
+  if(_sb) {
+    let email = identifier.toLowerCase();
+    if(!identifier.includes('@')) {
+      // Login via CPF: get email from profiles
+      const cleanCPF = identifier.replace(/\D/g,'');
+      const { data: emailData, error: rpcErr } = await _sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF});
+      if(rpcErr || !emailData) { showToast('❌ Dados incorretos'); return; }
+      email = emailData;
+    }
+    const { data, error } = await _sb.auth.signInWithPassword({email, password: pass});
+    if(error) { showToast('❌ Dados incorretos'); return; }
+    const { data: profile } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
+    if(!profile) { showToast('❌ Perfil não encontrado'); return; }
+    state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+    if(remember) saveSession(state.user); else clearSession();
+    loginSuccess();
+    return;
+  }
+
+  // Local auth fallback
   const isCPF = !identifier.includes('@');
   const cleanCPF = identifier.replace(/\D/g,'');
   const u = USERS.find(u =>
@@ -900,8 +1042,7 @@ function doLogin() {
   );
   if(!u) { showToast('❌ Dados incorretos'); return; }
   state.user = {...u};
-  if(document.getElementById('li-remember')?.checked) saveSession(state.user);
-  else clearSession();
+  if(remember) saveSession(state.user); else clearSession();
   loginSuccess();
 }
 
@@ -962,6 +1103,17 @@ function doRegister() {
   if(pass!==pass2) { showToast('❌ As senhas não conferem'); return; }
   if(pass.length<6) { showToast('❌ Senha muito curta'); return; }
 
+  if(_sb) {
+    const { data, error } = await _sb.auth.signUp({email, password: pass});
+    if(error) { showToast(`❌ ${error.message}`); return; }
+    const { error: profErr } = await _sb.from('profiles').insert({id: data.user.id, email, name, phone, cpf, pix, dob});
+    if(profErr) { showToast('❌ Erro ao criar perfil. Tente novamente.'); return; }
+    state.user = {id: data.user.id, email, name, phone, pix, cpf};
+    saveSession(state.user);
+    loginSuccess();
+    return;
+  }
+
   USERS.push({name,email,phone,cpf,dob,pix,pass});
   saveUsers();
   state.user = {name,email,phone,cpf,pix};
@@ -969,7 +1121,8 @@ function doRegister() {
   loginSuccess();
 }
 
-function loginSuccess() {
+async function loginSuccess() {
+  if(_sb) await _loadBoloesFromSupabase();
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
@@ -979,14 +1132,18 @@ function loginSuccess() {
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-home').classList.add('active');
+  updateGlobalNav('s-home');
+  updateFloatingAvatar();
   checkDeepLink();
+  setTimeout(checkOnboarding, 600);
 }
 
 function doLogout() {
   document.getElementById('logout-modal').style.display = 'flex';
 }
-function confirmLogout() {
+async function confirmLogout() {
   document.getElementById('logout-modal').style.display = 'none';
+  if(_sb) await _sb.auth.signOut();
   clearSession();
   state.user = null;
   if(window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
@@ -1142,10 +1299,10 @@ function renderLiveScores() {
 }
 
 // ===== CREATE BOLÃO =====
-let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:''};
+let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1};
 
 function go_create() {
-  createState = {step:1,title:'',game:null,amount:50,maxPart:20,hasPw:false,pw:''};
+  createState = {step:1,title:'',game:null,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1};
   renderCreateStep();
   go('s-create');
 }
@@ -1197,6 +1354,18 @@ function renderCreateStep() {
         <label class="toggle"><input type="checkbox" id="c-haspw" ${s.hasPw?'checked':''} onchange="createState.hasPw=this.checked;renderCreateStep()"><span class="slider"></span></label>
       </div>
       ${s.hasPw?`<div class="field"><label>Senha do bolão</label><input type="password" id="c-pw" placeholder="Senha" value="${s.pw}" oninput="createState.pw=this.value"></div>`:''}
+      <div class="section-title" style="margin-top:16px;margin-bottom:4px">Pontuação personalizada</div>
+      <div class="section-sub">Defina quantos pontos cada acerto vale</div>
+      <div class="score-rule-row">
+        <div class="score-rule-lbl">⚽ Placar exato</div>
+        <input class="score-rule-input" type="number" min="1" max="10" value="${s.pointsExact}" oninput="createState.pointsExact=Math.max(1,parseInt(this.value)||3)">
+        <span class="score-rule-pts">pts</span>
+      </div>
+      <div class="score-rule-row">
+        <div class="score-rule-lbl">✅ Resultado certo (V/E/D)</div>
+        <input class="score-rule-input" type="number" min="0" max="9" value="${s.pointsResult}" oninput="createState.pointsResult=Math.max(0,parseInt(this.value)||1)">
+        <span class="score-rule-pts">pts</span>
+      </div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="createState.step=1;renderCreateStep()">← Voltar</button>
         <button class="btn btn-primary" onclick="nextCreateStep()">Próximo →</button>
@@ -1213,6 +1382,7 @@ function renderCreateStep() {
         ${summaryRow('💵','Valor da aposta',`R$ ${s.amount}`)}
         ${summaryRow('👥','Máx. participantes',`${s.maxPart} pessoas`)}
         ${summaryRow('🔒','Senha',s.hasPw?'✅ Sim':'🔓 Sem senha')}
+        ${summaryRow('🎯','Pontuação',`Exato: ${s.pointsExact}pts · Resultado: ${s.pointsResult}pt`)}
         ${summaryRow('📊','Taxa do app','10% do prêmio total')}
       </div>
       <div class="btn-row">
@@ -1261,9 +1431,12 @@ function finishCreate() {
     participants: [],
     code,
     createdAt: new Date().toISOString(),
+    pointsExact: s.pointsExact??3,
+    pointsResult: s.pointsResult??1,
+    messages: [],
   };
   state.boloes.unshift(bolao);
-  saveBoloes();
+  saveBoloes(bolao);
   state.currentBolaoId = bolao.id;
   openDetail(bolao.id);
   // Replace create screen in stack
@@ -1503,7 +1676,7 @@ function joinAndBet(id) {
   if(!b.participants.find(p=>p.email===state.user.email)) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
     addSystemMessage(id, `${state.user.name} entrou no bolão`);
-    saveBoloes();
+    saveBoloes(b);
   }
   state.betScores = {home:0, away:0};
   state._betDetailId = id;
@@ -1535,16 +1708,24 @@ function confirmInlineBet(bolaoId) {
   const isEdit = me.homeScore != null;
   me.homeScore = s.home;
   me.awayScore = s.away;
-  saveBoloes();
+  saveBoloes(b);
   showToast(isEdit ? 'Palpite atualizado!' : 'Palpite registrado!');
   renderDetail();
 }
 
 // ===== JOIN BOLÃO =====
-function checkJoinCode(code) {
+async function checkJoinCode(code) {
   const el = document.getElementById('join-result');
   if(code.length<8) { el.innerHTML=''; return; }
-  const b = state.boloes.find(x=>x.code===code);
+  let b = state.boloes.find(x=>x.code===code);
+  if(!b && _sb) {
+    el.innerHTML=`<div style="text-align:center;padding:16px;color:var(--text3)">🔍 Buscando...</div>`;
+    const { data } = await _sb.from('boloes').select('*').eq('code', code).single();
+    if(data) {
+      b = _sbRowToBolao(data);
+      if(!state.boloes.find(x=>x.id===b.id)) { state.boloes.push(b); saveBoloes(); }
+    }
+  }
   if(!b) {
     el.innerHTML=`<div class="not-found"><div class="nf-icon">❌</div><div style="color:var(--err);font-weight:700">Bolão não encontrado</div><div style="color:var(--text3);font-size:12px;margin-top:4px">Verifique o código e tente novamente</div></div>`;
     return;
@@ -1582,7 +1763,7 @@ function doJoin(id) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
     addSystemMessage(id, `${state.user.name} entrou no bolão`);
   }
-  saveBoloes();
+  saveBoloes(b);
   document.getElementById('join-code').value='';
   document.getElementById('join-result').innerHTML='';
   openDetail(id);
@@ -1669,7 +1850,7 @@ function confirmBet() {
   }
   me.homeScore = s.home;
   me.awayScore = s.away;
-  saveBoloes();
+  saveBoloes(b);
   showToast('✅ Palpite registrado!');
   back();
   setTimeout(()=>renderDetail(), 300);
@@ -1705,7 +1886,7 @@ function confirmPix() {
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
   if(me) me.paid = true;
-  saveBoloes();
+  saveBoloes(b);
   showToast('✅ Pagamento confirmado! Boa sorte!');
   back();
   setTimeout(()=>renderDetail(), 300);
@@ -1746,10 +1927,11 @@ function updateProfileUI() {
   withResult.forEach(b=>{
     const me2=b.participants.find(p=>p.email===u.email);
     if(!me2) return;
-    const pts=calcPoints(me2,b.result);
+    const pts=calcPoints(me2,b.result,b);
+    const ptExact=b.pointsExact??3;
     totalPts+=pts;
-    if(pts===3) exactHits++;
-    const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result)})).sort((a,c)=>c.pts-a.pts);
+    if(pts===ptExact) exactHits++;
+    const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
     const rank=ranked.findIndex(p=>p.email===u.email)+1;
     if(rank>0&&(bestRank===null||rank<bestRank)) bestRank=rank;
   });
@@ -1846,7 +2028,7 @@ function confirmPayment(bolaoId, email) {
   const p = b?.participants.find(x=>x.email===email);
   if(!p) return;
   p.paid = !p.paid;
-  saveBoloes();
+  saveBoloes(b);
   renderDetail();
   showToast(p.paid ? '✅ Pagamento confirmado!' : 'Pagamento revertido');
 }
@@ -1881,25 +2063,28 @@ function submitResult() {
   b.status = 'finished';
   const resultText = home>away?`Vitória de ${b.game.home.name}`:away>home?`Vitória de ${b.game.away.name}`:'Empate';
   addSystemMessage(bolaoId, `Resultado definido: ${b.game.home.flag} ${home} × ${away} ${b.game.away.flag} · ${resultText}`);
-  saveBoloes();
+  saveBoloes(b);
   closeResultModal();
   renderDetail();
   showToast('Resultado registrado! Classificação atualizada.');
 }
 
 // ===== POINTS & RANKING =====
-function calcPoints(p, result) {
+function calcPoints(p, result, b) {
   if(p.homeScore==null||p.awayScore==null) return 0;
-  if(p.homeScore===result.home && p.awayScore===result.away) return 3;
+  const ptExact = b?.pointsExact ?? 3;
+  const ptResult = b?.pointsResult ?? 1;
+  if(p.homeScore===result.home && p.awayScore===result.away) return ptExact;
   const pRes = p.homeScore>p.awayScore?'h':p.homeScore<p.awayScore?'a':'d';
   const rRes = result.home>result.away?'h':result.home<result.away?'a':'d';
-  return pRes===rRes ? 1 : 0;
+  return pRes===rRes ? ptResult : 0;
 }
 
 function buildResultCard(b, prize) {
   const h = b.result.home, a = b.result.away;
   const resultText = h>a?`Vitória de ${b.game.home.name}`:a>h?`Vitória de ${b.game.away.name}`:'Empate';
-  const winners = b.participants.filter(p=>calcPoints(p,b.result)===3);
+  const maxPts = b.pointsExact ?? 3;
+  const winners = b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts);
   const prizeEach = winners.length>0 ? Math.floor(prize/winners.length) : 0;
   return `<div class="result-final">
     <div class="result-final-lbl">Resultado Oficial</div>
@@ -1921,10 +2106,16 @@ function buildRanking(b) {
   if(!b.result) return '';
   const medals = ['🥇','🥈','🥉'];
   const ranked = b.participants
-    .map(p=>({...p, pts: calcPoints(p, b.result)}))
+    .map(p=>({...p, pts: calcPoints(p, b.result, b)}))
     .sort((a,b)=>b.pts-a.pts);
   if(ranked.length===0) return '';
   const maxPts = ranked[0].pts;
+  // Show confetti if current user is among the winners
+  const myRank = ranked.findIndex(p=>p.email===state.user?.email);
+  if(myRank===0 && maxPts>0 && !b._confettiShown) {
+    b._confettiShown = true;
+    setTimeout(showConfetti, 300);
+  }
   const rows = ranked.map((p,i)=>{
     const isWinner = p.pts===maxPts && maxPts>0;
     const ur = USERS.find(u=>u.email===p.email);
@@ -1972,18 +2163,19 @@ function saveEditBolao() {
   }
   b.title = title;
   b.maxPart = max;
-  saveBoloes();
+  saveBoloes(b);
   closeEditBolao();
   showToast('Bolão atualizado!');
   renderDetail();
 }
 
-function deleteBolao(id) {
+async function deleteBolao(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
   if(!confirm(`Excluir o bolão "${b.title}"?\n\nEsta ação não pode ser desfeita.`)) return;
   state.boloes = state.boloes.filter(x=>x.id!==id);
   saveBoloes();
+  if(_sb) await _sb.from('boloes').delete().eq('id', id);
   showToast('Bolão excluído');
   back();
   setTimeout(()=>renderHome(), 300);
@@ -2154,9 +2346,10 @@ function renderBetHistory() {
   }
   el.innerHTML = mine.map(b=>{
     const me = b.participants.find(p=>p.email===u.email);
-    const pts = b.result ? calcPoints(me, b.result) : null;
-    const statusColor = pts===null?'var(--text3)':pts===3?'var(--ok)':pts===1?'var(--warn)':'var(--err)';
-    const statusTxt = pts===null?'Aguardando resultado':pts===3?'Acertou!':pts===1?'Resultado certo':'Errou';
+    const pts = b.result ? calcPoints(me, b.result, b) : null;
+    const ptExact = b.pointsExact??3; const ptResult = b.pointsResult??1;
+    const statusColor = pts===null?'var(--text3)':pts===ptExact?'var(--ok)':pts===ptResult?'var(--warn)':'var(--err)';
+    const statusTxt = pts===null?'Aguardando resultado':pts===ptExact?'Acertou!':pts===ptResult?'Resultado certo':'Errou';
     return `<div class="history-row" onclick="openDetail('${b.id}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
@@ -2198,7 +2391,7 @@ function exportResult(bolaoId) {
   c.font='16px sans-serif'; c.fillStyle='rgba(255,255,255,.65)';
   c.fillText(`${b.game.home.name}  ×  ${b.game.away.name}`, W/2, 200);
   // Ranking
-  const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result)})).sort((a,b)=>b.pts-a.pts);
+  const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,b)=>b.pts-a.pts);
   ranked.slice(0,5).forEach((p,i)=>{
     const y=240+i*58;
     c.fillStyle=i===0?'rgba(255,215,0,.12)':'rgba(255,255,255,.04)';
@@ -2266,7 +2459,7 @@ function sendMessage(bolaoId) {
   const ur = USERS.find(x=>x.email===state.user.email)||state.user;
   b.messages.push({email:state.user.email, name:state.user.name, photo:ur.photo||state.user.photo, text, time:new Date().toISOString()});
   input.value='';
-  saveBoloes();
+  saveBoloes(b);
   renderDetail();
   setTimeout(()=>{
     const el=document.getElementById(`chat-msgs-${bolaoId}`);
@@ -2274,11 +2467,102 @@ function sendMessage(bolaoId) {
   },100);
 }
 
+// ===== CONFETTI =====
+function showConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if(!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  const COLORS = ['#F4D03F','#006B3F','#ffffff','#00A651','#FFD700','#32BCAD'];
+  const particles = Array.from({length:130}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height - canvas.height,
+    r: Math.random() * 7 + 4,
+    color: COLORS[Math.floor(Math.random()*COLORS.length)],
+    vx: (Math.random()-0.5)*3,
+    vy: Math.random()*4+2,
+    tiltAngle: Math.random()*Math.PI*2,
+    tiltSpeed: (Math.random()-0.5)*0.12
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      p.tiltAngle += p.tiltSpeed;
+      p.x += p.vx + Math.sin(p.tiltAngle)*1.2;
+      p.y += p.vy;
+      if(p.y > canvas.height+10) { p.y=-10; p.x=Math.random()*canvas.width; }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.tiltAngle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*1.6);
+      ctx.restore();
+    });
+    frame++;
+    if(frame < 220) requestAnimationFrame(draw);
+    else { ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display='none'; }
+  }
+  draw();
+}
+
+// ===== ONBOARDING =====
+const OB_SLIDES = [
+  {icon:'🏆', title:'Bem-vindo ao Bolão Copa!', text:'Aposte com amigos nos jogos da Copa do Mundo 2026. Crie bolões privados e torça junto!'},
+  {icon:'⚽', title:'Como funciona', text:'Crie ou entre num bolão, registre seu palpite do placar e pague via Pix. Quem acertar o placar exato ganha o prêmio!'},
+  {icon:'🎉', title:'Pronto para começar!', text:'Crie seu primeiro bolão ou use um código de convite para entrar no bolão de um amigo. Boa sorte!'},
+];
+let _obSlide = 0;
+
+function checkOnboarding() {
+  if(localStorage.getItem('bolao_ob_done')) return;
+  _obSlide = 0;
+  _renderObSlide();
+  document.getElementById('ob-overlay').style.display = 'flex';
+}
+
+function _renderObSlide() {
+  const s = OB_SLIDES[_obSlide];
+  document.getElementById('ob-icon').textContent = s.icon;
+  document.getElementById('ob-title').textContent = s.title;
+  document.getElementById('ob-text').textContent = s.text;
+  document.querySelectorAll('#ob-dots .ob-dot').forEach((d,i) => d.classList.toggle('active', i===_obSlide));
+  document.getElementById('ob-next-btn').textContent = _obSlide===OB_SLIDES.length-1 ? '🎉 Começar!' : 'Próximo →';
+}
+
+function obNext() {
+  if(_obSlide < OB_SLIDES.length-1) { _obSlide++; _renderObSlide(); }
+  else obClose();
+}
+
+function obClose() {
+  localStorage.setItem('bolao_ob_done','1');
+  document.getElementById('ob-overlay').style.display = 'none';
+}
+
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', async ()=>{
+  initSupabase();
   loadPersistedData();
   hideOldTabs();
-  // Auto-login: se há sessão salva, logar direto sem mostrar login
+
+  // If Supabase configured, try to restore session from Supabase
+  if(_sb) {
+    const { data: { session } } = await _sb.auth.getSession();
+    if(session) {
+      const { data: profile } = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
+      if(profile) {
+        state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+        loginSuccess();
+        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+        return;
+      }
+    }
+  }
+
+  // Local session restore
   try {
     const saved = localStorage.getItem('bolao_session');
     if(saved) {
@@ -2287,17 +2571,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(found) {
         state.user = {...found};
         loginSuccess();
+        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
       clearSession();
     }
   } catch(e) {}
+
   updateGlobalNav('s-login');
   updateFloatingAvatar();
-  // Service Worker
-  if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 </script>
 
