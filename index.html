@@ -296,10 +296,10 @@ input:checked+.slider:before{transform:translateX(18px)}
 .tip-text{color:var(--text2);font-size:12px;line-height:1.8}
 /* Auth screen */
 .auth-wrapper{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:32px 24px}
-.auth-logo{text-align:center;margin-bottom:40px}
-.auth-trophy{font-size:60px;display:block;margin-bottom:10px}
-.auth-appname{color:var(--secondary);font-size:34px;font-weight:900;letter-spacing:-1px;display:block}
-.auth-tagline{color:var(--text2);font-size:14px;margin-top:6px;display:block}
+.auth-logo{text-align:center;margin-bottom:36px}
+.auth-icon{width:90px;height:90px;border-radius:22px;display:block;margin:0 auto 14px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.auth-appname{color:var(--secondary);font-size:38px;font-weight:900;letter-spacing:-1px;display:block;line-height:1}
+.auth-tagline{color:var(--text3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:3px;margin-top:6px;display:block}
 .divider{display:flex;align-items:center;gap:12px;margin:16px 0}
 .div-line{flex:1;height:1px;background:var(--border)}
 .div-text{color:var(--text3);font-size:12px}
@@ -374,9 +374,9 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div style="font-size:12px;color:var(--text2)">Faça login ou crie uma conta gratuita para entrar no bolão.</div>
     </div>
     <div class="auth-logo">
-      <span class="auth-trophy">🏆</span>
-      <span class="auth-appname">Bolão Copa</span>
-      <span class="auth-tagline">Aposte com os amigos. Ganhe junto.</span>
+      <img src="icon.svg" class="auth-icon" alt="Bolão">
+      <span class="auth-appname">Bolão</span>
+      <span class="auth-tagline">Copa 2026</span>
     </div>
     <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" oninput="fmtLoginCPF(this)"></div>
     <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••"></div>
@@ -395,7 +395,13 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div class="screen" id="s-register">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar conta</span></div>
   <div class="scroll">
-    <p style="color:var(--text2);font-size:13px;margin-bottom:20px">É grátis e rápido</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <img src="icon.svg" style="width:44px;height:44px;border-radius:11px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.4)" alt="Bolão">
+      <div>
+        <div style="font-size:18px;font-weight:900;color:var(--secondary);line-height:1">Bolão</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-top:2px">Copa 2026</div>
+      </div>
+    </div>
     <div class="field"><label>Nome completo</label><input id="rg-name" placeholder="Seu nome"></div>
     <div class="field"><label>E-mail</label><input id="rg-email" type="email" placeholder="seu@email.com"></div>
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
