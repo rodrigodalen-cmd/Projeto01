@@ -242,6 +242,8 @@ input:checked+.slider:before{transform:translateX(18px)}
 .modal-score-col{display:flex;flex-direction:column;align-items:center;gap:6px}
 .modal-input{width:72px;height:72px;font-size:32px;font-weight:900;text-align:center;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);outline:none}
 .modal-input:focus{border-color:var(--primary)}
+/* FLOATING AVATAR (top-right) */
+#float-av{position:fixed;top:14px;right:14px;z-index:998;cursor:pointer;width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.35);display:none}
 /* GLOBAL FIXED NAV */
 .global-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 20px;z-index:999}
 .global-nav .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;padding:4px 0}
@@ -296,10 +298,14 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" value="joao@email.com" oninput="fmtLoginCPF(this)"></div>
     <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" value="123456"></div>
-    <button class="btn btn-primary" style="margin-top:8px;margin-bottom:20px" onclick="doLogin()">Entrar</button>
+    <label style="display:flex;align-items:center;gap:8px;margin:4px 0 16px;cursor:pointer">
+      <input type="checkbox" id="li-remember" style="width:16px;height:16px;accent-color:var(--primary)" checked>
+      <span style="color:var(--text2);font-size:13px">Permanecer logado</span>
+    </label>
+    <button class="btn btn-primary" style="margin-bottom:20px" onclick="doLogin()">Entrar</button>
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
     <button class="btn btn-outline" onclick="go('s-register')">Criar conta gratuita</button>
-    <p class="hint-text">💡 Teste: joao@email.com / 123456</p>
+    <p class="hint-text">Teste: joao@email.com / 123456</p>
   </div>
 </div>
 
@@ -307,22 +313,16 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div class="screen" id="s-register">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar conta</span></div>
   <div class="scroll">
-    <p style="color:var(--text2);font-size:13px;margin-bottom:20px">É grátis e rápido 🎉</p>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:20px">É grátis e rápido</p>
     <div class="field"><label>Nome completo</label><input id="rg-name" placeholder="Seu nome"></div>
     <div class="field"><label>E-mail</label><input id="rg-email" type="email" placeholder="seu@email.com"></div>
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
     <div class="field"><label>CPF</label><input id="rg-cpf" placeholder="000.000.000-00" maxlength="14" oninput="fmtCPF(this)"></div>
-    <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
-      <span style="font-size:12px">🔐</span><span style="color:var(--text3);font-size:11px">Usado apenas para verificação de identidade (18+)</span>
-    </div>
+    <div style="color:var(--text3);font-size:11px;margin:-8px 0 14px;padding:0 2px">Usado apenas para verificação de identidade (18+)</div>
     <div class="field"><label>Data de Nascimento</label><input id="rg-dob" type="date" placeholder="dd/mm/aaaa" style="color-scheme:dark"></div>
-    <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
-      <span style="font-size:12px">🔞</span><span style="color:var(--warn);font-size:11px">Apenas maiores de 18 anos podem participar</span>
-    </div>
+    <div style="color:var(--warn);font-size:11px;margin:-8px 0 14px;padding:0 2px">Apenas maiores de 18 anos podem participar</div>
     <div class="field"><label>Chave Pix</label><input id="rg-pix" placeholder="CPF, e-mail, telefone..."></div>
-    <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
-      <span style="font-size:12px">🏦</span><span style="color:var(--pix);font-size:11px">Sua chave Pix será usada para receber prêmios</span>
-    </div>
+    <div style="color:var(--pix);font-size:11px;margin:-8px 0 14px;padding:0 2px">Sua chave Pix será usada para receber prêmios</div>
     <div class="field"><label>Senha</label><input id="rg-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
     <div class="field"><label>Confirmar senha</label><input id="rg-pass2" type="password" placeholder="Repita a senha"></div>
 
@@ -519,12 +519,12 @@ input:checked+.slider:before{transform:translateX(18px)}
         <div class="greeting" id="home-greeting">Olá! 👋</div>
         <div class="sub-greeting">Copa do Mundo 2026 · USA/CAN/MEX</div>
       </div>
-      <div class="trophy-badge">🏆</div>
+      <div id="home-av-badge" class="trophy-badge" onclick="gnavTo('profile')" style="cursor:pointer;overflow:hidden;padding:0"></div>
     </div>
     <div class="banner">
-      <h3>🇧🇷 Brasil na Copa 2026</h3>
+      <h3>Brasil na Copa 2026</h3>
       <p>Crie seu bolão e aposte com os amigos!</p>
-      <button class="btn btn-secondary btn-sm" onclick="go_create()">➕ Criar Bolão</button>
+      <button class="btn btn-secondary btn-sm" onclick="go_create()">Criar Bolão</button>
     </div>
     <div class="section-title">Meus Bolões</div>
     <div id="my-boloes-list"></div>
@@ -582,7 +582,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="profile-email" id="prof-email">joao@email.com</div>
       <p style="color:var(--text3);font-size:11px;margin-top:4px">Toque na foto para alterar</p>
     </div>
-    <button class="btn btn-ghost" style="margin-bottom:16px" onclick="openEditProfile()">✏️ Editar perfil</button>
+    <button class="btn btn-ghost" style="margin-bottom:16px" onclick="openEditProfile()">Editar perfil</button>
     <div style="display:flex;background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:20px">
       <div class="stat" id="prof-criados"><div class="stat-val">0</div><div class="stat-lbl">Criados</div></div>
       <div class="stat-div"></div>
@@ -592,22 +592,20 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div class="section-title">Meus dados</div>
     <div class="info-row">
-      <span style="font-size:18px">📱</span>
       <div><div class="info-lbl">Telefone</div><div class="info-val" id="prof-phone">-</div></div>
     </div>
     <div class="info-row">
-      <span style="font-size:18px;color:var(--pix)">🏦</span>
       <div><div class="info-lbl">Chave Pix</div><div class="info-val" style="color:var(--pix)" id="prof-pix">-</div></div>
     </div>
     <div class="section-title" style="margin-top:20px">Sobre o app</div>
     <div class="about-card">
-      <div class="about-item">🏆 Bolão Copa v1.0.0</div>
-      <div class="about-item">🇧🇷 Feito para a Copa do Mundo 2026</div>
-      <div class="about-item">💰 Taxa de 10% sobre o prêmio</div>
-      <div class="about-item">🔒 Máximo 50 participantes por bolão</div>
-      <div class="about-item">⚖️ Apenas para uso entre amigos</div>
+      <div class="about-item">Bolão Copa v1.0.0</div>
+      <div class="about-item">Feito para a Copa do Mundo 2026</div>
+      <div class="about-item">Taxa de 10% sobre o prêmio</div>
+      <div class="about-item">Máximo 50 participantes por bolão</div>
+      <div class="about-item">Apenas para uso entre amigos</div>
     </div>
-    <button class="signout-btn" onclick="doLogout()">🚪 Sair da conta</button>
+    <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
 </div>
 
@@ -627,12 +625,12 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="field"><label>WhatsApp / Telefone</label><input id="ep-phone" type="tel" placeholder="(11) 99999-9999"></div>
     <div class="field"><label>Chave Pix</label><input id="ep-pix" placeholder="CPF, e-mail, telefone..."></div>
     <div style="background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:16px">
-      <p style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">⚠️ Não editáveis (identidade)</p>
+      <p style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Não editáveis (identidade)</p>
       <p style="color:var(--text2);font-size:13px" id="ep-cpf-email">-</p>
     </div>
     <div class="field"><label>Nova senha (deixe vazio para manter)</label><input id="ep-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
     <div class="field"><label>Confirmar nova senha</label><input id="ep-pass2" type="password" placeholder="Repita a nova senha"></div>
-    <button class="btn btn-primary" onclick="saveProfile()">💾 Salvar alterações</button>
+    <button class="btn btn-primary" onclick="saveProfile()">Salvar alterações</button>
   </div>
 </div>
 
@@ -676,12 +674,15 @@ input:checked+.slider:before{transform:translateX(18px)}
   </button>
 </nav>
 
+<!-- FLOATING AVATAR -->
+<div id="float-av" onclick="gnavTo('profile')" title="Meu perfil"></div>
+
 </div><!-- #app -->
 
 <!-- RESULT MODAL -->
 <div id="result-modal" class="modal-overlay" style="display:none">
   <div class="modal-box">
-    <div style="font-size:18px;font-weight:900;color:var(--text);text-align:center;margin-bottom:4px">🏆 Resultado Final</div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);text-align:center;margin-bottom:4px">Resultado Final</div>
     <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:4px">Informe o placar oficial do jogo</div>
     <input type="hidden" id="res-modal-bolao-id">
     <div class="modal-scores-row">
@@ -699,7 +700,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-ghost" style="flex:1" onclick="closeResultModal()">Cancelar</button>
-      <button class="btn btn-primary" style="flex:1" onclick="submitResult()">✅ Confirmar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitResult()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -729,6 +730,20 @@ const GAMES = [
 ];
 
 const USERS = [{name:'João Silva',email:'joao@email.com',phone:'(11) 99999-9999',pix:'joao@email.com',pass:'123456'}];
+
+// ===== PERSISTÊNCIA (localStorage) =====
+function loadPersistedData() {
+  try {
+    const u = localStorage.getItem('bolao_users');
+    if(u) { const arr=JSON.parse(u); USERS.length=0; arr.forEach(x=>USERS.push(x)); }
+    const b = localStorage.getItem('bolao_boloes');
+    if(b) state.boloes = JSON.parse(b);
+  } catch(e) {}
+}
+function saveUsers()   { try{localStorage.setItem('bolao_users',  JSON.stringify(USERS));}catch(e){} }
+function saveBoloes()  { try{localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes));}catch(e){} }
+function saveSession(u){ try{localStorage.setItem('bolao_session',JSON.stringify(u));}catch(e){} }
+function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){} }
 
 // ===== NAV =====
 function _navCore(screenId, push=true) {
@@ -787,6 +802,8 @@ function doLogin() {
   );
   if(!u) { showToast('❌ Dados incorretos'); return; }
   state.user = {...u};
+  if(document.getElementById('li-remember')?.checked) saveSession(state.user);
+  else clearSession();
   loginSuccess();
 }
 
@@ -848,7 +865,9 @@ function doRegister() {
   if(pass.length<6) { showToast('❌ Senha muito curta'); return; }
 
   USERS.push({name,email,phone,cpf,dob,pix,pass});
+  saveUsers();
   state.user = {name,email,phone,cpf,pix};
+  saveSession(state.user);
   loginSuccess();
 }
 
@@ -864,10 +883,12 @@ function loginSuccess() {
 
 function doLogout() {
   if(!confirm('Sair da conta?')) return;
+  clearSession();
   state.user = null;
   state.screenStack = ['s-login'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-login').classList.add('active');
+  updateGlobalNav('s-login');
 }
 
 // ===== TABS =====
@@ -1045,7 +1066,7 @@ function renderCreateStep() {
       </div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="createState.step=2;renderCreateStep()">← Voltar</button>
-        <button class="btn btn-primary" onclick="finishCreate()">Criar Bolão 🚀</button>
+        <button class="btn btn-primary" onclick="finishCreate()">Criar Bolão</button>
       </div>`;
   }
 }
@@ -1090,6 +1111,7 @@ function finishCreate() {
     createdAt: new Date().toISOString(),
   };
   state.boloes.unshift(bolao);
+  saveBoloes();
   state.currentBolaoId = bolao.id;
   openDetail(bolao.id);
   // Replace create screen in stack
@@ -1139,7 +1161,7 @@ function renderDetail() {
     ? buildResultCard(b, prize)
     : `<div class="prize-card">
         <div class="prize-main">
-          <div class="prize-lbl">💰 Prêmio Acumulado</div>
+          <div class="prize-lbl">Prêmio Acumulado</div>
           <div class="prize-val">R$${prize}</div>
           <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 10% do app descontado</div>
         </div>
@@ -1151,38 +1173,38 @@ function renderDetail() {
 
   // 3. INSERT RESULT BUTTON (creator, game closed, no result yet)
   const insertBtn = (isCreator && betClosed && !b.result)
-    ? `<button class="btn btn-primary" style="margin-bottom:12px" onclick="showResultModal('${b.id}')">🏆 Inserir resultado final</button>`
+    ? `<button class="btn btn-primary" style="margin-bottom:12px" onclick="showResultModal('${b.id}')">Inserir resultado final</button>`
     : '';
 
   // 4. INVITE CARD (only while open)
   const inviteCard = !betClosed && !b.result ? `
     <div class="invite-card">
-      <div class="invite-title">🔗 Código de Convite</div>
+      <div class="invite-title">Código de Convite</div>
       <div class="code-row">
         <span class="code-text">${b.code}</span>
-        <button class="copy-btn" onclick="copyCode('${b.code}')">📋 Copiar</button>
+        <button class="copy-btn" onclick="copyCode('${b.code}')">Copiar</button>
       </div>
-      <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">📤 Compartilhar convite</button>
+      <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">Compartilhar convite</button>
     </div>` : '';
 
   // 5. CREATOR EDIT/DELETE BUTTONS
   const creatorBtns = isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
-    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">✏️ Editar bolão</button>
-    <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">🗑️ Excluir</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">"Editar bolão</button>
+    <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">Excluir</button>
   </div>` : '';
 
   // 6. ACTION BOX (bet/pay — only while open)
   let actionBox = '';
   if(!betClosed && !b.result) {
     actionBox = `<div class="action-box">
-      ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">🏦 Pagar R$${b.amount} via Pix</button>` : ''}
+      ${me && !me.paid ? `<button class="btn btn-pix" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
       ${me ? (me.homeScore!=null
         ? `<div class="my-bet-box">
              <div class="my-bet-lbl">Meu palpite</div>
              <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
              <button class="my-bet-edit" onclick="openBet('${b.id}')">Alterar palpite</button>
            </div>`
-        : `<button class="btn btn-secondary" onclick="openBet('${b.id}')">⚽ Fazer meu palpite</button>`)
+        : `<button class="btn btn-secondary" onclick="openBet('${b.id}')">Fazer meu palpite</button>`)
       : `<button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>`}
     </div>`;
   } else if(me?.homeScore!=null) {
@@ -1208,8 +1230,8 @@ function renderDetail() {
           : `<div class="part-av-init">${p.name.charAt(0).toUpperCase()}</div>`;
         const payCtrl = isCreator
           ? p.paid
-            ? `<button class="rev-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">↩️ Reverter</button>`
-            : `<button class="conf-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">✅ Confirmar</button>`
+            ? `<button class="rev-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">Reverter</button>`
+            : `<button class="conf-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">Confirmar</button>`
           : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
         return `<div class="part-row">
           ${av}
@@ -1294,7 +1316,7 @@ function checkJoinCode(code) {
       ${b.hasPw?'<div class="chip">🔒 Com senha</div>':''}
     </div>
     ${b.hasPw?`<div class="field"><label>Senha do bolão</label><input id="join-pw" type="password" placeholder="Digite a senha"></div>`:''}
-    <button class="btn btn-primary" onclick="doJoin('${b.id}')">Entrar no bolão 🎯</button>
+    <button class="btn btn-primary" onclick="doJoin('${b.id}')">Entrar no bolão</button>
   </div>`;
 }
 
@@ -1363,7 +1385,7 @@ function renderBet() {
       </div>
     </div>
     <div class="tip-card">
-      <div class="tip-title">💡 Como funciona</div>
+      <div class="tip-title">Como funciona</div>
       <div class="tip-text">• Registre o palpite do placar final\n• Pague via Pix para confirmar\n• Quem acertar o placar exato divide o prêmio\n• Se ninguém acertar, ganha quem chegou mais perto</div>
     </div>
     <button class="btn btn-primary" onclick="confirmBet()">✅ Confirmar meu palpite</button>`;
@@ -1391,6 +1413,7 @@ function confirmBet() {
   }
   me.homeScore = s.home;
   me.awayScore = s.away;
+  saveBoloes();
   showToast('✅ Palpite registrado!');
   back();
   setTimeout(()=>renderDetail(), 300);
@@ -1409,7 +1432,7 @@ function openPix(id) {
     </div>
     <div class="pix-key">Chave Pix: bolao@copa2026.com.br</div>
     <div class="pix-info">Transfira exatamente <strong>R$${b.amount}</strong> para a chave Pix acima e depois toque em "Confirmar pagamento".<br><br>Em produção, o QR Code Pix real será gerado automaticamente.</div>
-    <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Confirmar pagamento</button>
+    <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">Confirmar pagamento</button>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   go('s-pix');
 }
@@ -1419,6 +1442,7 @@ function confirmPix() {
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
   if(me) me.paid = true;
+  saveBoloes();
   showToast('✅ Pagamento confirmado! Boa sorte!');
   back();
   setTimeout(()=>renderDetail(), 300);
@@ -1428,13 +1452,20 @@ function confirmPix() {
 function updateProfileUI() {
   const u = state.user;
   if(!u) return;
+  // Sync latest data from USERS array
+  const stored = USERS.find(x=>x.email===u.email);
+  if(stored) Object.assign(state.user, stored);
   // Update avatar (photo or initials)
   const wrap = document.getElementById('prof-avatar-wrap');
+  const photo = state.user.photo;
+  const initial = state.user.name.charAt(0).toUpperCase();
   if(wrap) {
-    wrap.innerHTML = u.photo
-      ? `<img class="av-img" src="${u.photo}" alt="foto">`
-      : `<div class="av-init" id="prof-avatar">${u.name.charAt(0).toUpperCase()}</div>`;
+    wrap.innerHTML = photo
+      ? `<img class="av-img" src="${photo}" alt="foto">`
+      : `<div class="av-init" id="prof-avatar">${initial}</div>`;
   }
+  // Update floating avatar + home badge
+  updateFloatingAvatar();
   document.getElementById('prof-name').textContent = u.name;
   document.getElementById('prof-email').textContent = u.email;
   document.getElementById('prof-phone').textContent = u.phone||'-';
@@ -1455,9 +1486,10 @@ function uploadPhoto(input) {
   const reader = new FileReader();
   reader.onload = (e) => {
     state.user.photo = e.target.result;
-    // Also update the user in USERS array
     const u = USERS.find(x=>x.email===state.user.email);
     if(u) u.photo = e.target.result;
+    saveUsers();
+    saveSession(state.user);
     updateProfileUI();
     showToast('✅ Foto atualizada!');
   };
@@ -1492,6 +1524,8 @@ function saveProfile() {
   if(pass) state.user.pass = pass;
   const u = USERS.find(x=>x.email===state.user.email);
   if(u) { u.name=name; u.phone=phone; u.pix=pix; if(pass) u.pass=pass; }
+  saveUsers();
+  saveSession(state.user);
   updateProfileUI();
   showToast('✅ Perfil atualizado!');
   back();
@@ -1528,8 +1562,9 @@ function confirmPayment(bolaoId, email) {
   const p = b?.participants.find(x=>x.email===email);
   if(!p) return;
   p.paid = !p.paid;
+  saveBoloes();
   renderDetail();
-  showToast(p.paid ? '✅ Pagamento confirmado!' : '↩️ Pagamento revertido');
+  showToast(p.paid ? '✅ Pagamento confirmado!' : 'Pagamento revertido');
 }
 
 // ===== RESULT MODAL =====
@@ -1560,9 +1595,10 @@ function submitResult() {
   if(!b) return;
   b.result = {home, away};
   b.status = 'finished';
+  saveBoloes();
   closeResultModal();
   renderDetail();
-  showToast('🏆 Resultado registrado! Classificação atualizada.');
+  showToast('Resultado registrado! Classificação atualizada.');
 }
 
 // ===== POINTS & RANKING =====
@@ -1621,7 +1657,7 @@ function buildRanking(b) {
     </div>`;
   }).join('');
   return `<div style="margin-bottom:16px">
-    <div class="section-title">🏅 Classificação Final</div>
+    <div class="section-title">Classificação Final</div>
     ${rows}
   </div>`;
 }
@@ -1640,16 +1676,18 @@ function editBolao(id) {
     if(m>=b.participants.length && m<=50) b.maxPart=m;
     else showToast('⚠️ Limite inválido ou menor que participantes atuais');
   }
-  showToast('✅ Bolão atualizado!');
+  saveBoloes();
+  showToast('Bolão atualizado!');
   renderDetail();
 }
 
 function deleteBolao(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
-  if(!confirm(`Excluir o bolão "${b.title}"?\n\nEsta ação não pode ser desfeita. Todos os participantes serão notificados.`)) return;
+  if(!confirm(`Excluir o bolão "${b.title}"?\n\nEsta ação não pode ser desfeita.`)) return;
   state.boloes = state.boloes.filter(x=>x.id!==id);
-  showToast('🗑️ Bolão excluído');
+  saveBoloes();
+  showToast('Bolão excluído');
   back();
   setTimeout(()=>renderHome(), 300);
 }
@@ -1695,11 +1733,51 @@ function hideOldTabs() {
   if(oldTabs) oldTabs.style.display='none';
 }
 
+// ===== AVATAR FLUTUANTE =====
+function updateFloatingAvatar() {
+  const el = document.getElementById('float-av');
+  const badge = document.getElementById('home-av-badge');
+  if(!state.user) { if(el) el.style.display='none'; return; }
+  const isAuth = AUTH_SCREENS.includes(state.screenStack[state.screenStack.length-1]||'s-login');
+  if(el) {
+    el.style.display = isAuth ? 'none' : 'block';
+    const u = USERS.find(x=>x.email===state.user.email)||state.user;
+    const photo = u.photo||state.user.photo;
+    const initial = (u.name||state.user.name||'?').charAt(0).toUpperCase();
+    el.innerHTML = photo
+      ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover">`
+      : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff">${initial}</div>`;
+  }
+  if(badge) {
+    const u2 = USERS.find(x=>x.email===state.user.email)||state.user;
+    const photo2 = u2.photo||state.user.photo;
+    const initial2 = (u2.name||'?').charAt(0).toUpperCase();
+    badge.innerHTML = photo2
+      ? `<img src="${photo2}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial2}</div>`;
+  }
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', ()=>{
-  // Esconde nav global nas telas de auth ao iniciar
-  updateGlobalNav('s-login');
+  loadPersistedData();
   hideOldTabs();
+  // Auto-login: se há sessão salva, logar direto sem mostrar login
+  try {
+    const saved = localStorage.getItem('bolao_session');
+    if(saved) {
+      const parsed = JSON.parse(saved);
+      const found = USERS.find(x=>x.email===parsed.email);
+      if(found) {
+        state.user = {...found};
+        loginSuccess();
+        return;
+      }
+      clearSession();
+    }
+  } catch(e) {}
+  updateGlobalNav('s-login');
+  updateFloatingAvatar();
 });
 </script>
 </body>
