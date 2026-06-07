@@ -917,6 +917,9 @@ function doRegister() {
 function loginSuccess() {
   updateProfileUI();
   renderHome();
+  if(window._liveInterval) clearInterval(window._liveInterval);
+  window._liveInterval = setInterval(renderLiveScores, 60000);
+  setTimeout(renderLiveScores, 300);
   // Clear stack and go home
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
@@ -1833,6 +1836,182 @@ function updateFloatingAvatar() {
       ? `<img src="${photo2}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial2}</div>`;
   }
+}
+
+// ===== FORGOT PASSWORD =====
+function doForgot() {
+  const id = document.getElementById('forgot-id').value.trim();
+  if(!id) { showToast('Digite seu e-mail ou CPF'); return; }
+  const isCPF = !id.includes('@');
+  const clean = id.replace(/\D/g,'');
+  const u = USERS.find(x => isCPF ? x.cpf?.replace(/\D/g,'')===clean : x.email===id.toLowerCase());
+  const el = document.getElementById('forgot-result');
+  if(!u) { el.innerHTML='<div style="color:var(--err);font-size:13px;text-align:center">Conta não encontrada</div>'; return; }
+  el.innerHTML = `
+    <div style="background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="color:var(--ok);font-weight:700;font-size:13px;margin-bottom:2px">Conta encontrada</div>
+      <div style="color:var(--text2);font-size:12px">${u.name} · ${u.email}</div>
+    </div>
+    <div class="field"><label>Nova senha</label><input type="password" id="new-pass" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar nova senha</label><input type="password" id="new-pass2" placeholder="Repita a senha"></div>
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="doResetPassword('${u.email}')">Redefinir senha</button>`;
+}
+
+function doResetPassword(email) {
+  const pass = document.getElementById('new-pass')?.value||'';
+  const pass2 = document.getElementById('new-pass2')?.value||'';
+  if(pass.length<6) { showToast('Senha muito curta'); return; }
+  if(pass!==pass2) { showToast('Senhas não conferem'); return; }
+  const u = USERS.find(x=>x.email===email);
+  if(u) { u.pass=pass; saveUsers(); }
+  showToast('Senha redefinida! Faça login.');
+  document.getElementById('forgot-result').innerHTML='';
+  back();
+}
+
+// ===== QR CODE =====
+function showQRCode(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b) return;
+  const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
+  document.getElementById('qr-modal-title').textContent = b.title;
+  const canvas = document.getElementById('qr-canvas');
+  canvas.innerHTML = '';
+  try {
+    new QRCode(canvas, {text:link, width:200, height:200, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H});
+  } catch(e) { canvas.innerHTML='<div style="color:#999;font-size:12px">QR Code indisponível</div>'; }
+  document.getElementById('qr-modal').style.display = 'flex';
+}
+
+// ===== BET HISTORY =====
+function renderBetHistory() {
+  const u = state.user;
+  const el = document.getElementById('bet-history');
+  if(!u||!el) return;
+  const mine = state.boloes.filter(b=>b.participants.find(p=>p.email===u.email));
+  if(mine.length===0) {
+    el.innerHTML='<div class="empty-box"><div class="empty-text">Você ainda não participou de nenhum bolão</div></div>';
+    return;
+  }
+  el.innerHTML = mine.map(b=>{
+    const me = b.participants.find(p=>p.email===u.email);
+    const pts = b.result ? calcPoints(me, b.result) : null;
+    const statusColor = pts===null?'var(--text3)':pts===3?'var(--ok)':pts===1?'var(--warn)':'var(--err)';
+    const statusTxt = pts===null?'Aguardando resultado':pts===3?'Acertou!':pts===1?'Resultado certo':'Errou';
+    return `<div class="history-row" onclick="openDetail('${b.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
+        <div style="font-size:11px;color:var(--text3)">${b.game.home.flag} ${b.game.home.code} × ${b.game.away.code} ${b.game.away.flag} · ${b.game.date}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${me?.homeScore!=null?`Palpite: ${me.homeScore} × ${me.awayScore}`:'Sem palpite'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;font-weight:700;color:${statusColor}">${statusTxt}</div>
+        <div style="font-size:10px;color:${me?.paid?'var(--ok)':'var(--warn)'};margin-top:2px">${me?.paid?'Pago':'Pendente'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== EXPORT RESULT =====
+function exportResult(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b||!b.result) return;
+  const W=800, H=560;
+  const cv = document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const c = cv.getContext('2d');
+  // Background
+  c.fillStyle='#0D1B2A'; c.fillRect(0,0,W,H);
+  // Header gradient
+  const g = c.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,'#006B3F'); g.addColorStop(1,'#00A651');
+  c.fillStyle=g; c.beginPath();
+  c.roundRect(30,30,W-60,90,14); c.fill();
+  // Header text
+  c.fillStyle='rgba(255,255,255,.6)'; c.font='bold 11px sans-serif'; c.textAlign='center';
+  c.fillText('RESULTADO OFICIAL', W/2, 60);
+  c.fillStyle='#fff'; c.font='bold 22px sans-serif';
+  c.fillText(b.title, W/2, 88);
+  // Score
+  const score = `${b.result.home}  ×  ${b.result.away}`;
+  c.font='bold 52px sans-serif'; c.fillStyle='#F4D03F';
+  c.fillText(score, W/2, 170);
+  c.font='16px sans-serif'; c.fillStyle='rgba(255,255,255,.65)';
+  c.fillText(`${b.game.home.name}  ×  ${b.game.away.name}`, W/2, 200);
+  // Ranking
+  const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result)})).sort((a,b)=>b.pts-a.pts);
+  ranked.slice(0,5).forEach((p,i)=>{
+    const y=240+i*58;
+    c.fillStyle=i===0?'rgba(255,215,0,.12)':'rgba(255,255,255,.04)';
+    c.beginPath(); c.roundRect(30,y,W-60,48,10); c.fill();
+    c.fillStyle='#fff'; c.font=`bold 18px sans-serif`; c.textAlign='left';
+    c.fillText(`${i+1}°  ${p.name}`, 60, y+29);
+    c.textAlign='right'; c.fillStyle=i===0?'#FFD700':'rgba(255,255,255,.6)';
+    c.fillText(`${p.pts}pts`, W-50, y+29);
+  });
+  // Footer
+  c.fillStyle='rgba(255,255,255,.3)'; c.font='12px sans-serif'; c.textAlign='center';
+  c.fillText('Bolão Copa · Copa do Mundo 2026', W/2, H-20);
+  cv.toBlob(blob=>{
+    if(navigator.share && navigator.canShare?.({files:[]})) {
+      navigator.share({title:`Resultado: ${b.title}`, files:[new File([blob],'resultado.png',{type:'image/png'})]}).catch(()=>{});
+    } else {
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download=`resultado-${b.title}.png`; a.click();
+    }
+    showToast('Imagem gerada!');
+  },'image/png');
+}
+
+// ===== CHAT =====
+function buildChat(b) {
+  const msgs = (b.messages||[]);
+  const rows = msgs.slice(-50).map(m=>{
+    const isMine = m.email===state.user?.email;
+    const ur = USERS.find(u=>u.email===m.email);
+    const photo = ur?.photo||m.photo;
+    const av = photo
+      ? `<img src="${photo}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+      : `<div class="chat-av">${m.name.charAt(0).toUpperCase()}</div>`;
+    const t = new Date(m.time);
+    const timeStr = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+    return `<div class="chat-msg" style="${isMine?'flex-direction:row-reverse':''}">
+      ${av}
+      <div class="chat-bubble${isMine?' mine':''}">
+        ${!isMine?`<div class="chat-name">${m.name}</div>`:''}
+        <div class="chat-text">${m.text.replace(/</g,'&lt;')}</div>
+        <div class="chat-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="chat-section">
+    <div class="section-title">Chat do Bolão</div>
+    <div id="chat-msgs-${b.id}" style="max-height:300px;overflow-y:auto;margin-bottom:8px">
+      ${rows||'<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Nenhuma mensagem ainda. Seja o primeiro!</div>'}
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input-${b.id}" placeholder="Escreva uma mensagem..." maxlength="200" onkeydown="if(event.key==='Enter')sendMessage('${b.id}')">
+      <button class="chat-send" onclick="sendMessage('${b.id}')">Enviar</button>
+    </div>
+  </div>`;
+}
+
+function sendMessage(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  const input = document.getElementById(`chat-input-${bolaoId}`);
+  if(!b||!input||!state.user) return;
+  const text = input.value.trim();
+  if(!text) return;
+  if(!b.messages) b.messages=[];
+  const ur = USERS.find(x=>x.email===state.user.email)||state.user;
+  b.messages.push({email:state.user.email, name:state.user.name, photo:ur.photo||state.user.photo, text, time:new Date().toISOString()});
+  input.value='';
+  saveBoloes();
+  renderDetail();
+  setTimeout(()=>{
+    const el=document.getElementById(`chat-msgs-${bolaoId}`);
+    if(el) el.scrollTop=el.scrollHeight;
+  },100);
 }
 
 // ===== INIT =====
