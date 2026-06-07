@@ -254,7 +254,8 @@ input:checked+.slider:before{transform:translateX(18px)}
 /* FLOATING AVATAR (top-right) */
 #float-av{position:fixed;top:14px;right:14px;z-index:998;cursor:pointer;width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.35);display:none}
 /* GLOBAL FIXED NAV */
-.global-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 20px;z-index:999}
+.global-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 20px;z-index:999;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.global-nav.nav-hidden{transform:translateX(-50%) translateY(100%)}
 .global-nav .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;padding:4px 0}
 .global-nav .tab.active{color:var(--primary)}
 .global-nav .tab svg{width:22px;height:22px}
@@ -841,6 +842,8 @@ function _navCore(screenId, push=true) {
 function go(screenId, push=true) {
   _navCore(screenId, push);
   updateGlobalNav(screenId);
+  document.getElementById('global-nav')?.classList.remove('nav-hidden');
+  _lastScrollY = 0;
 }
 
 function back() {
@@ -1950,6 +1953,21 @@ function updateFloatingAvatar() {
       : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial2}</div>`;
   }
 }
+
+// ===== SCROLL-TO-HIDE NAV =====
+let _lastScrollY = 0;
+document.addEventListener('scroll', e=>{
+  const el = e.target;
+  if(!el.classList?.contains('scroll')) return;
+  const nav = document.getElementById('global-nav');
+  if(!nav || nav.style.display==='none') return;
+  const y = el.scrollTop;
+  if(y <= 12) { nav.classList.remove('nav-hidden'); _lastScrollY=y; return; }
+  if(Math.abs(y - _lastScrollY) < 5) return;
+  if(y > _lastScrollY) nav.classList.add('nav-hidden');
+  else nav.classList.remove('nav-hidden');
+  _lastScrollY = y;
+}, true);
 
 // ===== SYSTEM MESSAGES =====
 function addSystemMessage(bolaoId, text) {
