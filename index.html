@@ -261,6 +261,10 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="field"><label>Nome completo</label><input id="rg-name" placeholder="Seu nome"></div>
     <div class="field"><label>E-mail</label><input id="rg-email" type="email" placeholder="seu@email.com"></div>
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
+    <div class="field"><label>CPF</label><input id="rg-cpf" placeholder="000.000.000-00" maxlength="14" oninput="fmtCPF(this)"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
+      <span style="font-size:12px">🔐</span><span style="color:var(--text3);font-size:11px">Usado apenas para verificação de identidade (18+)</span>
+    </div>
     <div class="field"><label>Data de Nascimento</label><input id="rg-dob" type="date" placeholder="dd/mm/aaaa" style="color-scheme:dark"></div>
     <div style="display:flex;align-items:center;gap:6px;margin:-8px 0 14px;padding:0 2px">
       <span style="font-size:12px">🔞</span><span style="color:var(--warn);font-size:11px">Apenas maiores de 18 anos podem participar</span>
@@ -470,7 +474,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="banner">
       <h3>🇧🇷 Brasil na Copa 2026</h3>
       <p>Crie seu bolão e aposte com os amigos!</p>
-      <button class="btn btn-secondary btn-sm" onclick="go('s-create')">➕ Criar Bolão</button>
+      <button class="btn btn-secondary btn-sm" onclick="go_create()">➕ Criar Bolão</button>
     </div>
     <div class="section-title">Meus Bolões</div>
     <div id="my-boloes-list"></div>
@@ -485,7 +489,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <button class="tab" onclick="showTab('join')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar
     </button>
-    <button class="tab create-tab" onclick="go('s-create')">
+    <button class="tab create-tab" onclick="go_create()">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar
     </button>
     <button class="tab" onclick="showTab('profile')">
@@ -633,10 +637,32 @@ function doLogin() {
   loginSuccess();
 }
 
+function fmtCPF(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  else if(v.length>6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  else if(v.length>3) v = v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+  input.value = v;
+}
+
+function validCPF(cpf) {
+  cpf = cpf.replace(/\D/g,'');
+  if(cpf.length!==11 || /^(\d)\1+$/.test(cpf)) return false;
+  let s=0;
+  for(let i=0;i<9;i++) s+=parseInt(cpf[i])*(10-i);
+  let r=11-(s%11); if(r>=10) r=0;
+  if(r!==parseInt(cpf[9])) return false;
+  s=0;
+  for(let i=0;i<10;i++) s+=parseInt(cpf[i])*(11-i);
+  r=11-(s%11); if(r>=10) r=0;
+  return r===parseInt(cpf[10]);
+}
+
 function doRegister() {
   const name = document.getElementById('rg-name').value.trim();
   const email = document.getElementById('rg-email').value.trim().toLowerCase();
   const phone = document.getElementById('rg-phone').value.trim();
+  const cpf = document.getElementById('rg-cpf').value.trim();
   const dob = document.getElementById('rg-dob').value;
   const pix = document.getElementById('rg-pix').value.trim();
   const pass = document.getElementById('rg-pass').value;
@@ -644,9 +670,10 @@ function doRegister() {
   const ageOk = document.getElementById('rg-age').checked;
   const termsOk = document.getElementById('rg-terms').checked;
 
-  if(!name||!email||!phone||!dob||!pix||!pass) { showToast('⚠️ Preencha todos os campos'); return; }
+  if(!name||!email||!phone||!cpf||!dob||!pix||!pass) { showToast('⚠️ Preencha todos os campos'); return; }
 
-  // Verifica se tem 18 anos
+  if(!validCPF(cpf)) { showToast('❌ CPF inválido. Verifique o número'); return; }
+
   const birth = new Date(dob);
   const today = new Date();
   const age = today.getFullYear() - birth.getFullYear() - (
@@ -659,8 +686,8 @@ function doRegister() {
   if(pass!==pass2) { showToast('❌ As senhas não conferem'); return; }
   if(pass.length<6) { showToast('❌ Senha muito curta'); return; }
 
-  USERS.push({name,email,phone,dob,pix,pass});
-  state.user = {name,email,phone,pix};
+  USERS.push({name,email,phone,cpf,dob,pix,pass});
+  state.user = {name,email,phone,cpf,pix};
   loginSuccess();
 }
 
@@ -740,7 +767,7 @@ function renderMyBoloes() {
 
 function renderGames() {
   document.getElementById('games-list').innerHTML = GAMES.slice(0,5).map(g=>`
-    <div class="match-card" onclick="go('s-create')">
+    <div class="match-card" onclick="go_create()">
       <div class="match-stage"><span>${g.stage}${g.group?` · ${g.group}`:''}</span><span>${g.date} · ${g.time}</span></div>
       <div class="match-row">
         <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div><div class="team-code">${g.home.code}</div></div>
@@ -1161,11 +1188,7 @@ function updateProfileUI() {
 }
 
 // ===== INIT =====
-document.querySelectorAll('.tab').forEach((t,i)=>{
-  if(i===2) t.addEventListener('click', ()=>{ go_create(); });
-});
-// Fix create tab
-document.querySelector('.create-tab').onclick = ()=>go_create();
+// nada extra — tabs já têm onclick inline corretamente
 </script>
 </body>
 </html>
