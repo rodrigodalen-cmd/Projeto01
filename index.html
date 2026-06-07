@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bolão Copa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -280,6 +281,19 @@ input:checked+.slider:before{transform:translateX(18px)}
 .div-line{flex:1;height:1px;background:var(--border)}
 .div-text{color:var(--text3);font-size:12px}
 .hint-text{color:var(--text3);font-size:11px;text-align:center;margin-top:24px}
+.btn-link{background:none;border:none;color:var(--primary-light);font-size:13px;cursor:pointer;text-decoration:underline}
+.history-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer}
+.chat-section{margin-top:16px}
+.chat-msg{display:flex;gap:8px;margin-bottom:12px}
+.chat-av{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+.chat-bubble{flex:1;background:var(--surface);border-radius:0 12px 12px 12px;padding:8px 12px;border:1px solid var(--border)}
+.chat-bubble.mine{background:rgba(0,107,63,.2);border-color:rgba(0,107,63,.3);border-radius:12px 0 12px 12px}
+.chat-name{font-size:10px;font-weight:700;color:var(--primary-light);margin-bottom:2px}
+.chat-text{font-size:13px;color:var(--text)}
+.chat-time{font-size:10px;color:var(--text3);margin-top:2px}
+.chat-input-row{display:flex;gap:8px;margin-top:8px}
+.chat-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:13px;outline:none}
+.chat-send{background:var(--primary);border:none;border-radius:12px;padding:10px 18px;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -305,6 +319,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <button class="btn btn-primary" style="margin-bottom:20px" onclick="doLogin()">Entrar</button>
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
     <button class="btn btn-outline" onclick="go('s-register')">Criar conta gratuita</button>
+    <p style="text-align:center;margin-top:12px"><button class="btn-link" onclick="go('s-forgot')">Esqueci minha senha</button></p>
     <p class="hint-text">Teste: joao@email.com / 123456</p>
   </div>
 </div>
@@ -345,6 +360,21 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
 
     <button class="btn btn-primary" onclick="doRegister()">Criar minha conta</button>
+  </div>
+</div>
+
+<!-- === FORGOT PASSWORD === -->
+<div class="screen" id="s-forgot">
+  <div class="auth-wrapper">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:38px;margin-bottom:8px">🔑</div>
+      <div style="font-size:20px;font-weight:900;color:var(--text)">Recuperar senha</div>
+      <div style="color:var(--text3);font-size:13px;margin-top:6px">Digite seu CPF ou e-mail cadastrado</div>
+    </div>
+    <div class="field"><label>E-mail ou CPF</label><input id="forgot-id" placeholder="seu@email.com ou 000.000.000-00" oninput="fmtLoginCPF(this)"></div>
+    <div id="forgot-result" style="margin-bottom:12px"></div>
+    <button class="btn btn-primary" onclick="doForgot()">Encontrar minha conta</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="back()">Voltar ao login</button>
   </div>
 </div>
 
@@ -531,7 +561,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
-    <div id="live-section" style="display:none">
+    <div id="live-section">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div class="section-title" style="margin-bottom:0">Placares ao Vivo</div>
         <div class="live-pill"><div class="live-dot"></div>AO VIVO</div>
@@ -605,6 +635,8 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="about-item">Máximo 50 participantes por bolão</div>
       <div class="about-item">Apenas para uso entre amigos</div>
     </div>
+    <div class="section-title" style="margin-top:20px">Histórico de apostas</div>
+    <div id="bet-history"></div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
 </div>
@@ -678,6 +710,17 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div id="float-av" onclick="gnavTo('profile')" title="Meu perfil"></div>
 
 </div><!-- #app -->
+
+<!-- QR CODE MODAL -->
+<div id="qr-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="text-align:center">
+    <div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:4px">QR Code de Convite</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px" id="qr-modal-title">—</div>
+    <div id="qr-canvas" style="display:flex;justify-content:center;align-items:center;background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;min-height:224px"></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Aponte a câmera para entrar direto no bolão</div>
+    <button class="btn btn-ghost" onclick="document.getElementById('qr-modal').style.display='none'">Fechar</button>
+  </div>
+</div>
 
 <!-- RESULT MODAL -->
 <div id="result-modal" class="modal-overlay" style="display:none">
@@ -874,6 +917,9 @@ function doRegister() {
 function loginSuccess() {
   updateProfileUI();
   renderHome();
+  if(window._liveInterval) clearInterval(window._liveInterval);
+  window._liveInterval = setInterval(renderLiveScores, 60000);
+  setTimeout(renderLiveScores, 300);
   // Clear stack and go home
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
@@ -966,28 +1012,51 @@ function fmtPrize(b) {
   return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
 }
 
-const LIVE_SCORES = []; // populated when games are live
-let liveInterval = null;
-
 function renderLiveScores() {
-  // Simulate live scores for demo - in production connect to API
-  const liveGames = GAMES.filter(g => g.status === 'live');
+  const now = new Date();
   const section = document.getElementById('live-section');
   if(!section) return;
-  if(liveGames.length === 0) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = 'block';
-  document.getElementById('live-list').innerHTML = liveGames.map(g=>`
-    <div class="live-card">
-      <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>AO VIVO</div></div>
-      <div class="match-row" style="margin-top:8px">
-        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
-        <div class="vs-block"><div class="live-score-big">${g.liveHome??0} - ${g.liveAway??0}</div><div class="live-min">⏱ ${g.liveMin??0}'</div></div>
-        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
+  // Find live games (within kickoff time + 110 minutes)
+  const liveGames = GAMES.filter(g=>{
+    const dt = gameDateTime(g);
+    const diff = now - dt;
+    return diff >= 0 && diff <= 110*60*1000;
+  });
+  // Find next upcoming game
+  const upcoming = GAMES.filter(g=>gameDateTime(g)>now).sort((a,b)=>gameDateTime(a)-gameDateTime(b));
+  if(liveGames.length===0 && upcoming.length===0) { section.style.display='none'; return; }
+  section.style.display='block';
+  if(liveGames.length>0) {
+    document.getElementById('live-list').innerHTML = liveGames.map(g=>{
+      const min = Math.floor((now-gameDateTime(g))/60000);
+      const lh = g.liveHome??Math.floor(Math.random()*3);
+      const la = g.liveAway??Math.floor(Math.random()*3);
+      return `<div class="live-card">
+        <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>${min}'</div></div>
+        <div class="match-row" style="margin-top:8px">
+          <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
+          <div class="vs-block"><div class="live-score-big">${lh} - ${la}</div></div>
+          <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+    if(liveGames.length===1) document.querySelector('#live-section .section-title').textContent='Ao Vivo';
+  } else {
+    // Show next upcoming game countdown
+    const next = upcoming[0];
+    const diff = gameDateTime(next)-now;
+    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000);
+    const countdown = d>0?`${d}d ${h}h`:`${h}h ${m}min`;
+    document.getElementById('live-list').innerHTML=`<div style="background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border)">
+      <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Próximo jogo</div>
+      <div class="match-row">
+        <div class="team-block"><div class="flag">${next.home.flag}</div><div class="team-name">${next.home.name}</div></div>
+        <div class="vs-block"><div style="font-size:11px;color:var(--secondary);font-weight:800;text-align:center">${next.date} · ${next.time}<br><span style="font-size:16px;color:var(--text)">em ${countdown}</span></div></div>
+        <div class="team-block right"><div class="flag">${next.away.flag}</div><div class="team-name">${next.away.name}</div></div>
       </div>
-    </div>`).join('');
+    </div>`;
+    document.querySelector('#live-section .section-title').textContent='Próximo Jogo';
+  }
 }
 
 // ===== CREATE BOLÃO =====
@@ -1185,11 +1254,12 @@ function renderDetail() {
         <button class="copy-btn" onclick="copyCode('${b.code}')">Copiar</button>
       </div>
       <button class="btn btn-outline" style="gap:6px" onclick="shareInvite('${b.id}')">Compartilhar convite</button>
+      <button class="btn btn-outline" style="gap:6px;margin-top:8px" onclick="showQRCode('${b.id}')">QR Code de convite</button>
     </div>` : '';
 
   // 5. CREATOR EDIT/DELETE BUTTONS
   const creatorBtns = isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
-    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">"Editar bolão</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">Editar bolão</button>
     <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">Excluir</button>
   </div>` : '';
 
@@ -1219,7 +1289,14 @@ function renderDetail() {
   // 7. RANKING (if result exists)
   const rankingSection = buildRanking(b);
 
-  // 8. PARTICIPANTS with confirm payment buttons
+  const exportBtn = b.result
+    ? `<button class="btn btn-outline" style="margin-bottom:12px" onclick="exportResult('${b.id}')">Exportar resultado</button>`
+    : '';
+
+  // 8. CHAT
+  const chatHTML = buildChat(b);
+
+  // 9. PARTICIPANTS with confirm payment buttons
   const participantsHTML = b.participants.length===0
     ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
     : b.participants.map(p => {
@@ -1255,12 +1332,14 @@ function renderDetail() {
     ${deadlineBadge}
     ${prizeSection}
     ${rankingSection}
+    ${exportBtn}
     ${insertBtn}
     ${inviteCard}
     ${creatorBtns}
     ${actionBox}
     <div class="section-title" style="margin-top:4px">Participantes (${b.participants.length}/${b.maxPart})</div>
-    ${participantsHTML}`;
+    ${participantsHTML}
+    ${chatHTML}`;
 }
 
 function copyCode(code) {
@@ -1477,6 +1556,7 @@ function updateProfileUI() {
   document.getElementById('prof-criados').innerHTML=`<div class="stat-val">${criados}</div><div class="stat-lbl">Criados</div>`;
   document.getElementById('prof-partic').innerHTML=`<div class="stat-val">${partic}</div><div class="stat-lbl">Particip.</div>`;
   document.getElementById('prof-total').innerHTML=`<div class="stat-val">R$${total}</div><div class="stat-lbl">Apostado</div>`;
+  renderBetHistory();
 }
 
 function uploadPhoto(input) {
@@ -1756,6 +1836,182 @@ function updateFloatingAvatar() {
       ? `<img src="${photo2}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial2}</div>`;
   }
+}
+
+// ===== FORGOT PASSWORD =====
+function doForgot() {
+  const id = document.getElementById('forgot-id').value.trim();
+  if(!id) { showToast('Digite seu e-mail ou CPF'); return; }
+  const isCPF = !id.includes('@');
+  const clean = id.replace(/\D/g,'');
+  const u = USERS.find(x => isCPF ? x.cpf?.replace(/\D/g,'')===clean : x.email===id.toLowerCase());
+  const el = document.getElementById('forgot-result');
+  if(!u) { el.innerHTML='<div style="color:var(--err);font-size:13px;text-align:center">Conta não encontrada</div>'; return; }
+  el.innerHTML = `
+    <div style="background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="color:var(--ok);font-weight:700;font-size:13px;margin-bottom:2px">Conta encontrada</div>
+      <div style="color:var(--text2);font-size:12px">${u.name} · ${u.email}</div>
+    </div>
+    <div class="field"><label>Nova senha</label><input type="password" id="new-pass" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar nova senha</label><input type="password" id="new-pass2" placeholder="Repita a senha"></div>
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="doResetPassword('${u.email}')">Redefinir senha</button>`;
+}
+
+function doResetPassword(email) {
+  const pass = document.getElementById('new-pass')?.value||'';
+  const pass2 = document.getElementById('new-pass2')?.value||'';
+  if(pass.length<6) { showToast('Senha muito curta'); return; }
+  if(pass!==pass2) { showToast('Senhas não conferem'); return; }
+  const u = USERS.find(x=>x.email===email);
+  if(u) { u.pass=pass; saveUsers(); }
+  showToast('Senha redefinida! Faça login.');
+  document.getElementById('forgot-result').innerHTML='';
+  back();
+}
+
+// ===== QR CODE =====
+function showQRCode(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b) return;
+  const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
+  document.getElementById('qr-modal-title').textContent = b.title;
+  const canvas = document.getElementById('qr-canvas');
+  canvas.innerHTML = '';
+  try {
+    new QRCode(canvas, {text:link, width:200, height:200, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H});
+  } catch(e) { canvas.innerHTML='<div style="color:#999;font-size:12px">QR Code indisponível</div>'; }
+  document.getElementById('qr-modal').style.display = 'flex';
+}
+
+// ===== BET HISTORY =====
+function renderBetHistory() {
+  const u = state.user;
+  const el = document.getElementById('bet-history');
+  if(!u||!el) return;
+  const mine = state.boloes.filter(b=>b.participants.find(p=>p.email===u.email));
+  if(mine.length===0) {
+    el.innerHTML='<div class="empty-box"><div class="empty-text">Você ainda não participou de nenhum bolão</div></div>';
+    return;
+  }
+  el.innerHTML = mine.map(b=>{
+    const me = b.participants.find(p=>p.email===u.email);
+    const pts = b.result ? calcPoints(me, b.result) : null;
+    const statusColor = pts===null?'var(--text3)':pts===3?'var(--ok)':pts===1?'var(--warn)':'var(--err)';
+    const statusTxt = pts===null?'Aguardando resultado':pts===3?'Acertou!':pts===1?'Resultado certo':'Errou';
+    return `<div class="history-row" onclick="openDetail('${b.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
+        <div style="font-size:11px;color:var(--text3)">${b.game.home.flag} ${b.game.home.code} × ${b.game.away.code} ${b.game.away.flag} · ${b.game.date}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${me?.homeScore!=null?`Palpite: ${me.homeScore} × ${me.awayScore}`:'Sem palpite'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;font-weight:700;color:${statusColor}">${statusTxt}</div>
+        <div style="font-size:10px;color:${me?.paid?'var(--ok)':'var(--warn)'};margin-top:2px">${me?.paid?'Pago':'Pendente'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== EXPORT RESULT =====
+function exportResult(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b||!b.result) return;
+  const W=800, H=560;
+  const cv = document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const c = cv.getContext('2d');
+  // Background
+  c.fillStyle='#0D1B2A'; c.fillRect(0,0,W,H);
+  // Header gradient
+  const g = c.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,'#006B3F'); g.addColorStop(1,'#00A651');
+  c.fillStyle=g; c.beginPath();
+  c.roundRect(30,30,W-60,90,14); c.fill();
+  // Header text
+  c.fillStyle='rgba(255,255,255,.6)'; c.font='bold 11px sans-serif'; c.textAlign='center';
+  c.fillText('RESULTADO OFICIAL', W/2, 60);
+  c.fillStyle='#fff'; c.font='bold 22px sans-serif';
+  c.fillText(b.title, W/2, 88);
+  // Score
+  const score = `${b.result.home}  ×  ${b.result.away}`;
+  c.font='bold 52px sans-serif'; c.fillStyle='#F4D03F';
+  c.fillText(score, W/2, 170);
+  c.font='16px sans-serif'; c.fillStyle='rgba(255,255,255,.65)';
+  c.fillText(`${b.game.home.name}  ×  ${b.game.away.name}`, W/2, 200);
+  // Ranking
+  const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result)})).sort((a,b)=>b.pts-a.pts);
+  ranked.slice(0,5).forEach((p,i)=>{
+    const y=240+i*58;
+    c.fillStyle=i===0?'rgba(255,215,0,.12)':'rgba(255,255,255,.04)';
+    c.beginPath(); c.roundRect(30,y,W-60,48,10); c.fill();
+    c.fillStyle='#fff'; c.font=`bold 18px sans-serif`; c.textAlign='left';
+    c.fillText(`${i+1}°  ${p.name}`, 60, y+29);
+    c.textAlign='right'; c.fillStyle=i===0?'#FFD700':'rgba(255,255,255,.6)';
+    c.fillText(`${p.pts}pts`, W-50, y+29);
+  });
+  // Footer
+  c.fillStyle='rgba(255,255,255,.3)'; c.font='12px sans-serif'; c.textAlign='center';
+  c.fillText('Bolão Copa · Copa do Mundo 2026', W/2, H-20);
+  cv.toBlob(blob=>{
+    if(navigator.share && navigator.canShare?.({files:[]})) {
+      navigator.share({title:`Resultado: ${b.title}`, files:[new File([blob],'resultado.png',{type:'image/png'})]}).catch(()=>{});
+    } else {
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download=`resultado-${b.title}.png`; a.click();
+    }
+    showToast('Imagem gerada!');
+  },'image/png');
+}
+
+// ===== CHAT =====
+function buildChat(b) {
+  const msgs = (b.messages||[]);
+  const rows = msgs.slice(-50).map(m=>{
+    const isMine = m.email===state.user?.email;
+    const ur = USERS.find(u=>u.email===m.email);
+    const photo = ur?.photo||m.photo;
+    const av = photo
+      ? `<img src="${photo}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+      : `<div class="chat-av">${m.name.charAt(0).toUpperCase()}</div>`;
+    const t = new Date(m.time);
+    const timeStr = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+    return `<div class="chat-msg" style="${isMine?'flex-direction:row-reverse':''}">
+      ${av}
+      <div class="chat-bubble${isMine?' mine':''}">
+        ${!isMine?`<div class="chat-name">${m.name}</div>`:''}
+        <div class="chat-text">${m.text.replace(/</g,'&lt;')}</div>
+        <div class="chat-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="chat-section">
+    <div class="section-title">Chat do Bolão</div>
+    <div id="chat-msgs-${b.id}" style="max-height:300px;overflow-y:auto;margin-bottom:8px">
+      ${rows||'<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Nenhuma mensagem ainda. Seja o primeiro!</div>'}
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input-${b.id}" placeholder="Escreva uma mensagem..." maxlength="200" onkeydown="if(event.key==='Enter')sendMessage('${b.id}')">
+      <button class="chat-send" onclick="sendMessage('${b.id}')">Enviar</button>
+    </div>
+  </div>`;
+}
+
+function sendMessage(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  const input = document.getElementById(`chat-input-${bolaoId}`);
+  if(!b||!input||!state.user) return;
+  const text = input.value.trim();
+  if(!text) return;
+  if(!b.messages) b.messages=[];
+  const ur = USERS.find(x=>x.email===state.user.email)||state.user;
+  b.messages.push({email:state.user.email, name:state.user.name, photo:ur.photo||state.user.photo, text, time:new Date().toISOString()});
+  input.value='';
+  saveBoloes();
+  renderDetail();
+  setTimeout(()=>{
+    const el=document.getElementById(`chat-msgs-${bolaoId}`);
+    if(el) el.scrollTop=el.scrollHeight;
+  },100);
 }
 
 // ===== INIT =====
