@@ -361,8 +361,8 @@ input:checked+.slider:before{transform:translateX(18px)}
       <span class="auth-appname">Bolão Copa</span>
       <span class="auth-tagline">Aposte com os amigos. Ganhe junto.</span>
     </div>
-    <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" value="joao@email.com" oninput="fmtLoginCPF(this)"></div>
-    <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" value="123456"></div>
+    <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" oninput="fmtLoginCPF(this)"></div>
+    <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••"></div>
     <label style="display:flex;align-items:center;gap:8px;margin:4px 0 16px;cursor:pointer">
       <input type="checkbox" id="li-remember" style="width:16px;height:16px;accent-color:var(--primary)" checked>
       <span style="color:var(--text2);font-size:13px">Permanecer logado</span>
@@ -371,7 +371,6 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
     <button class="btn btn-outline" onclick="goRegister()">Criar conta gratuita</button>
     <p style="text-align:center;margin-top:12px"><button class="btn-link" onclick="go('s-forgot')">Esqueci minha senha</button></p>
-    <p class="hint-text">Teste: joao@email.com / 123456</p>
   </div>
 </div>
 
@@ -941,7 +940,7 @@ const GAMES = [
   {id:'7',home:{name:'Brasil',code:'BRA',flag:'🇧🇷'},away:{name:'Argentina',code:'ARG',flag:'🇦🇷'},date:'01 Jul',time:'20:00',stage:'Oitavas de Final',venue:'MetLife Stadium, Nova York'},
 ];
 
-const USERS = [{name:'João Silva',email:'joao@email.com',phone:'(11) 99999-9999',pix:'joao@email.com',pass:'123456'}];
+const USERS = [];
 
 // ===== PERSISTÊNCIA (localStorage) =====
 function loadPersistedData() {
