@@ -29,7 +29,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .screen{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;transform:translateX(100%);transition:transform .3s ease;z-index:1}
 .screen.active{transform:translateX(0);z-index:2}
 .screen.prev{transform:translateX(-30%)}
-.scroll{overflow-y:auto;flex:1;padding:20px;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+.scroll{overflow-y:auto;flex:1;padding:20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:16px 20px 0;position:sticky;top:0;background:var(--bg);z-index:10}
 .topbar-title{flex:1;font-size:17px;font-weight:800}
@@ -181,7 +181,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 .not-found{text-align:center;margin-top:28px}
 .not-found .nf-icon{font-size:40px;margin-bottom:8px}
 /* TOAST */
-.toast{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#1a2a3a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;border:1px solid var(--primary);white-space:nowrap}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#1a2a3a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;border:1px solid var(--primary);white-space:nowrap}
 .toast.show{opacity:1}
 /* MY BET BOX */
 .my-bet-box{background:rgba(0,107,63,.1);border:1px solid rgba(0,107,63,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px}
@@ -253,16 +253,28 @@ input:checked+.slider:before{transform:translateX(18px)}
 .modal-score-col{display:flex;flex-direction:column;align-items:center;gap:6px}
 .modal-input{width:72px;height:72px;font-size:32px;font-weight:900;text-align:center;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);outline:none}
 .modal-input:focus{border-color:var(--primary)}
-/* FLOATING AVATAR (top-right) */
-#float-av{position:fixed;top:14px;right:14px;z-index:998;cursor:pointer;width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.35);display:none}
-/* GLOBAL FIXED NAV */
-.global-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px));z-index:999;transition:transform .28s cubic-bezier(.4,0,.2,1)}
-.global-nav.nav-hidden{transform:translateX(-50%) translateY(100%)}
-.global-nav .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:600;cursor:pointer;padding:3px 0}
-.global-nav .tab.active{color:var(--primary)}
-.global-nav .tab svg{width:20px;height:20px}
-.global-nav .tab.create-tab svg{width:28px;height:28px;color:var(--secondary)}
-.global-nav .tab.create-tab{color:var(--secondary)}
+/* HAMBURGER MENU BUTTON */
+.menu-btn{position:fixed;top:12px;left:12px;z-index:998;width:42px;height:42px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.menu-btn.visible{display:flex}
+/* DRAWER OVERLAY */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1500;opacity:0;pointer-events:none;transition:opacity .28s}
+.drawer-overlay.open{opacity:1;pointer-events:auto}
+/* LEFT DRAWER */
+.left-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:var(--surface);z-index:1501;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.left-drawer.open{transform:translateX(0)}
+.drawer-user{padding:24px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.drawer-av{width:48px;height:48px;border-radius:24px;border:2px solid var(--primary);overflow:hidden;flex-shrink:0}
+.drawer-uname{font-size:15px;font-weight:800;color:var(--text)}
+.drawer-email{font-size:11px;color:var(--text3);margin-top:2px;word-break:break-all}
+.drawer-nav{flex:1;padding:12px 0;overflow-y:auto}
+.drawer-item{display:flex;align-items:center;gap:14px;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .15s}
+.drawer-item:active,.drawer-item.active{background:var(--surface2);color:var(--text)}
+.drawer-item svg{width:22px;height:22px;flex-shrink:0}
+.drawer-item.create-item{color:var(--secondary)}
+.drawer-item.create-item.active{background:rgba(244,208,63,.08)}
+.drawer-footer{padding:12px 0;border-top:1px solid var(--border)}
+.drawer-item.danger{color:var(--err)}
+.drawer-item.danger:active{background:rgba(231,76,60,.1)}
 /* TERMS */
 .terms-section{margin-top:20px}
 .terms-title{color:var(--secondary);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -759,24 +771,43 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="pix-screen-content" id="pix-content"></div>
 </div>
 
-<!-- BARRA DE NAVEGAÇÃO GLOBAL FIXA -->
-<nav class="global-nav" id="global-nav">
-  <button class="tab active" id="gnav-home" onclick="gnavTo('home')">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
-  </button>
-  <button class="tab" id="gnav-join" onclick="gnavTo('join')">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar
-  </button>
-  <button class="tab create-tab" id="gnav-create" onclick="go_create()">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar
-  </button>
-  <button class="tab" id="gnav-profile" onclick="gnavTo('profile')">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Perfil
-  </button>
-</nav>
+<!-- HAMBURGER MENU BUTTON -->
+<button class="menu-btn" id="menu-btn" onclick="openDrawer()">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+</button>
 
-<!-- FLOATING AVATAR -->
-<div id="float-av" onclick="gnavTo('profile')" title="Meu perfil"></div>
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- LEFT DRAWER -->
+<div class="left-drawer" id="left-drawer">
+  <div class="drawer-user">
+    <div class="drawer-av" id="drawer-av"></div>
+    <div style="min-width:0">
+      <div class="drawer-uname" id="drawer-uname">—</div>
+      <div class="drawer-email" id="drawer-email-lbl"></div>
+    </div>
+  </div>
+  <div class="drawer-nav">
+    <button class="drawer-item active" id="di-home" onclick="drawerGo('home')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
+    </button>
+    <button class="drawer-item" id="di-join" onclick="drawerGo('join')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar bolão
+    </button>
+    <button class="drawer-item create-item" id="di-create" onclick="drawerGo('create')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar bolão
+    </button>
+    <button class="drawer-item" id="di-profile" onclick="drawerGo('profile')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Meu perfil
+    </button>
+  </div>
+  <div class="drawer-footer">
+    <button class="drawer-item danger" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Sair da conta
+    </button>
+  </div>
+</div>
 
 <!-- CONFETTI -->
 <canvas id="confetti-canvas"></canvas>
@@ -974,8 +1005,6 @@ function _navCore(screenId, push=true) {
 function go(screenId, push=true) {
   _navCore(screenId, push);
   updateGlobalNav(screenId);
-  document.getElementById('global-nav')?.classList.remove('nav-hidden');
-  _lastScrollY = 0;
 }
 
 function back() {
@@ -1142,15 +1171,17 @@ function doLogout() {
 }
 async function confirmLogout() {
   document.getElementById('logout-modal').style.display = 'none';
-  if(_sb) await _sb.auth.signOut();
+  closeDrawer();
   clearSession();
   state.user = null;
+  state.boloes = [];
   if(window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
   state.screenStack = ['s-login'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-login').classList.add('active');
   updateGlobalNav('s-login');
   updateFloatingAvatar();
+  if(_sb) _sb.auth.signOut().catch(()=>{});
 }
 function cancelLogout() {
   document.getElementById('logout-modal').style.display = 'none';
@@ -1612,11 +1643,7 @@ function renderDetail() {
         const av = photo
           ? `<img class="part-av-img" src="${photo}" alt="${p.name}">`
           : `<div class="part-av-init">${p.name.charAt(0).toUpperCase()}</div>`;
-        const payCtrl = isCreator
-          ? p.paid
-            ? `<button class="rev-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">Reverter</button>`
-            : `<button class="conf-pay-btn" onclick="confirmPayment('${b.id}','${p.email}')">Confirmar</button>`
-          : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
+        const payCtrl = `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
         return `<div class="part-row">
           ${av}
           <div style="flex:1;min-width:0">
@@ -2222,20 +2249,32 @@ function checkDeepLink() {
 const AUTH_SCREENS = ['s-login','s-register','s-terms'];
 
 function updateGlobalNav(screenId) {
-  const nav = document.getElementById('global-nav');
-  if(!nav) return;
-  nav.style.display = AUTH_SCREENS.includes(screenId) ? 'none' : 'flex';
-  // Atualiza tab ativa
-  document.querySelectorAll('#global-nav .tab').forEach(t=>t.classList.remove('active'));
-  if(screenId==='s-home') document.getElementById('gnav-home')?.classList.add('active');
-  else if(screenId==='s-join') document.getElementById('gnav-join')?.classList.add('active');
-  else if(screenId==='s-create') document.getElementById('gnav-create')?.classList.add('active');
-  else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('gnav-profile')?.classList.add('active');
+  const btn = document.getElementById('menu-btn');
+  const isAuth = AUTH_SCREENS.includes(screenId);
+  if(btn) btn.classList.toggle('visible', !isAuth && !!state.user);
+  document.querySelectorAll('.drawer-item').forEach(t=>t.classList.remove('active'));
+  if(screenId==='s-home') document.getElementById('di-home')?.classList.add('active');
+  else if(screenId==='s-join') document.getElementById('di-join')?.classList.add('active');
+  else if(screenId==='s-create') document.getElementById('di-create')?.classList.add('active');
+  else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
 }
 
-function gnavTo(tab) {
+function gnavTo(tab) { drawerGo(tab); }
+
+// ===== LEFT DRAWER =====
+function openDrawer() {
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('left-drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('left-drawer').classList.remove('open');
+}
+function drawerGo(tab) {
+  closeDrawer();
   if(tab==='home') { renderHome(); go('s-home'); }
   else if(tab==='join') { go('s-join'); }
+  else if(tab==='create') { go_create(); }
   else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
 }
 
@@ -2245,45 +2284,27 @@ function hideOldTabs() {
   if(oldTabs) oldTabs.style.display='none';
 }
 
-// ===== AVATAR FLUTUANTE =====
+// ===== AVATAR / DRAWER USER =====
 function updateFloatingAvatar() {
-  const el = document.getElementById('float-av');
+  if(!state.user) return;
+  const u = USERS.find(x=>x.email===state.user.email)||state.user;
+  const photo = u.photo||state.user.photo;
+  const initial = (u.name||state.user.name||'?').charAt(0).toUpperCase();
+  const avEl = document.getElementById('drawer-av');
+  if(avEl) avEl.innerHTML = photo
+    ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover">`
+    : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff">${initial}</div>`;
+  const nameEl = document.getElementById('drawer-uname');
+  if(nameEl) nameEl.textContent = u.name||state.user.name||'Usuário';
+  const emailEl = document.getElementById('drawer-email-lbl');
+  if(emailEl) emailEl.textContent = state.user.email||'';
   const badge = document.getElementById('home-av-badge');
-  if(!state.user) { if(el) el.style.display='none'; return; }
-  const isAuth = AUTH_SCREENS.includes(state.screenStack[state.screenStack.length-1]||'s-login');
-  if(el) {
-    el.style.display = isAuth ? 'none' : 'block';
-    const u = USERS.find(x=>x.email===state.user.email)||state.user;
-    const photo = u.photo||state.user.photo;
-    const initial = (u.name||state.user.name||'?').charAt(0).toUpperCase();
-    el.innerHTML = photo
-      ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover">`
-      : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff">${initial}</div>`;
-  }
   if(badge) {
-    const u2 = USERS.find(x=>x.email===state.user.email)||state.user;
-    const photo2 = u2.photo||state.user.photo;
-    const initial2 = (u2.name||'?').charAt(0).toUpperCase();
-    badge.innerHTML = photo2
-      ? `<img src="${photo2}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-      : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial2}</div>`;
+    badge.innerHTML = photo
+      ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial}</div>`;
   }
 }
-
-// ===== SCROLL-TO-HIDE NAV =====
-let _lastScrollY = 0;
-document.addEventListener('scroll', e=>{
-  const el = e.target;
-  if(!el.classList?.contains('scroll')) return;
-  const nav = document.getElementById('global-nav');
-  if(!nav || nav.style.display==='none') return;
-  const y = el.scrollTop;
-  if(y <= 12) { nav.classList.remove('nav-hidden'); _lastScrollY=y; return; }
-  if(Math.abs(y - _lastScrollY) < 5) return;
-  if(y > _lastScrollY) nav.classList.add('nav-hidden');
-  else nav.classList.remove('nav-hidden');
-  _lastScrollY = y;
-}, true);
 
 // ===== SYSTEM MESSAGES =====
 function addSystemMessage(bolaoId, text) {
