@@ -339,7 +339,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     </label>
     <button class="btn btn-primary" style="margin-bottom:20px" onclick="doLogin()">Entrar</button>
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
-    <button class="btn btn-outline" onclick="go('s-register')">Criar conta gratuita</button>
+    <button class="btn btn-outline" onclick="goRegister()">Criar conta gratuita</button>
     <p style="text-align:center;margin-top:12px"><button class="btn-link" onclick="go('s-forgot')">Esqueci minha senha</button></p>
     <p class="hint-text">Teste: joao@email.com / 123456</p>
   </div>
@@ -970,13 +970,26 @@ function loginSuccess() {
 }
 
 function doLogout() {
-  if(!confirm('Sair da conta?')) return;
+  document.getElementById('logout-modal').style.display = 'flex';
+}
+function confirmLogout() {
+  document.getElementById('logout-modal').style.display = 'none';
   clearSession();
   state.user = null;
+  if(window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
   state.screenStack = ['s-login'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-login').classList.add('active');
   updateGlobalNav('s-login');
+  updateFloatingAvatar();
+}
+function cancelLogout() {
+  document.getElementById('logout-modal').style.display = 'none';
+}
+function goRegister() {
+  clearSession();
+  state.user = null;
+  go('s-register');
 }
 
 // ===== TABS =====
@@ -2199,6 +2212,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
 </script>
+
+<!-- LOGOUT MODAL -->
+<div class="edit-bolao-modal" id="logout-modal" onclick="if(event.target===this)cancelLogout()">
+  <div class="edit-bolao-sheet">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px">Sair da conta?</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:24px">Você precisará fazer login novamente para acessar seus bolões.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="cancelLogout()">Cancelar</button>
+      <button class="btn" style="background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3);font-weight:700" onclick="confirmLogout()">Sair da conta</button>
+    </div>
+  </div>
+</div>
 
 <!-- EDIT BOLÃO MODAL -->
 <div class="edit-bolao-modal" id="edit-bolao-modal" onclick="if(event.target===this)closeEditBolao()">
