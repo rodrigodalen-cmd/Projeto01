@@ -1525,7 +1525,7 @@ function renderLiveScores() {
         </div>
       </div>`;
     }).join('');
-    if(liveGames.length===1) document.querySelector('#live-section .section-title').textContent='Ao Vivo';
+    document.querySelector('#live-section .section-title').textContent=liveGames.length>1?`Ao Vivo (${liveGames.length})`:'Ao Vivo';
   } else {
     // Show next upcoming game countdown
     const next = upcoming[0];
@@ -1575,6 +1575,8 @@ function renderCreateGamesCarousel() {
       </div>
       <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px">🕐 ${g.time} BRT</div>
     </div>`).join('');
+  const sel = carousel.querySelector('.snap-card.selected');
+  if(sel) sel.scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});
 }
 
 function selectCreateGame(el, gameId) {
@@ -1590,7 +1592,7 @@ function selectCreateGame(el, gameId) {
 }
 
 function go_create() {
-  createState = {step:1,title:'',game:null,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1};
+  createState = {step:1,title:'',game:null,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false};
   _createGroupFilter = 'all';
   renderCreateStep();
   go('s-create');
@@ -1641,7 +1643,7 @@ function renderCreateStep() {
           <input id="c-custom-amount" type="number" min="5" max="10000" placeholder="Ex: 30"
             value="${s._customAmt&&![20,50,100,200,500,1000].includes(s.amount)?s.amount:''}"
             style="padding-left:36px"
-            oninput="createState.amount=Math.max(1,parseInt(this.value)||1);const pv=document.querySelector('.prize-preview-val');if(pv)pv.textContent='R$'+Math.floor(createState.amount*10*.9)">
+            oninput="const _v=parseInt(this.value);createState.amount=isNaN(_v)?1:Math.max(1,_v);const pv=document.querySelector('.prize-preview-val');if(pv)pv.textContent='R$'+Math.floor(createState.amount*10*.9)">
         </div>
       </div>`:``}
       <div class="prize-preview">
@@ -1982,6 +1984,7 @@ function copyCode(code) {
 
 function shareInvite(id) {
   const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
   const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
   const msg = `🏆 Entre no meu bolão "${b.title}"!\n\n🔗 Clique para entrar:\n${link}\n\nOu abra o Bolão Copa e use o código: *${b.code}*\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n💰 Valor: R$${b.amount} por pessoa`;
   if(navigator.share) navigator.share({title:'Bolão Copa',text:msg,url:link});
@@ -1992,7 +1995,7 @@ function shareWhatsApp(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
   const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
-  const msg = `🏆 *${esc(b.title)}* — Bolão Copa 2026!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
+  const msg = `🏆 *${b.title}* — Bolão Copa 2026!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -2069,7 +2072,7 @@ function confirmInlineBet(bolaoId) {
 function editBet(bolaoId) {
   const b = state.boloes.find(x=>x.id===bolaoId);
   const me = b?.participants.find(p=>p.email===state.user?.email);
-  if(me?.homeScore != null) state.betScores = {home: me.homeScore, away: me.awayScore};
+  state.betScores = {home: me?.homeScore ?? 0, away: me?.awayScore ?? 0};
   state.editingBet[bolaoId] = true;
   renderDetail();
 }
@@ -2227,7 +2230,10 @@ function requestNotificationPermission() {
   setTimeout(() => Notification.requestPermission(), 4000);
 }
 
+let _notifTimeouts = [];
 function scheduleGameNotifications() {
+  _notifTimeouts.forEach(t=>clearTimeout(t));
+  _notifTimeouts = [];
   if(!('Notification' in window) || Notification.permission !== 'granted' || !state.user) return;
   const now = new Date();
   state.boloes.forEach(b => {
@@ -2237,7 +2243,7 @@ function scheduleGameNotifications() {
     if(msToKickoff <= 0 || msToKickoff > 48 * 3600000) return;
     const msTo1h = msToKickoff - 3600000;
     if(msTo1h > 0) {
-      setTimeout(() => {
+      _notifTimeouts.push(setTimeout(() => {
         const me = state.boloes.find(x=>x.id===b.id)?.participants.find(p=>p.email===state.user?.email);
         if(me?.homeScore == null) {
           new Notification('⚽ Bolão Copa — faltam 1h!', {
@@ -2246,12 +2252,11 @@ function scheduleGameNotifications() {
             tag: `bet-1h-${b.id}`
           });
         }
-      }, msTo1h);
+      }, msTo1h));
     }
-    // 15 min reminder
     const msTo15 = msToKickoff - 15 * 60000;
     if(msTo15 > 0) {
-      setTimeout(() => {
+      _notifTimeouts.push(setTimeout(() => {
         const me = state.boloes.find(x=>x.id===b.id)?.participants.find(p=>p.email===state.user?.email);
         if(me?.homeScore == null) {
           new Notification('⏰ Último aviso — 15 minutos!', {
@@ -2260,7 +2265,7 @@ function scheduleGameNotifications() {
             tag: `bet-15m-${b.id}`
           });
         }
-      }, msTo15);
+      }, msTo15));
     }
   });
 }
@@ -2269,6 +2274,7 @@ function scheduleGameNotifications() {
 function openPix(id) {
   state.pixBolaoId = id;
   const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
   const creator = USERS.find(x=>x.email===b.creatorId);
   const pixKey = b.creatorPixKey || creator?.pix || '';
   document.getElementById('pix-content').innerHTML=`
@@ -2294,7 +2300,8 @@ function confirmPix() {
   const b = state.boloes.find(x=>x.id===state.pixBolaoId);
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
-  if(me) me.paid = true;
+  if(!me) { showToast('⚠️ Participe do bolão antes de confirmar o pagamento'); return; }
+  me.paid = true;
   addSystemMessage(b.id, `💸 ${state.user.name} confirmou o pagamento · R$${b.amount}`);
   saveBoloes(b);
   showToast('✅ Pagamento confirmado! Boa sorte!');
@@ -2388,7 +2395,7 @@ function openEditProfile() {
   const wrap = document.getElementById('edit-avatar-wrap');
   wrap.innerHTML = u.photo
     ? `<img class="av-img" src="${u.photo}" alt="foto">`
-    : `<div class="av-init">${u.name.charAt(0).toUpperCase()}</div>`;
+    : `<div class="av-init">${u.name?.charAt(0)?.toUpperCase() || '?'}</div>`;
   go('s-edit-profile');
 }
 
@@ -2664,6 +2671,7 @@ async function fetchTabelaScores() {
       };
     });
     // Auto-apply finished results to bolões that don't have one yet
+    let _anyAutoResult = false;
     state.boloes.forEach(b => {
       if(b.result || !b.game?.id) return;
       const sc = _ls[b.game.id];
@@ -2672,11 +2680,13 @@ async function fetchTabelaScores() {
       b.status = 'finished';
       const g = GAMES.find(x=>x.id===b.game.id);
       if(g) addSystemMessage(b.id, `🤖 Resultado automático via ESPN: ${g.home.flag} ${sc.h} × ${sc.a} ${g.away.flag}`);
-      saveBoloes(b);
+      _anyAutoResult = true;
     });
-    renderTabela();
+    if(_anyAutoResult) saveBoloes();
+    const _curScreen = state.screenStack[state.screenStack.length-1];
+    if(_curScreen === 's-tabela') renderTabela();
     renderLiveScores();
-    if(state.currentBolaoId) renderDetail();
+    if(state.currentBolaoId && _curScreen === 's-detail') renderDetail();
   } catch(e) {}
 }
 
@@ -2765,7 +2775,7 @@ function renderTabela() {
 function go_create_from_game(gameId) {
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
-  createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1};
+  createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false};
   _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
   renderCreateStep();
   go('s-create');
