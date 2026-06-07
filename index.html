@@ -1310,8 +1310,8 @@ async function loginSuccess() {
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
-  window._liveInterval = setInterval(renderLiveScores, 60000);
-  setTimeout(renderLiveScores, 300);
+  window._liveInterval = setInterval(()=>{ fetchTabelaScores(); renderLiveScores(); }, 60000);
+  setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
   // Clear stack and go home
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
@@ -1391,7 +1391,7 @@ function renderMyBoloes() {
     return `<div class="card" onclick="openDetail('${b.id}')" style="cursor:pointer">
       <div class="bolao-header">
         <div>
-          <span class="bolao-title">${b.title}</span>
+          <span class="bolao-title">${esc(b.title)}</span>
           ${isCreator?'<span class="badge badge-green" style="margin-left:6px;font-size:9px">Criador</span>':''}
         </div>
         <span class="badge ${b.status==='open'?'badge-green':b.status==='closed'?'badge-yellow':'badge-red'}">${b.status==='open'?'Aberto':'Finalizado'}</span>
@@ -1426,6 +1426,10 @@ function renderGames() {
     </div>`).join('');
 }
 
+function esc(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function fmtPrize(b) {
   return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
 }
@@ -1447,8 +1451,9 @@ function renderLiveScores() {
   if(liveGames.length>0) {
     document.getElementById('live-list').innerHTML = liveGames.map(g=>{
       const min = Math.floor((now-gameDateTime(g))/60000);
-      const lh = g.liveHome??Math.floor(Math.random()*3);
-      const la = g.liveAway??Math.floor(Math.random()*3);
+      const sc = _ls[g.id];
+      const lh = sc?.h ?? '-';
+      const la = sc?.a ?? '-';
       return `<div class="live-card">
         <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>${min}'</div></div>
         <div class="match-row" style="margin-top:8px">
@@ -1713,8 +1718,8 @@ function renderDetail() {
   const pixCard = (!isCreator && me && !me.paid && !betClosed && !b.result && creatorPix)
     ? `<div class="pix-creator-card">
          <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pagamento via Pix</div>
-         <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Pague para: <strong style="color:var(--text)">${b.creatorName}</strong></div>
-         <div style="font-size:15px;color:var(--pix);font-weight:700;margin-bottom:6px;word-break:break-all">${creatorPix}</div>
+         <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Pague para: <strong style="color:var(--text)">${esc(b.creatorName)}</strong></div>
+         <div style="font-size:15px;color:var(--pix);font-weight:700;margin-bottom:6px;word-break:break-all">${esc(creatorPix)}</div>
          <div style="font-size:12px;color:var(--text3)">Valor: <strong style="color:var(--secondary)">R$${b.amount}</strong> · Após pagar, toque em "Pagar via Pix" para confirmar</div>
        </div>`
     : '';
@@ -1790,13 +1795,13 @@ function renderDetail() {
         const ur = USERS.find(u=>u.email===p.email);
         const photo = ur?.photo || p.photo;
         const av = photo
-          ? `<img class="part-av-img" src="${photo}" alt="${p.name}">`
-          : `<div class="part-av-init">${p.name.charAt(0).toUpperCase()}</div>`;
+          ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}">`
+          : `<div class="part-av-init">${esc(p.name.charAt(0).toUpperCase())}</div>`;
         const payCtrl = `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
         return `<div class="part-row">
           ${av}
           <div style="flex:1;min-width:0">
-            <div class="part-name">${p.name}</div>
+            <div class="part-name">${esc(p.name)}</div>
             <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
           </div>
           ${payCtrl}
@@ -2068,12 +2073,12 @@ function openPix(id) {
     ${pixKey ? `
     <div style="background:rgba(50,188,173,.1);border:1px solid rgba(50,188,173,.3);border-radius:14px;padding:16px;text-align:center;margin:16px 0">
       <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Chave Pix do organizador</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Para: <strong style="color:var(--text)">${b.creatorName}</strong></div>
-      <div style="font-size:16px;color:var(--pix);font-weight:700;word-break:break-all;margin-bottom:8px">${pixKey}</div>
-      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard&&navigator.clipboard.writeText('${pixKey}').then(()=>showToast('Chave copiada!'))">Copiar chave</button>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Para: <strong style="color:var(--text)">${esc(b.creatorName)}</strong></div>
+      <div style="font-size:16px;color:var(--pix);font-weight:700;word-break:break-all;margin-bottom:8px">${esc(pixKey)}</div>
+      <button class="btn btn-ghost btn-sm" data-pix="${esc(pixKey)}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('Chave copiada!'))">Copiar chave</button>
     </div>` : `
     <div class="qr-mock"><span style="font-size:80px;line-height:1">📱</span></div>
-    <div class="pix-key">Entre em contato com ${b.creatorName} para obter a chave Pix</div>`}
+    <div class="pix-key">Entre em contato com ${esc(b.creatorName)} para obter a chave Pix</div>`}
     <div class="pix-info">Transfira exatamente <strong>R$${b.amount}</strong> para a chave Pix acima e depois toque em "Confirmar pagamento".</div>
     <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">Confirmar pagamento</button>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
@@ -2321,13 +2326,13 @@ function buildRanking(b) {
     const ur = USERS.find(u=>u.email===p.email);
     const photo = ur?.photo||p.photo;
     const av = photo
-      ? `<img class="part-av-img" src="${photo}" alt="${p.name}" style="width:32px;height:32px">`
-      : `<div class="part-av-init" style="width:32px;height:32px;font-size:13px">${p.name.charAt(0).toUpperCase()}</div>`;
+      ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}" style="width:32px;height:32px">`
+      : `<div class="part-av-init" style="width:32px;height:32px;font-size:13px">${esc(p.name.charAt(0).toUpperCase())}</div>`;
     return `<div class="rank-row${isWinner?' winner':''}">
       <div class="rank-pos">${medals[i]||`${i+1}°`}</div>
       ${av}
       <div class="rank-info">
-        <div class="rank-name">${p.name}</div>
+        <div class="rank-name">${esc(p.name)}</div>
         <div class="rank-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite'}</div>
       </div>
       <div class="rank-pts${isWinner?' gold':''}">${p.pts}pt${p.pts!==1?'s':''}</div>
@@ -2453,6 +2458,7 @@ async function fetchTabelaScores() {
 
 function openTabela() {
   _tf = 'all'; _tg = 'all';
+  Object.keys(_ls).forEach(k=>delete _ls[k]);
   document.querySelectorAll('#t-main-filter .t-chip').forEach((c,i)=>c.classList.toggle('active',i===0));
   document.querySelectorAll('#t-grp-filter .t-chip').forEach((c,i)=>c.classList.toggle('active',i===0));
   renderTabela();
@@ -2662,11 +2668,11 @@ function doForgot() {
   el.innerHTML = `
     <div style="background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);border-radius:12px;padding:14px;margin-bottom:12px">
       <div style="color:var(--ok);font-weight:700;font-size:13px;margin-bottom:2px">Conta encontrada</div>
-      <div style="color:var(--text2);font-size:12px">${u.name} · ${u.email}</div>
+      <div style="color:var(--text2);font-size:12px">${esc(u.name)} · ${esc(u.email)}</div>
     </div>
     <div class="field"><label>Nova senha</label><input type="password" id="new-pass" placeholder="Mínimo 6 caracteres"></div>
     <div class="field"><label>Confirmar nova senha</label><input type="password" id="new-pass2" placeholder="Repita a senha"></div>
-    <button class="btn btn-primary" style="margin-bottom:12px" onclick="doResetPassword('${u.email}')">Redefinir senha</button>`;
+    <button class="btn btn-primary" style="margin-bottom:12px" data-email="${esc(u.email)}" onclick="doResetPassword(this.dataset.email)">Redefinir senha</button>`;
 }
 
 function doResetPassword(email) {
@@ -2780,20 +2786,20 @@ function exportResult(bolaoId) {
 function buildChat(b) {
   const msgs = (b.messages||[]);
   const rows = msgs.slice(-50).map(m=>{
-    if(m.system) return `<div class="sys-msg">${m.text.replace(/</g,'&lt;')}</div>`;
+    if(m.system) return `<div class="sys-msg">${esc(m.text)}</div>`;
     const isMine = m.email===state.user?.email;
     const ur = USERS.find(u=>u.email===m.email);
     const photo = ur?.photo||m.photo;
     const av = photo
       ? `<img src="${photo}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0">`
-      : `<div class="chat-av">${m.name.charAt(0).toUpperCase()}</div>`;
+      : `<div class="chat-av">${esc(m.name.charAt(0).toUpperCase())}</div>`;
     const t = new Date(m.time);
     const timeStr = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
     return `<div class="chat-msg" style="${isMine?'flex-direction:row-reverse':''}">
       ${av}
       <div class="chat-bubble${isMine?' mine':''}">
-        ${!isMine?`<div class="chat-name">${m.name}</div>`:''}
-        <div class="chat-text">${m.text.replace(/</g,'&lt;')}</div>
+        ${!isMine?`<div class="chat-name">${esc(m.name)}</div>`:''}
+        <div class="chat-text">${esc(m.text)}</div>
         <div class="chat-time">${timeStr}</div>
       </div>
     </div>`;
