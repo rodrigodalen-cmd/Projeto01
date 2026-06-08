@@ -1116,6 +1116,8 @@ let state = {
   createData: {},
   currentBolaoId: null,
   betScores: {home:0, away:0},
+  customChampionship: null,
+  pixTimerInterval: null,
   betBolaoId: null,
   pixBolaoId: null,
   editingBet: {},
@@ -2073,11 +2075,16 @@ function renderDetail() {
         const av = photo
           ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}">`
           : `<div class="part-av-init">${esc(p.name.charAt(0).toUpperCase())}</div>`;
-        const payCtrl = `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
-        return `<div class="part-row">
+        const notParticipating = b.result && !p.paid;
+        const payCtrl = notParticipating
+          ? `<div class="paid-badge" style="background:rgba(231,76,60,.15);color:var(--err)">❌ Não participou</div>`
+          : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
+        return `<div class="part-row" style="${notParticipating?'opacity:.6':''}">
           ${av}
           <div style="flex:1;min-width:0">
-            <div class="part-name">${esc(p.name)}</div>
+            <div class="part-name" style="${notParticipating?'text-decoration:line-through;color:var(--text3)':''}">
+              ${esc(p.name)}${notParticipating?' <span style="font-size:10px;color:var(--err)">(só no grupo)</span>':''}
+            </div>
             <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
           </div>
           ${payCtrl}
@@ -2506,6 +2513,7 @@ async function openPix(id) {
 }
 
 function confirmPix() {
+  if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
   const b = state.boloes.find(x=>x.id===state.pixBolaoId);
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
