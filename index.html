@@ -933,7 +933,10 @@ input:checked+.slider:before{transform:translateX(18px)}
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
     </button>
     <button class="drawer-item" id="di-tabela" onclick="drawerGo('tabela')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela Copa 2026
+    </button>
+    <button class="drawer-item" id="di-championships" onclick="drawerGo('championships')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>Campeonatos
     </button>
     <button class="drawer-item" id="di-join" onclick="drawerGo('join')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar bolão
@@ -950,6 +953,18 @@ input:checked+.slider:before{transform:translateX(18px)}
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Sair da conta
     </button>
   </div>
+</div>
+
+<!-- === CAMPEONATOS === -->
+<div class="screen" id="s-championships">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Campeonatos</span></div>
+  <div class="scroll" id="championships-content"></div>
+</div>
+
+<!-- === CRIAR BOLÃO PERSONALIZADO (campeonatos) === -->
+<div class="screen" id="s-custom-create">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title" id="custom-create-title">Criar Bolão</span></div>
+  <div class="scroll" id="custom-create-content"></div>
 </div>
 
 <!-- CONFETTI -->
@@ -1101,6 +1116,7 @@ let state = {
   createData: {},
   currentBolaoId: null,
   betScores: {home:0, away:0},
+  customChampionship: null,
   betBolaoId: null,
   pixBolaoId: null,
   editingBet: {},
@@ -1194,6 +1210,46 @@ const GAMES = [
 ];
 
 const USERS = [];
+
+// ===== CAMPEONATOS =====
+const CHAMPIONSHIPS = [
+  { category: '🌍 Seleções', items: [
+    { id: 'copa-mundo',      name: 'Copa do Mundo FIFA',     flag: '🌍', region: 'Mundial' },
+    { id: 'eurocopa',        name: 'Eurocopa UEFA',          flag: '🇪🇺', region: 'Europa' },
+    { id: 'copa-america',    name: 'Copa América',           flag: '🌎', region: 'América do Sul' },
+    { id: 'afcon',           name: 'Copa Africana (AFCON)',  flag: '🌍', region: 'África' },
+    { id: 'copa-asiatica',   name: 'Copa Asiática AFC',      flag: '🌏', region: 'Ásia' },
+    { id: 'gold-cup',        name: 'Gold Cup CONCACAF',      flag: '🌎', region: 'América do Norte' },
+    { id: 'nations-league',  name: 'UEFA Nations League',    flag: '🇪🇺', region: 'Europa' },
+  ]},
+  { category: '🏆 Clubes — Internacional', items: [
+    { id: 'champions',       name: 'UEFA Champions League',  flag: '⭐', region: 'Europa' },
+    { id: 'europa-league',   name: 'UEFA Europa League',     flag: '🟠', region: 'Europa' },
+    { id: 'conference',      name: 'UEFA Conference League', flag: '🟢', region: 'Europa' },
+    { id: 'libertadores',    name: 'Copa Libertadores',      flag: '🌎', region: 'América do Sul' },
+    { id: 'sudamericana',    name: 'Copa Sudamericana',      flag: '🌎', region: 'América do Sul' },
+    { id: 'mundial-clubes',  name: 'Mundial de Clubes FIFA', flag: '🌍', region: 'Mundial' },
+    { id: 'afc-champions',   name: 'AFC Champions League',   flag: '🌏', region: 'Ásia' },
+    { id: 'caf-champions',   name: 'CAF Champions League',   flag: '🌍', region: 'África' },
+  ]},
+  { category: '⚽ Ligas Nacionais', items: [
+    { id: 'premier-league',  name: 'Premier League',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', region: 'Inglaterra' },
+    { id: 'la-liga',         name: 'La Liga',                flag: '🇪🇸', region: 'Espanha' },
+    { id: 'bundesliga',      name: 'Bundesliga',             flag: '🇩🇪', region: 'Alemanha' },
+    { id: 'serie-a',         name: 'Serie A',                flag: '🇮🇹', region: 'Itália' },
+    { id: 'ligue-1',         name: 'Ligue 1',                flag: '🇫🇷', region: 'França' },
+    { id: 'brasileirao',     name: 'Brasileirão Série A',    flag: '🇧🇷', region: 'Brasil' },
+    { id: 'copa-brasil',     name: 'Copa do Brasil',         flag: '🇧🇷', region: 'Brasil' },
+    { id: 'liga-mx',         name: 'Liga MX',                flag: '🇲🇽', region: 'México' },
+    { id: 'mls',             name: 'MLS',                    flag: '🇺🇸', region: 'EUA/Canadá' },
+    { id: 'eredivisie',      name: 'Eredivisie',             flag: '🇳🇱', region: 'Holanda' },
+    { id: 'primeira-liga',   name: 'Primeira Liga',          flag: '🇵🇹', region: 'Portugal' },
+    { id: 'argentina-pd',    name: 'Primera División',       flag: '🇦🇷', region: 'Argentina' },
+    { id: 'super-lig',       name: 'Süper Lig',              flag: '🇹🇷', region: 'Turquia' },
+    { id: 'saudi-pro',       name: 'Saudi Pro League',       flag: '🇸🇦', region: 'Arábia Saudita' },
+    { id: 'scottish-prem',   name: 'Scottish Premiership',   flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', region: 'Escócia' },
+  ]},
+];
 
 // ===== PERSISTÊNCIA (localStorage) =====
 function loadPersistedData() {
@@ -2942,6 +2998,7 @@ function updateGlobalNav(screenId) {
   document.querySelectorAll('.drawer-item').forEach(t=>t.classList.remove('active'));
   if(screenId==='s-home') document.getElementById('di-home')?.classList.add('active');
   else if(screenId==='s-tabela') document.getElementById('di-tabela')?.classList.add('active');
+  else if(screenId==='s-championships'||screenId==='s-custom-create') document.getElementById('di-championships')?.classList.add('active');
   else if(screenId==='s-join') document.getElementById('di-join')?.classList.add('active');
   else if(screenId==='s-create') document.getElementById('di-create')?.classList.add('active');
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
@@ -2962,9 +3019,139 @@ function drawerGo(tab) {
   closeDrawer();
   if(tab==='home') { renderHome(); go('s-home'); }
   else if(tab==='tabela') { openTabela(); go('s-tabela'); }
+  else if(tab==='championships') { renderChampionships(); go('s-championships'); }
   else if(tab==='join') { go('s-join'); }
   else if(tab==='create') { go_create(); }
   else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
+}
+
+// ===== CAMPEONATOS =====
+function renderChampionships() {
+  const el = document.getElementById('championships-content');
+  if(!el) return;
+  el.innerHTML = `
+    <div style="padding-bottom:8px">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.5">
+        Escolha um campeonato para criar um bolão com seus amigos.
+      </div>
+      ${CHAMPIONSHIPS.map(cat=>`
+        <div style="margin-bottom:24px">
+          <div class="section-title" style="margin-bottom:10px">${esc(cat.category)}</div>
+          ${cat.items.map(c=>`
+            <div onclick="openChampionship(${JSON.stringify(c).replace(/"/g,'&quot;')})"
+              style="display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer;transition:background .15s"
+              ontouchstart="this.style.background='var(--surface2)'" ontouchend="this.style.background='var(--surface)'">
+              <div style="font-size:28px;line-height:1;width:36px;text-align:center">${c.flag}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(c.name)}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(c.region)}</div>
+              </div>
+              <div style="color:var(--text3);font-size:18px">›</div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function openChampionship(c) {
+  state.customChampionship = c;
+  document.getElementById('custom-create-title').textContent = c.name;
+  renderCustomCreate();
+  go('s-custom-create');
+}
+
+function renderCustomCreate() {
+  const c = state.customChampionship;
+  const el = document.getElementById('custom-create-content');
+  if(!el || !c) return;
+  el.innerHTML = `
+    <div style="background:var(--surface);border-radius:16px;padding:20px;border:1px solid var(--border);margin-bottom:16px;text-align:center">
+      <div style="font-size:40px;margin-bottom:6px">${c.flag}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text)">${esc(c.name)}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">${esc(c.region)}</div>
+    </div>
+    <div class="section-title" style="margin-bottom:10px">Times da partida</div>
+    <div style="background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:16px">
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Time da Casa</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input id="cc-home-flag" type="text" placeholder="🏳️" maxlength="4"
+            style="width:56px;text-align:center;font-size:24px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;color:var(--text);outline:none">
+          <input id="cc-home-name" type="text" placeholder="Nome do time" maxlength="30"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
+        </div>
+      </div>
+      <div style="text-align:center;font-size:22px;font-weight:900;color:var(--text3);margin:4px 0">VS</div>
+      <div style="margin-top:10px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Time Visitante</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input id="cc-away-flag" type="text" placeholder="🏳️" maxlength="4"
+            style="width:56px;text-align:center;font-size:24px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;color:var(--text);outline:none">
+          <input id="cc-away-name" type="text" placeholder="Nome do time" maxlength="30"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
+        </div>
+      </div>
+    </div>
+    <div class="section-title" style="margin-bottom:10px">Data e fase</div>
+    <div style="background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:24px">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="flex:1">
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Data</label>
+          <input id="cc-date" type="date" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Hora</label>
+          <input id="cc-time" type="time" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Fase / Rodada</label>
+        <input id="cc-stage" type="text" placeholder="Ex: Final, Quartas, Rodada 5..." maxlength="40"
+          style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitCustomCreate()">Continuar →</button>
+  `;
+}
+
+function submitCustomCreate() {
+  const c = state.customChampionship;
+  const homeName = document.getElementById('cc-home-name').value.trim();
+  const homeFlag = document.getElementById('cc-home-flag').value.trim() || '🏳️';
+  const awayName = document.getElementById('cc-away-name').value.trim();
+  const awayFlag = document.getElementById('cc-away-flag').value.trim() || '🏳️';
+  const dateVal  = document.getElementById('cc-date').value;
+  const timeVal  = document.getElementById('cc-time').value || '00:00';
+  const stage    = document.getElementById('cc-stage').value.trim() || c.name;
+
+  if(!homeName || !awayName) { showToast('⚠️ Informe os nomes dos dois times'); return; }
+  if(!dateVal) { showToast('⚠️ Informe a data da partida'); return; }
+
+  const d = new Date(dateVal);
+  const dateFmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const homeCode = homeName.substring(0,3).toUpperCase();
+  const awayCode = awayName.substring(0,3).toUpperCase();
+
+  const customGame = {
+    id: 'custom-' + Date.now(),
+    home:  { name: homeName, code: homeCode, flag: homeFlag },
+    away:  { name: awayName, code: awayCode, flag: awayFlag },
+    date:  dateFmt,
+    time:  timeVal,
+    stage: stage,
+    group: '',
+    venue: c.name,
+    championship: c.id,
+  };
+
+  createState = {
+    step:1, title:`${homeName} x ${awayName}`, game: customGame,
+    amount:50, maxPart:20, hasPw:false, pw:'',
+    pointsExact:3, pointsResult:1, _customAmt:false
+  };
+  renderCreateStep();
+  go('s-create');
 }
 
 
