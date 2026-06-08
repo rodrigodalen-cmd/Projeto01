@@ -3077,7 +3077,6 @@ function updateGlobalNav(screenId) {
   if(screenId==='s-home') document.getElementById('di-home')?.classList.add('active');
   else if(screenId==='s-tabela') document.getElementById('di-tabela')?.classList.add('active');
   else if(screenId==='s-championships'||screenId==='s-custom-create') document.getElementById('di-championships')?.classList.add('active');
-  document.getElementById('di-meuboloes')?.classList.toggle('active', screenId==='s-home' && state._homeMineFilter);
   else if(screenId==='s-join') document.getElementById('di-join')?.classList.add('active');
   else if(screenId==='s-create') document.getElementById('di-create')?.classList.add('active');
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
