@@ -2510,8 +2510,9 @@ function calcPoints(p, result, b) {
 function buildResultCard(b, prize) {
   const h = b.result.home, a = b.result.away;
   const resultText = h>a?`Vitória de ${b.game.home.name}`:a>h?`Vitória de ${b.game.away.name}`:'Empate';
-  const maxPts = b.pointsExact ?? 3;
-  const winners = b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts);
+  const allPts = b.participants.map(p=>calcPoints(p,b.result,b));
+  const maxPts = allPts.length>0 ? Math.max(...allPts) : 0;
+  const winners = maxPts>0 ? b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts) : [];
   const prizeEach = winners.length>0 ? Math.floor(prize/winners.length) : 0;
   return `<div class="result-final">
     <div class="result-final-lbl">Resultado Oficial</div>
