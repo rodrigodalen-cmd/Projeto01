@@ -3121,7 +3121,8 @@ function renderTabela() {
         bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px;line-height:1.2">📍 ${g.venue.split(',')[0]}<br>em ${cd}</div>`;
       }
 
-      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}')">
+      const _closedCopa = isDone ? 'opacity:.55;cursor:not-allowed' : '';
+      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" style="${_closedCopa}" onclick="go_create_from_game('${g.id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
           <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px">Gr. ${grpL}</span>
           ${topStatus}
@@ -3147,6 +3148,10 @@ function renderTabela() {
 function go_create_from_game(gameId) {
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
+  const sc = _ls[gameId];
+  if(sc?.status === 'FT') { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
+  if(sc?.status === 'LIVE') { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
+  if(isBetClosed(g)) { showToast('⏰ Jogo já começou — apostas encerradas'); return; }
   createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false};
   _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
   renderCreateStep();
@@ -3405,6 +3410,8 @@ async function renderBRCarousel() {
 }
 
 function go_create_from_brcard(g) {
+  if(g.isDone) { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
+  if(g.isLive) { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
   createState = {
     step:1, title:`${g.home.name} × ${g.away.name}`, game:g,
     amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
@@ -3521,7 +3528,8 @@ function renderChampionshipDetail() {
             bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px">em ${cd}</div>`;
           }
           const gJson=JSON.stringify(g).replace(/"/g,'&quot;');
-          return `<div class="t-gcell${g.isLive?' live':''}" onclick="go_create_from_champ_game(JSON.parse(this.dataset.g))" data-g="${gJson}">
+          const closedStyle=g.isDone?'opacity:.55;cursor:not-allowed':'';
+          return `<div class="t-gcell${g.isLive?' live':''}" style="${closedStyle}" onclick="go_create_from_champ_game(JSON.parse(this.dataset.g))" data-g="${gJson}">
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
               <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.round||'')}</span>
               ${topStatus}
@@ -3563,6 +3571,8 @@ function renderChampionshipDetail() {
 }
 
 function go_create_from_champ_game(g) {
+  if(g.isDone) { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
+  if(g.isLive) { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
   const c = state.customChampionship;
   const customGame = {
     id: 'champ-'+g.id,
