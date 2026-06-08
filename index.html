@@ -1117,6 +1117,7 @@ let state = {
   currentBolaoId: null,
   betScores: {home:0, away:0},
   customChampionship: null,
+  pixTimerInterval: null,
   betBolaoId: null,
   pixBolaoId: null,
   editingBet: {},
@@ -1288,9 +1289,9 @@ function go(screenId, push=true) {
 function back() {
   if(state.screenStack.length <= 1) return;
   const cur = state.screenStack.pop();
-  if(cur === 's-pix' && state.pixPollInterval) {
-    clearInterval(state.pixPollInterval);
-    state.pixPollInterval = null;
+  if(cur === 's-pix') {
+    if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
+    if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
   }
   const prev = state.screenStack[state.screenStack.length-1];
   document.getElementById(cur).classList.remove('active');
@@ -1900,6 +1901,24 @@ function renderDetail() {
     deadlineBadge = `<div class="deadline-badge deadline-open">✅ Apostas abertas — fecha em ${countdown}</div>`;
   }
 
+  // 1b. PAINEL DE PAGAMENTOS (visível para todos)
+  const unpaidList = b.participants.filter(p=>!p.paid);
+  const paymentPanel = b.participants.length > 0 && !b.result ? `
+    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Status de Pagamentos</div>
+        <div style="font-size:11px;color:var(--text3)">${paidCount}/${b.participants.length} pagaram</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${b.participants.map(p=>`
+          <div style="display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${p.paid?'rgba(39,174,96,.12)':'rgba(243,156,18,.1)'};color:${p.paid?'var(--ok)':'var(--warn)'}">
+            <span>${p.paid?'✅':'⏳'}</span>
+            <span>${esc(p.name.split(' ')[0])}</span>
+          </div>`).join('')}
+      </div>
+      ${unpaidList.length>0?`<div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">Aguardando: ${unpaidList.map(p=>esc(p.name.split(' ')[0])).join(', ')}</div>`:''}
+    </div>` : '';
+
   // 2. PRIZE CARD or RESULT CARD
   const prizeSection = b.result
     ? buildResultCard(b, prize)
@@ -2083,6 +2102,7 @@ function renderDetail() {
       </div>
     </div>
     ${deadlineBadge}
+    ${paymentPanel}
     ${prizeSection}
     ${rankingSection}
     ${exportBtn}
@@ -2436,9 +2456,38 @@ async function openPix(id) {
       ${qrHtml}
       ${copiaCola}
       <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. A confirmação é automática.</div>
-      <div id="pix-status" style="text-align:center;font-size:12px;color:var(--text3);margin:10px 0">⏳ Aguardando pagamento...</div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0;padding:10px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)">
+        <span style="font-size:20px">⏱️</span>
+        <div style="text-align:left">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Tempo restante</div>
+          <div id="pix-timer" style="font-size:22px;font-weight:900;color:var(--secondary);letter-spacing:1px;line-height:1.2">10:00</div>
+        </div>
+      </div>
+      <div id="pix-status" style="text-align:center;font-size:12px;color:var(--text3);margin:4px 0">⏳ Aguardando pagamento...</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="back()">Cancelar</button>`;
+
     if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
+    if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
+
+    let secsLeft = 600;
+    state.pixTimerInterval = setInterval(()=>{
+      secsLeft--;
+      const el = document.getElementById('pix-timer');
+      if(el) {
+        const m = String(Math.floor(secsLeft/60)).padStart(2,'0');
+        const s = String(secsLeft%60).padStart(2,'0');
+        el.textContent = `${m}:${s}`;
+        if(secsLeft <= 60) el.style.color = 'var(--err)';
+        else if(secsLeft <= 120) el.style.color = 'var(--warn)';
+      }
+      if(secsLeft <= 0) {
+        clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
+        clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
+        showToast('⏱️ Tempo esgotado — PIX cancelado');
+        back();
+      }
+    }, 1000);
+
     state.pixPollInterval = setInterval(async ()=>{
       try {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/boloes?id=eq.${b.id}&select=participants`,{
@@ -2448,7 +2497,8 @@ async function openPix(id) {
         if(!rows?.length) return;
         const me = (rows[0].participants||[]).find(p=>p.email===state.user.email);
         if(me?.paid) {
-          clearInterval(state.pixPollInterval); state.pixPollInterval = null;
+          clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
+          clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
           _autoConfirmPix(b.id);
         }
       } catch(_){}
@@ -2478,6 +2528,7 @@ function confirmPix() {
 }
 
 function _autoConfirmPix(bolaoId) {
+  if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
   const b = state.boloes.find(x=>x.id===bolaoId);
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
@@ -2485,6 +2536,7 @@ function _autoConfirmPix(bolaoId) {
     me.paid = true;
     addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
     saveBoloes(b);
+    _notifyCreator(b, state.user.name);
   }
   document.getElementById('pix-content').innerHTML=`
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;animation:pixPop .5s cubic-bezier(.34,1.56,.64,1) both">
@@ -2494,6 +2546,17 @@ function _autoConfirmPix(bolaoId) {
       <div style="margin-top:28px;font-size:13px;color:var(--text3)">Voltando em instantes...</div>
     </div>`;
   setTimeout(()=>{ back(); setTimeout(()=>renderDetail(), 300); }, 2800);
+}
+
+function _notifyCreator(b, payerName) {
+  if(!b || b.creatorId === state.user?.email) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification(`💸 Pagamento recebido — ${b.title}`, {
+    body: `${payerName} pagou R$${b.amount} no seu bolão!`,
+    icon: '/Projeto01/icon.svg',
+    badge: '/Projeto01/icon.svg',
+    tag: `pix-${b.id}-${Date.now()}`,
+  });
 }
 
 // ===== PROFILE =====
