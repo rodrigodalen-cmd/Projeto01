@@ -1,7 +1,7 @@
 {
-  "name": "Bolão Copa 2026",
-  "short_name": "Bolão",
-  "description": "Bolão da Copa do Mundo 2026 · Aposte com seus amigos",
+  "name": "Bolão FC",
+  "short_name": "Bolão FC",
+  "description": "Bolão FC · Aposte com seus amigos nos jogos de futebol",
   "start_url": "/Projeto01/?pwa=1",
   "scope": "/Projeto01/",
   "display": "standalone",
