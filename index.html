@@ -1122,6 +1122,9 @@ let state = {
   pixPollInterval: null,
   pixTimerInterval: null,
   customChampionship: null,
+  champFilter: 'all',
+  champRound: 'all',
+  champGames: [],
 };
 
 const GAMES = [
@@ -3085,30 +3088,36 @@ function drawerGo(tab) {
 }
 
 // ===== CAMPEONATOS =====
-const _champScores = {};
 
-async function fetchChampionshipScores(espnCode, containerId) {
+async function fetchChampionshipScores(espnCode) {
   try {
     const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/scoreboard`);
     if(!r.ok) return [];
     const data = await r.json();
-    return (data.events||[]).slice(0,6).map(ev=>{
+    return (data.events||[]).map(ev=>{
       const comp = ev.competitions?.[0];
       const competitors = comp?.competitors||[];
       const hc = competitors.find(c=>c.homeAway==='home');
       const ac = competitors.find(c=>c.homeAway==='away');
       const st = comp?.status?.type;
       const isLive = st?.state==='in';
-      const isDone = st?.state==='post';
+      const isDone = st?.completed||st?.state==='post';
       const min = comp?.status?.displayClock||'';
+      const notes = comp?.notes||[];
+      const noteText = notes.find(n=>n.type==='event')?.headline||notes[0]?.headline||'';
+      const round = noteText||(ev.week?.number?`Rodada ${ev.week.number}`:'');
+      const evDate = ev.date?new Date(ev.date):null;
       return {
-        home: hc?.team?.shortDisplayName||hc?.team?.name||'?',
-        away: ac?.team?.shortDisplayName||ac?.team?.name||'?',
+        id: ev.id||String(Math.random()),
+        home: {name:hc?.team?.shortDisplayName||hc?.team?.name||'?',code:hc?.team?.abbreviation||'HME',flag:'🏳️'},
+        away: {name:ac?.team?.shortDisplayName||ac?.team?.name||'?',code:ac?.team?.abbreviation||'AWY',flag:'🏳️'},
         homeScore: hc?.score||'',
         awayScore: ac?.score||'',
-        isLive, isDone, min,
-        date: ev.date ? new Date(ev.date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '',
-        time: ev.date ? new Date(ev.date).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '',
+        isLive, isDone, min, round,
+        date: evDate?evDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'',
+        time: evDate?evDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'',
+        dateObj: evDate,
+        venue: comp?.venue?.fullName||'',
       };
     });
   } catch(_){ return []; }
@@ -3138,108 +3147,193 @@ function renderChampionships() {
     </div>`;
 }
 
-function openChampionship(c) {
-  state.customChampionship = c;
-  document.getElementById('custom-create-title').textContent = c.name;
-  renderCustomCreate(c);
-  go('s-custom-create');
+function setChampFilter(f, el) {
+  state.champFilter = f;
+  document.querySelectorAll('#champ-main-filter .t-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderChampionshipDetail();
 }
 
-async function renderCustomCreate(c) {
-  const el = document.getElementById('custom-create-content');
-  if(!el || !c) return;
-  el.innerHTML = `
-    <div style="background:var(--surface);border-radius:16px;padding:20px;border:1px solid var(--border);margin-bottom:16px;text-align:center">
-      <div style="font-size:40px;margin-bottom:6px">${c.flag}</div>
-      <div style="font-size:18px;font-weight:800">${esc(c.name)}</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:4px">${esc(c.region)}</div>
-    </div>
-    ${c.espn ? `<div id="live-champ-section"><div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Buscando jogos ao vivo...</div></div>` : ''}
-    <div class="section-title" style="margin-bottom:10px;margin-top:8px">Criar bolão — informe os times</div>
-    <div style="background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:16px">
-      <div style="margin-bottom:14px">
-        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Time da Casa</label>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <input id="cc-home-flag" type="text" placeholder="🏳️" maxlength="4"
-            style="width:56px;text-align:center;font-size:24px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;color:var(--text);outline:none">
-          <input id="cc-home-name" type="text" placeholder="Nome do time" maxlength="30"
-            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
-        </div>
-      </div>
-      <div style="text-align:center;font-size:20px;font-weight:900;color:var(--text3);margin:4px 0">VS</div>
-      <div style="margin-top:10px">
-        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Time Visitante</label>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <input id="cc-away-flag" type="text" placeholder="🏳️" maxlength="4"
-            style="width:56px;text-align:center;font-size:24px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;color:var(--text);outline:none">
-          <input id="cc-away-name" type="text" placeholder="Nome do time" maxlength="30"
-            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
-        </div>
-      </div>
-    </div>
-    <div style="background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:24px">
-      <div style="display:flex;gap:10px;margin-bottom:12px">
-        <div style="flex:1">
-          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Data</label>
-          <input id="cc-date" type="date" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit">
-        </div>
-        <div style="flex:1">
-          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Hora</label>
-          <input id="cc-time" type="time" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit">
-        </div>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Fase / Rodada</label>
-        <input id="cc-stage" type="text" placeholder="Ex: Final, Quartas, Rodada 5..." maxlength="40"
-          style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box">
-      </div>
-    </div>
-    <button class="btn btn-primary" style="width:100%" onclick="submitCustomCreate()">Continuar →</button>`;
+function setChampRound(r, el) {
+  state.champRound = r;
+  document.querySelectorAll('#champ-round-filter .t-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderChampionshipDetail();
+}
 
-  if(c.espn) {
-    const games = await fetchChampionshipScores(c.espn);
-    const liveSection = document.getElementById('live-champ-section');
-    if(!liveSection) return;
-    if(!games.length) { liveSection.innerHTML=''; return; }
-    liveSection.innerHTML = `
-      <div class="section-title" style="margin-bottom:10px">Jogos ao vivo / hoje</div>
-      ${games.map(g=>`
-        <div style="background:var(--surface);border-radius:12px;padding:10px 14px;border:1px solid ${g.isLive?'rgba(231,76,60,.35)':'var(--border)'};margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:6px">
-            <div style="flex:1;text-align:right;font-size:13px;font-weight:700">${esc(g.home)}</div>
-            <div style="min-width:64px;text-align:center">
-              ${g.isLive||g.isDone
-                ? `<div style="font-size:17px;font-weight:900;color:${g.isLive?'var(--err)':'var(--text)'}">${g.homeScore} × ${g.awayScore}</div>
-                   <div style="font-size:9px;font-weight:700;color:${g.isLive?'var(--err)':'var(--text3)'}">${g.isLive?`🔴 ${g.min}`:'Encerrado'}</div>`
-                : `<div style="font-size:12px;font-weight:700;color:var(--text2)">${g.time||g.date}</div>`}
+function openChampionship(c) {
+  state.customChampionship = c;
+  state.champFilter = 'all';
+  state.champRound = 'all';
+  state.champGames = [];
+  document.getElementById('custom-create-title').textContent = c.name;
+  const el = document.getElementById('custom-create-content');
+  if(el) el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:16px">
+      <div style="font-size:32px">${c.flag}</div>
+      <div><div style="font-size:15px;font-weight:800">${esc(c.name)}</div><div style="font-size:11px;color:var(--text3)">${esc(c.region)}</div></div>
+    </div>
+    <div style="text-align:center;padding:32px 0;color:var(--text3)">
+      <div style="font-size:28px;margin-bottom:10px">⏳</div>
+      <div style="font-size:13px">Buscando jogos...</div>
+    </div>`;
+  go('s-custom-create');
+  fetchChampionshipScores(c.espn||'').then(games=>{
+    state.champGames = games;
+    renderChampionshipDetail();
+  }).catch(()=>renderChampionshipDetail());
+}
+
+function renderChampionshipDetail() {
+  const el = document.getElementById('custom-create-content');
+  if(!el) return;
+  const c = state.customChampionship;
+  const games = state.champGames||[];
+  const now = new Date();
+
+  const rounds = [];
+  games.forEach(g=>{ if(g.round&&!rounds.includes(g.round)) rounds.push(g.round); });
+
+  const filtered = games.filter(g=>{
+    if(state.champFilter==='live'&&!g.isLive) return false;
+    if(state.champFilter==='next'&&(g.isLive||g.isDone)) return false;
+    if(state.champFilter==='done'&&!g.isDone) return false;
+    if(state.champRound!=='all'&&g.round!==state.champRound) return false;
+    return true;
+  }).sort((a,b)=>(a.dateObj||new Date(0))-(b.dateObj||new Date(0)));
+
+  const byDate={};
+  filtered.forEach(g=>{ const k=g.date||'?'; (byDate[k]||(byDate[k]=[])).push(g); });
+
+  const roundChips = rounds.length>1?`
+    <div class="t-filter-row" id="champ-round-filter">
+      <button class="t-chip${state.champRound==='all'?' active':''}" onclick="setChampRound('all',this)">Todas</button>
+      ${rounds.map(r=>`<button class="t-chip${state.champRound===r?' active':''}" onclick="setChampRound(${JSON.stringify(r)},this)">${esc(r)}</button>`).join('')}
+    </div>`:'';
+
+  const gamesHTML = filtered.length===0
+    ?`<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">${games.length===0?'Nenhum jogo disponível no momento':'Nenhum jogo para este filtro'}</div>`
+    :Object.entries(byDate).map(([date,gs])=>{
+        const dayPt=gs[0].dateObj?gs[0].dateObj.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}):date;
+        const cards=gs.map(g=>{
+          const topStatus=g.isLive
+            ?`<span class="t-live-pill" style="font-size:9px"><span class="t-live-dot"></span>${g.min||'LIVE'}</span>`
+            :g.isDone
+              ?`<span style="color:var(--ok);font-size:9px;font-weight:800">✓ FIM</span>`
+              :`<span style="color:var(--text2);font-size:9px;font-weight:700">${g.time||''}</span>`;
+          const midContent=(g.isDone||g.isLive)
+            ?`<div style="font-size:18px;font-weight:900;color:${g.isLive?'var(--err)':'var(--text)'};letter-spacing:1px">${g.homeScore}–${g.awayScore}</div>`
+            :`<div style="font-size:10px;font-weight:800;color:var(--text3)">VS</div>`;
+          let bottom='';
+          if(!g.isDone&&!g.isLive&&g.dateObj&&g.dateObj>now){
+            const diff=g.dateObj-now,d=Math.floor(diff/86400000),h2=Math.floor((diff%86400000)/3600000),m2=Math.floor((diff%3600000)/60000);
+            const cd=d>0?`${d}d ${h2}h`:h2>0?`${h2}h ${m2}min`:`${m2}min`;
+            bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px">em ${cd}</div>`;
+          }
+          const gJson=JSON.stringify(g).replace(/"/g,'&quot;');
+          return `<div class="t-gcell${g.isLive?' live':''}" onclick="go_create_from_champ_game(JSON.parse(this.dataset.g))" data-g="${gJson}">
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
+              <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.round||'')}</span>
+              ${topStatus}
             </div>
-            <div style="flex:1;text-align:left;font-size:13px;font-weight:700">${esc(g.away)}</div>
-          </div>
-        </div>`).join('')}`;
-  }
+            <div style="display:flex;align-items:center;justify-content:space-around;width:100%;gap:4px">
+              <div style="text-align:center;flex:1;min-width:0">
+                <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word">${esc(g.home.name)}</div>
+              </div>
+              <div style="text-align:center;flex-shrink:0;padding:0 4px">${midContent}</div>
+              <div style="text-align:center;flex:1;min-width:0">
+                <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word">${esc(g.away.name)}</div>
+              </div>
+            </div>
+            ${bottom}
+          </div>`;
+        }).join('');
+        return `<div class="t-date-hdr">${dayPt}</div><div class="t-grid">${cards}</div>`;
+      }).join('');
+
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:14px">
+      <div style="font-size:32px">${c.flag}</div>
+      <div>
+        <div style="font-size:15px;font-weight:800">${esc(c.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">${esc(c.region)} · ${games.length} jogo${games.length!==1?'s':''}</div>
+      </div>
+    </div>
+    <div class="t-filter-row" id="champ-main-filter">
+      <button class="t-chip${state.champFilter==='all'?' active':''}" onclick="setChampFilter('all',this)">Todos</button>
+      <button class="t-chip${state.champFilter==='live'?' active':''}" onclick="setChampFilter('live',this)">🔴 Ao Vivo</button>
+      <button class="t-chip${state.champFilter==='next'?' active':''}" onclick="setChampFilter('next',this)">Próximos</button>
+      <button class="t-chip${state.champFilter==='done'?' active':''}" onclick="setChampFilter('done',this)">Encerrados</button>
+    </div>
+    ${roundChips}
+    ${gamesHTML}
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Criar bolão personalizado</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Se o jogo não está na lista, informe os times manualmente:</div>
+      <div style="background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:10px">
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="cc-home-flag" type="text" placeholder="🏳️" maxlength="4"
+            style="width:48px;text-align:center;font-size:22px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:6px;color:var(--text);outline:none">
+          <input id="cc-home-name" type="text" placeholder="Time da casa" maxlength="30"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
+        </div>
+        <div style="text-align:center;font-size:16px;font-weight:900;color:var(--text3);margin:4px 0">VS</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <input id="cc-away-flag" type="text" placeholder="🏳️" maxlength="4"
+            style="width:48px;text-align:center;font-size:22px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:6px;color:var(--text);outline:none">
+          <input id="cc-away-name" type="text" placeholder="Time visitante" maxlength="30"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="cc-date" type="date" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 10px;font-size:13px;color:var(--text);outline:none;font-family:inherit">
+        <input id="cc-time" type="time" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 10px;font-size:13px;color:var(--text);outline:none;font-family:inherit">
+      </div>
+      <input id="cc-stage" type="text" placeholder="Fase / Rodada (ex: Final, Quartas...)" maxlength="40"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:12px">
+      <button class="btn btn-primary" style="width:100%" onclick="submitCustomCreate()">Criar bolão →</button>
+    </div>`;
+}
+
+function go_create_from_champ_game(g) {
+  const c = state.customChampionship;
+  const customGame = {
+    id: 'champ-'+g.id,
+    home: {name:g.home.name, code:g.home.code, flag:g.home.flag||'🏳️'},
+    away: {name:g.away.name, code:g.away.code, flag:g.away.flag||'🏳️'},
+    date: g.date||'', time: g.time||'',
+    stage: g.round||c?.name||'',
+    group: '', venue: g.venue||c?.name||'', championship: c?.id||'',
+  };
+  createState = {
+    step:1, title:`${g.home.name} × ${g.away.name}`, game:customGame,
+    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
+  };
+  renderCreateStep();
+  go('s-create');
 }
 
 function submitCustomCreate() {
   const c = state.customChampionship;
   const homeName = document.getElementById('cc-home-name').value.trim();
-  const homeFlag = document.getElementById('cc-home-flag').value.trim() || '🏳️';
+  const homeFlag = document.getElementById('cc-home-flag').value.trim()||'🏳️';
   const awayName = document.getElementById('cc-away-name').value.trim();
-  const awayFlag = document.getElementById('cc-away-flag').value.trim() || '🏳️';
+  const awayFlag = document.getElementById('cc-away-flag').value.trim()||'🏳️';
   const dateVal  = document.getElementById('cc-date').value;
-  const timeVal  = document.getElementById('cc-time').value || '00:00';
-  const stage    = document.getElementById('cc-stage').value.trim() || c.name;
-  if(!homeName || !awayName) { showToast('⚠️ Informe os nomes dos dois times'); return; }
+  const timeVal  = document.getElementById('cc-time').value||'00:00';
+  const stage    = document.getElementById('cc-stage').value.trim()||c?.name||'';
+  if(!homeName||!awayName) { showToast('⚠️ Informe os nomes dos dois times'); return; }
   if(!dateVal) { showToast('⚠️ Informe a data da partida'); return; }
   const d = new Date(dateVal);
   const dateFmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
   const customGame = {
-    id: 'custom-' + Date.now(),
-    home:  { name: homeName, code: homeName.substring(0,3).toUpperCase(), flag: homeFlag },
-    away:  { name: awayName, code: awayName.substring(0,3).toUpperCase(), flag: awayFlag },
-    date: dateFmt, time: timeVal, stage, group: '', venue: c.name, championship: c.id,
+    id: 'custom-'+Date.now(),
+    home:  {name:homeName, code:homeName.substring(0,3).toUpperCase(), flag:homeFlag},
+    away:  {name:awayName, code:awayName.substring(0,3).toUpperCase(), flag:awayFlag},
+    date: dateFmt, time: timeVal, stage, group: '', venue: c?.name||'', championship: c?.id||'',
   };
   createState = {
-    step:1, title:`${homeName} x ${awayName}`, game: customGame,
+    step:1, title:`${homeName} × ${awayName}`, game:customGame,
     amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
   };
   renderCreateStep();
