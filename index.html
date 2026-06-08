@@ -1230,6 +1230,10 @@ function go(screenId, push=true) {
 function back() {
   if(state.screenStack.length <= 1) return;
   const cur = state.screenStack.pop();
+  if(cur === 's-pix' && state.pixPollInterval) {
+    clearInterval(state.pixPollInterval);
+    state.pixPollInterval = null;
+  }
   const prev = state.screenStack[state.screenStack.length-1];
   document.getElementById(cur).classList.remove('active');
   document.getElementById(prev).classList.remove('prev');
@@ -2359,9 +2363,25 @@ async function openPix(id) {
       <div class="pix-amount">R$${b.amount}</div>
       ${qrHtml}
       ${copiaCola}
-      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. Após pagar, toque em "Confirmar".</div>
-      <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Confirmar pagamento</button>
+      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. A confirmação é automática após o pagamento.</div>
+      <div id="pix-status" style="text-align:center;font-size:12px;color:var(--text3);margin:6px 0">⏳ Aguardando pagamento...</div>
+      <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Já paguei</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
+    if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
+    state.pixPollInterval = setInterval(async ()=>{
+      try {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/boloes?id=eq.${b.id}&select=participants`,{
+          headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`}
+        });
+        const rows = await r.json();
+        if(!rows?.length) return;
+        const me = (rows[0].participants||[]).find(p=>p.email===state.user.email);
+        if(me?.paid) {
+          clearInterval(state.pixPollInterval); state.pixPollInterval = null;
+          _autoConfirmPix(b.id);
+        }
+      } catch(_){}
+    }, 5000);
   } catch(e) {
     document.getElementById('pix-content').innerHTML=`
       <div class="pix-icon">⚠️</div>
@@ -2373,6 +2393,7 @@ async function openPix(id) {
 }
 
 function confirmPix() {
+  if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
   const b = state.boloes.find(x=>x.id===state.pixBolaoId);
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
@@ -2381,6 +2402,20 @@ function confirmPix() {
   addSystemMessage(b.id, `💸 ${state.user.name} confirmou o pagamento · R$${b.amount}`);
   saveBoloes(b);
   showToast('✅ Pagamento confirmado! Boa sorte!');
+  back();
+  setTimeout(()=>renderDetail(), 300);
+}
+
+function _autoConfirmPix(bolaoId) {
+  const b = state.boloes.find(x=>x.id===bolaoId);
+  if(!b) return;
+  const me = b.participants.find(p=>p.email===state.user.email);
+  if(me && !me.paid) {
+    me.paid = true;
+    addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
+    saveBoloes(b);
+  }
+  showToast('🎉 PIX confirmado automaticamente! Boa sorte!');
   back();
   setTimeout(()=>renderDetail(), 300);
 }
