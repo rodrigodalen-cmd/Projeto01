@@ -1992,11 +1992,16 @@ function renderDetail() {
         const av = photo
           ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}">`
           : `<div class="part-av-init">${esc(p.name.charAt(0).toUpperCase())}</div>`;
-        const payCtrl = `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
-        return `<div class="part-row">
+        const notParticipating = b.result && !p.paid;
+        const payCtrl = notParticipating
+          ? `<div class="paid-badge" style="background:rgba(231,76,60,.15);color:var(--err)">❌ Não participou</div>`
+          : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
+        return `<div class="part-row" style="${notParticipating?'opacity:.6':''}">
           ${av}
           <div style="flex:1;min-width:0">
-            <div class="part-name">${esc(p.name)}</div>
+            <div class="part-name" style="${notParticipating?'text-decoration:line-through;color:var(--text3)':''}">
+              ${esc(p.name)}${notParticipating?' <span style="font-size:10px;color:var(--err)">(só no grupo)</span>':''}
+            </div>
             <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
           </div>
           ${payCtrl}
@@ -2624,9 +2629,10 @@ function calcPoints(p, result, b) {
 function buildResultCard(b, prize) {
   const h = b.result.home, a = b.result.away;
   const resultText = h>a?`Vitória de ${b.game.home.name}`:a>h?`Vitória de ${b.game.away.name}`:'Empate';
-  const allPts = b.participants.map(p=>calcPoints(p,b.result,b));
+  const paid = b.participants.filter(p=>p.paid);
+  const allPts = paid.map(p=>calcPoints(p,b.result,b));
   const maxPts = allPts.length>0 ? Math.max(...allPts) : 0;
-  const winners = maxPts>0 ? b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts) : [];
+  const winners = maxPts>0 ? paid.filter(p=>calcPoints(p,b.result,b)===maxPts) : [];
   const prizeEach = winners.length>0 ? Math.floor(prize/winners.length) : 0;
   return `<div class="result-final">
     <div class="result-final-lbl">Resultado Oficial</div>
@@ -2647,18 +2653,19 @@ function buildResultCard(b, prize) {
 function buildRanking(b) {
   if(!b.result) return '';
   const medals = ['🥇','🥈','🥉'];
-  const ranked = b.participants
+  const paid = b.participants.filter(p=>p.paid);
+  const unpaid = b.participants.filter(p=>!p.paid);
+  if(paid.length===0 && unpaid.length===0) return '';
+  const ranked = paid
     .map(p=>({...p, pts: calcPoints(p, b.result, b)}))
     .sort((a,b)=>b.pts-a.pts);
-  if(ranked.length===0) return '';
-  const maxPts = ranked[0].pts;
-  // Show confetti if current user is among the winners
-  const myRank = ranked.findIndex(p=>p.email===state.user?.email);
-  if(myRank===0 && maxPts>0 && !_confettiShownIds.has(b.id)) {
+  const maxPts = ranked.length>0 ? ranked[0].pts : 0;
+  const myEntry = ranked.find(p=>p.email===state.user?.email);
+  if(myEntry && myEntry.pts===maxPts && maxPts>0 && !_confettiShownIds.has(b.id)) {
     _confettiShownIds.add(b.id);
     setTimeout(showConfetti, 300);
   }
-  const rows = ranked.map((p,i)=>{
+  const paidRows = ranked.map((p,i)=>{
     const isWinner = p.pts===maxPts && maxPts>0;
     const ur = USERS.find(u=>u.email===p.email);
     const photo = ur?.photo||p.photo;
@@ -2675,9 +2682,26 @@ function buildRanking(b) {
       <div class="rank-pts${isWinner?' gold':''}">${p.pts}pt${p.pts!==1?'s':''}</div>
     </div>`;
   }).join('');
+  const unpaidRows = unpaid.map(p=>{
+    const ur = USERS.find(u=>u.email===p.email);
+    const photo = ur?.photo||p.photo;
+    const av = photo
+      ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}" style="width:32px;height:32px;opacity:.45">`
+      : `<div class="part-av-init" style="width:32px;height:32px;font-size:13px;opacity:.45">${esc(p.name.charAt(0).toUpperCase())}</div>`;
+    return `<div class="rank-row" style="opacity:.55">
+      <div class="rank-pos">—</div>
+      ${av}
+      <div class="rank-info">
+        <div class="rank-name" style="text-decoration:line-through;color:var(--text3)">${esc(p.name)}</div>
+        <div class="rank-bet" style="color:var(--err)">❌ Não participou — pagamento pendente</div>
+      </div>
+      <div class="rank-pts" style="color:var(--text3)">—</div>
+    </div>`;
+  }).join('');
   return `<div style="margin-bottom:16px">
     <div class="section-title">Classificação Final</div>
-    ${rows}
+    ${paidRows}
+    ${unpaidRows}
   </div>`;
 }
 
