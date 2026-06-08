@@ -306,6 +306,11 @@ input:checked+.slider:before{transform:translateX(18px)}
 .t-gcell.bra{border-left:3px solid #009B3A}
 .t-gcell.live{border-color:var(--err)}
 .t-done{color:var(--ok);font-weight:700}
+/* br-carousel */
+.br-card{flex-shrink:0;width:148px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.br-card.live{border-color:var(--err)}
+.br-card:active{opacity:.82}
+#br-carousel::-webkit-scrollbar{display:none}
 /* TERMS */
 .terms-section{margin-top:20px}
 .terms-title{color:var(--secondary);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -711,6 +716,13 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="section-title" style="margin-bottom:0">⚽ Jogos no Brasil</div>
+      <div id="br-live-badge" style="display:none"><span class="live-pill"><span class="live-dot"></span>AO VIVO</span></div>
+    </div>
+    <div id="br-carousel" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;-ms-overflow-style:none;scrollbar-width:none;margin-bottom:20px">
+      <div style="color:var(--text3);font-size:12px;padding:16px 0">Carregando jogos...</div>
+    </div>
     <div class="section-title">Meus Bolões</div>
     <div class="filter-chips" id="home-filters">
       <button class="chip-btn active" onclick="setHomeFilter('all',this)">Todos</button>
@@ -734,7 +746,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === TABELA === -->
 <div class="screen" id="s-tabela">
-  <div class="topbar"><span class="topbar-title">Tabela Copa 2026</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Tabela Copa 2026</span></div>
   <div class="scroll">
     <div id="t-main-filter" class="t-filter-row">
       <button class="t-chip active" onclick="setTF('all',this)">Todos</button>
@@ -813,7 +825,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === PROFILE (tab dentro do home) === -->
 <div class="screen" id="s-profile">
-  <div class="topbar"><span class="topbar-title" style="flex:0;margin-right:auto">Perfil</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Perfil</span></div>
   <div class="scroll" style="padding-top:16px">
     <div class="avatar-card">
       <div class="avatar-upload" onclick="document.getElementById('photo-input').click()">
@@ -931,6 +943,9 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="drawer-nav">
     <button class="drawer-item active" id="di-home" onclick="drawerGo('home')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
+    </button>
+    <button class="drawer-item" id="di-meuboloes" onclick="drawerGo('meuboloes')">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>Meus Bolões
     </button>
     <button class="drawer-item" id="di-tabela" onclick="drawerGo('tabela')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela Copa 2026
@@ -1125,8 +1140,6 @@ let state = {
   champFilter: 'all',
   champRound: 'all',
   champGames: [],
-  champPollInterval: null,
-  champLastUpdate: null,
 };
 
 const GAMES = [
@@ -1294,9 +1307,6 @@ function back() {
   if(cur === 's-pix') {
     if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
     if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-  }
-  if(cur === 's-custom-create') {
-    if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
   }
   const prev = state.screenStack[state.screenStack.length-1];
   document.getElementById(cur).classList.remove('active');
@@ -1475,7 +1485,7 @@ async function loginSuccess() {
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
-  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
+  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); renderBRCarousel(); } }, 60000);
   setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
   requestNotificationPermission();
   scheduleGameNotifications();
@@ -1523,6 +1533,7 @@ function renderHome() {
   renderMyBoloes();
   renderGames();
   renderLiveScores();
+  renderBRCarousel();
 }
 
 function setHomeFilter(filter, btn) {
@@ -3066,6 +3077,7 @@ function updateGlobalNav(screenId) {
   if(screenId==='s-home') document.getElementById('di-home')?.classList.add('active');
   else if(screenId==='s-tabela') document.getElementById('di-tabela')?.classList.add('active');
   else if(screenId==='s-championships'||screenId==='s-custom-create') document.getElementById('di-championships')?.classList.add('active');
+  document.getElementById('di-meuboloes')?.classList.toggle('active', screenId==='s-home' && state._homeMineFilter);
   else if(screenId==='s-join') document.getElementById('di-join')?.classList.add('active');
   else if(screenId==='s-create') document.getElementById('di-create')?.classList.add('active');
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
@@ -3085,6 +3097,7 @@ function closeDrawer() {
 function drawerGo(tab) {
   closeDrawer();
   if(tab==='home') { renderHome(); go('s-home'); }
+  else if(tab==='meuboloes') { go('s-home'); setTimeout(()=>{ setHomeFilter('mine', document.querySelector('#home-filters .chip-btn:nth-child(2)')); const el=document.getElementById('my-boloes-list'); if(el) el.scrollIntoView({behavior:'smooth'}); }, 150); }
   else if(tab==='tabela') { openTabela(); go('s-tabela'); }
   else if(tab==='championships') { renderChampionships(); go('s-championships'); }
   else if(tab==='join') { go('s-join'); }
@@ -3126,6 +3139,124 @@ async function fetchChampionshipScores(espnCode) {
       };
     });
   } catch(_){ return []; }
+}
+
+// ===== JOGOS NO BRASIL (carousel) =====
+const BR_ESPN = ['bra.1','bra.cup','conmebol.libertadores','conmebol.sudamericana'];
+const BR_LABELS = {'bra.1':'Brasileirão','bra.cup':'Copa do Brasil','conmebol.libertadores':'Libertadores','conmebol.sudamericana':'Sudamericana'};
+
+async function renderBRCarousel() {
+  const el = document.getElementById('br-carousel');
+  const badge = document.getElementById('br-live-badge');
+  if(!el) return;
+
+  // Brazil Copa do Mundo games from fixed GAMES array
+  const brazilGames = GAMES.filter(g=>g.home.code==='BRA'||g.away.code==='BRA')
+    .sort((a,b)=>gameDateTime(a)-gameDateTime(b));
+
+  // Fetch ESPN domestic leagues
+  let espnGames = [];
+  try {
+    const results = await Promise.allSettled(
+      BR_ESPN.map(code=>fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard`)
+        .then(r=>r.ok?r.json():null)
+        .then(data=>(data?.events||[]).map(ev=>{
+          const comp=ev.competitions?.[0];
+          const hc=comp?.competitors?.find(c=>c.homeAway==='home');
+          const ac=comp?.competitors?.find(c=>c.homeAway==='away');
+          const st=comp?.status?.type;
+          const evDate=ev.date?new Date(ev.date):null;
+          return {
+            _espn:true, _league:code,
+            id:'espn-'+ev.id,
+            home:{name:hc?.team?.shortDisplayName||'?',code:hc?.team?.abbreviation||'HME',flag:'🏳️'},
+            away:{name:ac?.team?.shortDisplayName||'?',code:ac?.team?.abbreviation||'AWY',flag:'🏳️'},
+            homeScore:hc?.score||'', awayScore:ac?.score||'',
+            isLive:st?.state==='in', isDone:st?.completed||st?.state==='post',
+            min:comp?.status?.displayClock||'',
+            date:evDate?evDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'',
+            time:evDate?evDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'',
+            dateObj:evDate,
+            stage:'', group:'', venue:comp?.venue?.fullName||'', championship:code,
+          };
+        }))
+      )
+    );
+    results.forEach(r=>{ if(r.status==='fulfilled'&&r.value) espnGames.push(...r.value); });
+  } catch(_){}
+
+  const now = new Date();
+  const allCards = [];
+
+  // Copa do Mundo Brazil games
+  brazilGames.forEach(g=>{
+    const sc = _ls[g.id];
+    const dt = gameDateTime(g);
+    const isLive = sc?.status==='LIVE'||(now-dt>=0&&now-dt<=110*60000&&sc?.status!=='FT');
+    const isDone = sc?.status==='FT'||(now-dt>110*60000);
+    allCards.push({...g, isLive, isDone, homeScore:sc?.h??'', awayScore:sc?.a??'', min:sc?.min||'', _label:'Copa 2026 🌍', dateObj:dt});
+  });
+
+  // ESPN games
+  espnGames.forEach(g=>allCards.push({...g, _label:BR_LABELS[g._league]||g._league}));
+
+  // Sort: live first, then by date
+  allCards.sort((a,b)=>{
+    if(a.isLive&&!b.isLive) return -1;
+    if(!a.isLive&&b.isLive) return 1;
+    return (a.dateObj||new Date(9e15))-(b.dateObj||new Date(9e15));
+  });
+
+  const liveCount = allCards.filter(g=>g.isLive).length;
+  if(badge) badge.style.display = liveCount>0?'block':'none';
+
+  if(!allCards.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:16px 0;white-space:nowrap">Nenhum jogo disponível agora</div>';
+    return;
+  }
+
+  el.innerHTML = allCards.map(g=>{
+    const topStatus = g.isLive
+      ? `<span class="t-live-pill" style="font-size:9px"><span class="t-live-dot"></span>${g.min||'LIVE'}</span>`
+      : g.isDone
+        ? `<span style="font-size:9px;font-weight:800;color:var(--ok)">FIM</span>`
+        : `<span style="font-size:9px;font-weight:700;color:var(--text2)">${g.time||g.date||''}</span>`;
+    const score = (g.isLive||g.isDone)
+      ? `<div style="font-size:17px;font-weight:900;color:${g.isLive?'var(--err)':'var(--text)'};letter-spacing:1px;margin:2px 0">${g.homeScore}–${g.awayScore}</div>`
+      : `<div style="font-size:11px;font-weight:800;color:var(--text3);margin:4px 0">VS</div>`;
+    const homeFlag = g.home.flag||'🏳️';
+    const awayFlag = g.away.flag||'🏳️';
+    const gameJson = JSON.stringify({
+      id:'custom-'+Date.now()+'-'+g.id,
+      home:g.home, away:g.away,
+      date:g.date, time:g.time||'',
+      stage:g.stage||g._label||'', group:g.group||'', venue:g.venue||'', championship:g.championship||''
+    }).replace(/"/g,'&quot;');
+    return `<div class="br-card${g.isLive?' live':''}" onclick="go_create_from_brcard(JSON.parse(this.dataset.g))" data-g="${gameJson}">
+      <div style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.3px;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g._label||'')}</div>
+      ${topStatus}
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:2px">
+        <div style="flex:1;text-align:right">
+          <div style="font-size:18px">${homeFlag}</div>
+          <div style="font-size:9px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.home.name)}</div>
+        </div>
+        <div style="flex-shrink:0;min-width:32px;text-align:center">${score}</div>
+        <div style="flex:1;text-align:left">
+          <div style="font-size:18px">${awayFlag}</div>
+          <div style="font-size:9px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.away.name)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function go_create_from_brcard(g) {
+  createState = {
+    step:1, title:`${g.home.name} × ${g.away.name}`, game:g,
+    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
+  };
+  renderCreateStep();
+  go('s-create');
 }
 
 function renderChampionships() {
@@ -3383,6 +3514,24 @@ const _isStandalone = window.navigator.standalone === true ||
                       window.matchMedia('(display-mode: standalone)').matches;
 const _isSafari = /safari/i.test(navigator.userAgent) &&
                   !/chrome|crios|fxios/i.test(navigator.userAgent);
+
+// Swipe-back gesture for iOS/Android
+(function(){
+  let _sx=0,_sy=0,_sTime=0;
+  document.addEventListener('touchstart',e=>{
+    const t=e.touches[0];
+    _sx=t.clientX; _sy=t.clientY; _sTime=Date.now();
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    const t=e.changedTouches[0];
+    const dx=t.clientX-_sx, dy=t.clientY-_sy;
+    const dt=Date.now()-_sTime;
+    // Right swipe from left edge (within 40px) — back navigation
+    if(_sx<40 && dx>60 && Math.abs(dy)<80 && dt<400) {
+      if(state.screenStack.length>1) back();
+    }
+  },{passive:true});
+})();
 
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault();
