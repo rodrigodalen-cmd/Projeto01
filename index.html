@@ -224,6 +224,8 @@ input:checked+.slider:before{transform:translateX(18px)}
 .live-pill{display:inline-flex;align-items:center;gap:4px;background:var(--err);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.5px}
 .live-dot{width:6px;height:6px;border-radius:3px;background:#fff;animation:blink 1.2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes pixPop{0%{opacity:0;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
+@keyframes pixPulse{0%{box-shadow:0 0 0 0 rgba(0,184,148,.5)}70%{box-shadow:0 0 0 24px rgba(0,184,148,0)}100%{box-shadow:0 0 0 0 rgba(0,184,148,0)}}
 .live-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid rgba(231,76,60,.25);margin-bottom:10px;cursor:default}
 .live-score-big{color:var(--secondary);font-size:28px;font-weight:900;text-align:center;letter-spacing:2px}
 .live-min{color:var(--err);font-size:11px;font-weight:700;text-align:center;margin-top:2px}
@@ -2415,9 +2417,14 @@ function _autoConfirmPix(bolaoId) {
     addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
     saveBoloes(b);
   }
-  showToast('🎉 PIX confirmado automaticamente! Boa sorte!');
-  back();
-  setTimeout(()=>renderDetail(), 300);
+  document.getElementById('pix-content').innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;animation:pixPop .5s cubic-bezier(.34,1.56,.64,1) both">
+      <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#00b894,#00cec9);display:flex;align-items:center;justify-content:center;font-size:52px;box-shadow:0 0 0 0 rgba(0,184,148,.4);animation:pixPulse 1s ease-out 3">✅</div>
+      <div style="font-size:26px;font-weight:900;color:#00b894;margin:20px 0 8px;letter-spacing:-.5px">PIX Confirmado!</div>
+      <div style="font-size:15px;color:var(--text2);text-align:center">Pagamento de <b style="color:var(--text1)">R$${b.amount}</b> recebido.<br>Boa sorte no bolão! 🏆</div>
+      <div style="margin-top:28px;font-size:13px;color:var(--text3)">Voltando em instantes...</div>
+    </div>`;
+  setTimeout(()=>{ back(); setTimeout(()=>renderDetail(), 300); }, 2800);
 }
 
 // ===== PROFILE =====
