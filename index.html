@@ -1102,10 +1102,13 @@ async function _loadBoloesFromSupabase() {
   try {
     const { data, error } = await _sb.from('boloes').select('*').order('created_at', {ascending:false});
     if(error || !data) { showToast('⚠️ Erro ao carregar bolões da nuvem'); return; }
-    // Filter: user is creator or participant
+    const _deleted = _getDeleted();
+    // Filter: user is creator or participant, excluding locally-deleted IDs
     const mine = data.filter(row =>
-      row.creator_id === state.user.email ||
-      (row.participants||[]).some(p => p.email === state.user.email)
+      !_deleted.includes(row.id) && (
+        row.creator_id === state.user.email ||
+        (row.participants||[]).some(p => p.email === state.user.email)
+      )
     );
     const sbBoloes = mine.map(_sbRowToBolao);
     // Merge: Supabase wins on matching IDs
@@ -1278,6 +1281,8 @@ function saveBoloes(bolaoToSync)  {
 function saveBolao(b) { saveBoloes(b); }
 function saveSession(u){ try{localStorage.setItem('bolao_session',JSON.stringify(u));}catch(e){} }
 function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){} }
+function _markDeleted(id){ try{ const d=JSON.parse(localStorage.getItem('bolao_deleted')||'[]'); if(!d.includes(id))d.push(id); localStorage.setItem('bolao_deleted',JSON.stringify(d)); }catch(e){} }
+function _getDeleted(){ try{ return JSON.parse(localStorage.getItem('bolao_deleted')||'[]'); }catch(e){ return []; } }
 
 // ===== NAV =====
 function _navCore(screenId, push=true) {
@@ -1309,6 +1314,7 @@ function back() {
   updateGlobalNav(prev);
   if(prev === 's-detail' && state.currentBolaoId) renderDetail();
   if(prev === 's-home') renderHome();
+  if(prev === 's-meuboloes') renderMeusBoloes();
 }
 
 function showToast(msg) {
@@ -2672,21 +2678,37 @@ function updateProfileUI() {
   renderBetHistory();
 }
 
+function _resizePhoto(dataURL) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 280;
+      let w = img.width, h = img.height;
+      const ratio = Math.min(MAX / w, MAX / h, 1);
+      w = Math.round(w * ratio); h = Math.round(h * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => resolve(dataURL);
+    img.src = dataURL;
+  });
+}
+
 function uploadPhoto(input) {
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 5*1024*1024) { showToast('❌ Imagem muito grande (máx 5MB)'); return; }
+  if(file.size > 15*1024*1024) { showToast('❌ Imagem muito grande (máx 15MB)'); return; }
   const reader = new FileReader();
-  reader.onload = (e) => {
-    const photo = e.target.result;
+  reader.onload = async (e) => {
+    const photo = await _resizePhoto(e.target.result);
     state.user.photo = photo;
-    // Persist keyed by email so it survives logout/login cycles
     try { localStorage.setItem(`bolao_photo_${state.user.email}`, photo); } catch(_) {}
     const u = USERS.find(x=>x.email===state.user.email);
     if(u) u.photo = photo;
     saveUsers();
     saveSession(state.user);
-    // Save to Supabase profiles table if connected
     if(_sb && state.user.id) {
       _sb.from('profiles').update({photo}).eq('id', state.user.id).catch(()=>{});
     }
@@ -2936,12 +2958,32 @@ function cancelDeleteBolao() {
 async function confirmDeleteBolao() {
   const id = document.getElementById('delete-bolao-modal').dataset.id;
   document.getElementById('delete-bolao-modal').style.display = 'none';
+  // Mark as deleted so it never comes back from Supabase sync
+  _markDeleted(id);
   state.boloes = state.boloes.filter(x=>x.id!==id);
   saveBoloes();
-  if(_sb) await _sb.from('boloes').delete().eq('id', id);
-  showToast('Bolão excluído');
-  back();
-  setTimeout(()=>renderHome(), 300);
+  // Navigate away BEFORE async Supabase call to avoid blank screen
+  state.currentBolaoId = null;
+  // Go to home cleanly, clearing the detail from the stack
+  const detailIdx = state.screenStack.indexOf('s-detail');
+  if(detailIdx > -1) state.screenStack.splice(detailIdx, 1);
+  const dest = state.screenStack[state.screenStack.length-1] || 's-home';
+  document.querySelectorAll('.screen.active').forEach(s=>s.classList.remove('active'));
+  document.getElementById(dest).classList.add('active');
+  updateGlobalNav(dest);
+  if(dest === 's-home') renderHome();
+  else if(dest === 's-meuboloes') renderMeusBoloes();
+  showToast('✅ Bolão excluído');
+  // Fire-and-forget Supabase delete
+  if(_sb) _sb.from('boloes').delete().eq('id', id).then(({error})=>{
+    if(!error) {
+      // Successfully deleted on server — remove from blacklist
+      try {
+        const d = _getDeleted().filter(x=>x!==id);
+        localStorage.setItem('bolao_deleted', JSON.stringify(d));
+      } catch(e) {}
+    }
+  });
 }
 
 // ===== DEEP LINK =====
