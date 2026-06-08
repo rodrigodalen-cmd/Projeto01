@@ -1960,17 +1960,26 @@ function renderDetail() {
       <button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>
     </div>`;
   } else if(locked && me) {
-    // Locked: read-only view + pix if needed
-    actionBox = `<div class="action-box">
-      ${me.homeScore!=null
-        ? `<div class="my-bet-box">
-             <div class="my-bet-lbl">Meu palpite registrado</div>
-             <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
-             <div style="font-size:11px;color:var(--err);font-weight:600;margin-top:4px">Apostas encerradas</div>
-           </div>`
-        : `<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Você não registrou um palpite</div>`}
-      ${!me.paid && !b.result ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
-    </div>`;
+    if(!me.paid && b.result) {
+      actionBox = `<div class="action-box">
+        <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);border-radius:14px;padding:16px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">😔</div>
+          <div style="font-size:14px;font-weight:800;color:var(--err);margin-bottom:6px">Você não participou deste bolão</div>
+          <div style="font-size:12px;color:var(--text3);line-height:1.5">O pagamento não foi efetuado antes do resultado.<br>Você está no grupo, mas não concorreu ao prêmio.</div>
+        </div>
+      </div>`;
+    } else {
+      actionBox = `<div class="action-box">
+        ${me.homeScore!=null
+          ? `<div class="my-bet-box">
+               <div class="my-bet-lbl">Meu palpite registrado</div>
+               <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+               <div style="font-size:11px;color:var(--err);font-weight:600;margin-top:4px">Apostas encerradas</div>
+             </div>`
+          : `<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Você não registrou um palpite</div>`}
+        ${!me.paid && !b.result ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
+      </div>`;
+    }
   }
 
   // 8. RANKING (if result exists)
@@ -2026,7 +2035,7 @@ function renderDetail() {
     ${pixCard}
     ${creatorBtns}
     ${actionBox}
-    <div class="section-title" style="margin-top:4px">Participantes (${b.participants.length}/${b.maxPart})</div>
+    <div class="section-title" style="margin-top:4px">Participantes <span style="font-weight:400;font-size:12px;color:var(--text3)">(${paidCount} pagantes · ${b.participants.length} no grupo)</span></div>
     ${participantsHTML}
     ${chatHTML}`;
 }
