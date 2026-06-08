@@ -1389,6 +1389,7 @@ async function confirmLogout() {
   state.user = null;
   state.boloes = [];
   if(window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
+  _notifTimeouts.forEach(t=>clearTimeout(t)); _notifTimeouts = [];
   state.screenStack = ['s-login'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   document.getElementById('s-login').classList.add('active');
@@ -2096,7 +2097,7 @@ async function checkJoinCode(code) {
   }
   el.innerHTML=`<div class="found-box">
     <div class="found-header">✅ Bolão encontrado!</div>
-    <div style="font-size:16px;font-weight:800;margin-bottom:8px">${b.title}</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:8px">${esc(b.title)}</div>
     <div class="match-card" style="cursor:default;margin-bottom:10px">
       <div class="match-stage"><span>${b.game.stage}</span><span>${b.game.date}</span></div>
       <div class="match-row">
@@ -2152,7 +2153,7 @@ function renderBet() {
   const me = b.participants.find(p=>p.email===state.user?.email);
   const isEditing = me?.homeScore!=null;
   document.getElementById('bet-content').innerHTML=`
-    <p style="color:var(--text2);font-size:13px;text-align:center;margin-bottom:12px">${b.title}</p>
+    <p style="color:var(--text2);font-size:13px;text-align:center;margin-bottom:12px">${esc(b.title)}</p>
     ${isEditing ? `<div class="editing-notice">Editando palpite atual: ${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>` : ''}
     <div class="bet-card">
       <div class="bet-teams">
@@ -2272,9 +2273,9 @@ function scheduleGameNotifications() {
 
 // ===== PIX =====
 function openPix(id) {
-  state.pixBolaoId = id;
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
+  state.pixBolaoId = id;
   const creator = USERS.find(x=>x.email===b.creatorId);
   const pixKey = b.creatorPixKey || creator?.pix || '';
   document.getElementById('pix-content').innerHTML=`
@@ -2319,7 +2320,7 @@ function updateProfileUI() {
   // Update avatar (photo or initials)
   const wrap = document.getElementById('prof-avatar-wrap');
   const photo = state.user.photo;
-  const initial = state.user.name.charAt(0).toUpperCase();
+  const initial = state.user.name?.charAt(0)?.toUpperCase() || '?';
   if(wrap) {
     wrap.innerHTML = photo
       ? `<img class="av-img" src="${photo}" alt="foto">`
@@ -2520,7 +2521,7 @@ function buildResultCard(b, prize) {
     <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:4px">${resultText}</div>
     ${winners.length>0
       ? `<div style="margin-top:12px;padding:8px 12px;background:rgba(255,255,255,.12);border-radius:10px;font-size:13px;color:#fff;font-weight:700">
-           🏆 ${winners.map(w=>w.name).join(' & ')} ${winners.length===1?'ganhou':'ganharam'} R$${prizeEach} cada!
+           🏆 ${winners.map(w=>esc(w.name)).join(' & ')} ${winners.length===1?'ganhou':'ganharam'} R$${prizeEach} cada!
          </div>`
       : `<div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.65)">Ninguém acertou o placar exato</div>`}
   </div>`;
@@ -2967,7 +2968,7 @@ function renderBetHistory() {
     const statusTxt = pts===null?'Aguardando resultado':pts===ptExact?'Acertou!':pts===ptResult?'Resultado certo':'Errou';
     return `<div class="history-row" onclick="openDetail('${b.id}')">
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
         <div style="font-size:11px;color:var(--text3)">${b.game.home.flag} ${b.game.home.code} × ${b.game.away.code} ${b.game.away.flag} · ${b.game.date}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${me?.homeScore!=null?`Palpite: ${me.homeScore} × ${me.awayScore}`:'Sem palpite'}</div>
       </div>
