@@ -2329,7 +2329,7 @@ async function openPix(id) {
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-pix`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/dynamic-processor`, {
       method:'POST',
       headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
       body: JSON.stringify({
