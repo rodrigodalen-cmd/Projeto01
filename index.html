@@ -1031,7 +1031,7 @@ async function _loadBoloesFromSupabase() {
   if(!_sb || !state.user) return;
   try {
     const { data, error } = await _sb.from('boloes').select('*').order('created_at', {ascending:false});
-    if(error || !data) return;
+    if(error || !data) { showToast('⚠️ Erro ao carregar bolões da nuvem'); return; }
     // Filter: user is creator or participant
     const mine = data.filter(row =>
       row.creator_id === state.user.email ||
@@ -1042,7 +1042,7 @@ async function _loadBoloesFromSupabase() {
     const localOnly = state.boloes.filter(b => !sbBoloes.find(s => s.id === b.id));
     state.boloes = [...sbBoloes, ...localOnly];
     try { localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes)); } catch(e) {}
-  } catch(e) {}
+  } catch(e) { showToast('⚠️ Sem conexão — usando dados locais'); }
 }
 
 async function _syncBolaoToSupabase(b) {
@@ -1411,7 +1411,7 @@ function goRegister() {
 
 // ===== HOME =====
 function renderHome() {
-  document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name.split(' ')[0]} 👋`;
+  document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name?.split(' ')[0] || 'amigo'} 👋`;
   renderMyBoloes();
   renderGames();
   renderLiveScores();
