@@ -1,65 +1,59 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg2" cx="35%" cy="25%" r="75%">
-      <stop offset="0%" stop-color="#1B3A6B"/>
-      <stop offset="100%" stop-color="#071525"/>
-    </radialGradient>
-    <radialGradient id="ball2" cx="36%" cy="30%" r="68%">
+    <radialGradient id="ballG2" cx="36%" cy="30%" r="68%">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="75%" stop-color="#f2f2f2"/>
-      <stop offset="100%" stop-color="#d5d5d5"/>
+      <stop offset="100%" stop-color="#c8c8c8"/>
     </radialGradient>
-    <radialGradient id="green2" cx="50%" cy="0%" r="100%">
-      <stop offset="0%" stop-color="#00803A"/>
-      <stop offset="100%" stop-color="#004520"/>
-    </radialGradient>
-    <filter id="bs2">
-      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#000" flood-opacity="0.4"/>
+    <linearGradient id="cupG2" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFE55C"/>
+      <stop offset="45%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#B8860B"/>
+    </linearGradient>
+    <linearGradient id="stemG2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#A07800"/>
+      <stop offset="40%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#A07800"/>
+    </linearGradient>
+    <filter id="sh4">
+      <feDropShadow dx="0" dy="5" stdDeviation="10" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="sh5">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
     </filter>
   </defs>
 
-  <!-- Full bleed background (maskable: content fills entire square, safe zone is inner 80%) -->
-  <rect width="512" height="512" fill="url(#bg2)"/>
+  <!-- Full bleed for maskable (safe zone = inner 80%) -->
+  <polygon points="0,0 512,0 0,512" fill="#27A84A"/>
+  <polygon points="512,0 512,512 0,512" fill="#F5C518"/>
+  <line x1="0" y1="512" x2="512" y2="0" stroke="rgba(255,255,255,0.18)" stroke-width="28"/>
 
-  <!-- Green field -->
-  <path d="M0,360 L512,360 L512,512 L0,512 Z" fill="url(#green2)"/>
+  <ellipse cx="256" cy="436" rx="125" ry="16" fill="rgba(0,0,0,0.22)"/>
 
-  <!-- Yellow stripe -->
-  <rect x="0" y="352" width="512" height="14" fill="#F4D03F"/>
-  <rect x="0" y="352" width="512" height="5" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="256" cy="292" r="150" fill="url(#ballG2)" filter="url(#sh4)"/>
+  <path d="M256,155 L304,184 L288,242 L224,242 L208,184Z" fill="#111" opacity="0.87"/>
+  <path d="M208,184 L158,177 L133,228 L168,277 L208,242Z" fill="#111" opacity="0.87"/>
+  <path d="M304,184 L354,177 L379,228 L344,277 L304,242Z" fill="#111" opacity="0.87"/>
+  <path d="M168,277 L133,322 L158,371 L215,381 L238,335 L208,242Z" fill="#111" opacity="0.87"/>
+  <path d="M344,277 L379,322 L354,371 L297,381 L274,335 L304,242Z" fill="#111" opacity="0.87"/>
+  <path d="M238,335 L215,381 L256,399 L297,381 L274,335 L256,348Z" fill="#111" opacity="0.87"/>
+  <circle cx="256" cy="292" r="150" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
 
-  <!-- Ball shadow -->
-  <ellipse cx="256" cy="354" rx="90" ry="12" fill="rgba(0,0,0,0.3)"/>
+  <path d="M196,188 Q150,188 150,228 Q150,265 196,268" fill="none" stroke="url(#cupG2)" stroke-width="22" stroke-linecap="round"/>
+  <path d="M316,188 Q362,188 362,228 Q362,265 316,268" fill="none" stroke="url(#cupG2)" stroke-width="22" stroke-linecap="round"/>
+  <path d="M196,162 L196,255 Q196,285 256,288 Q316,285 316,255 L316,162 Z" fill="url(#cupG2)" filter="url(#sh4)"/>
+  <rect x="187" y="152" width="138" height="18" rx="9" fill="#FFE55C"/>
+  <path d="M213,168 L228,168 L225,278 L213,275Z" fill="rgba(255,255,255,0.28)"/>
+  <rect x="238" y="288" width="36" height="32" rx="4" fill="url(#stemG2)"/>
+  <rect x="208" y="318" width="96" height="16" rx="8" fill="url(#cupG2)"/>
+  <rect x="200" y="330" width="112" height="12" rx="6" fill="#FFD700"/>
 
-  <!-- Soccer ball (within safe zone) -->
-  <circle cx="256" cy="200" r="116" fill="url(#ball2)" filter="url(#bs2)"/>
-
-  <!-- Pentagon patches -->
-  <path d="M256,97  L298,122 L284,168 L228,168 L214,122 Z" fill="#111" opacity="0.88"/>
-  <path d="M214,122 L170,117 L148,160 L176,200 L214,168 Z" fill="#111" opacity="0.88"/>
-  <path d="M298,122 L342,117 L364,160 L336,200 L298,168 Z" fill="#111" opacity="0.88"/>
-  <path d="M176,200 L148,238 L168,280 L214,288 L232,246 L214,168 Z" fill="#111" opacity="0.88"/>
-  <path d="M336,200 L364,238 L344,280 L298,288 L280,246 L298,168 Z" fill="#111" opacity="0.88"/>
-  <path d="M232,246 L214,288 L256,306 L298,288 L280,246 L256,258 Z" fill="#111" opacity="0.88"/>
-
-  <!-- Ball outline -->
-  <circle cx="256" cy="200" r="116" fill="none" stroke="rgba(180,180,180,0.4)" stroke-width="2"/>
-
-  <!-- "Bolão" text — within safe zone (y ≤ 460) -->
-  <text x="256" y="432"
-    font-size="80"
-    font-family="'Arial Black', Arial, sans-serif"
-    font-weight="900"
-    fill="#F4D03F"
-    text-anchor="middle"
-    letter-spacing="-1">Bolão</text>
-
-  <!-- "Copa 2026" — within safe zone -->
-  <text x="256" y="474"
-    font-size="24"
-    font-family="Arial, Helvetica, sans-serif"
-    font-weight="700"
-    fill="rgba(255,255,255,0.85)"
-    text-anchor="middle"
-    letter-spacing="5">COPA 2026</text>
+  <g transform="translate(178,76) scale(0.72)" filter="url(#sh5)">
+    <polygon points="0,-30 6.8,-10 28,-10 11.5,3.5 18.5,24 0,12 -18.5,24 -11.5,3.5 -28,-10 -6.8,-10" fill="#FFD700"/>
+  </g>
+  <g transform="translate(256,64)" filter="url(#sh5)">
+    <polygon points="0,-34 7.8,-11 32,-11 13,4 20,27 0,14 -20,27 -13,4 -32,-11 -7.8,-11" fill="#FFD700"/>
+  </g>
+  <g transform="translate(334,76) scale(0.72)" filter="url(#sh5)">
+    <polygon points="0,-30 6.8,-10 28,-10 11.5,3.5 18.5,24 0,12 -18.5,24 -11.5,3.5 -28,-10 -6.8,-10" fill="#FFD700"/>
+  </g>
 </svg>
