@@ -1125,6 +1125,8 @@ let state = {
   champFilter: 'all',
   champRound: 'all',
   champGames: [],
+  champPollInterval: null,
+  champLastUpdate: null,
 };
 
 const GAMES = [
@@ -1292,6 +1294,9 @@ function back() {
   if(cur === 's-pix') {
     if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
     if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
+  }
+  if(cur === 's-custom-create') {
+    if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
   }
   const prev = state.screenStack[state.screenStack.length-1];
   document.getElementById(cur).classList.remove('active');
