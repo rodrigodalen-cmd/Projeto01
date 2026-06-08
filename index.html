@@ -1195,6 +1195,8 @@ function back() {
   document.getElementById(prev).classList.remove('prev');
   document.getElementById(prev).classList.add('active');
   updateGlobalNav(prev);
+  if(prev === 's-detail' && state.currentBolaoId) renderDetail();
+  if(prev === 's-home') renderHome();
 }
 
 function showToast(msg) {
@@ -1365,7 +1367,7 @@ async function loginSuccess() {
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
-  window._liveInterval = setInterval(()=>{ fetchTabelaScores(); renderLiveScores(); }, 60000);
+  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
   setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
   requestNotificationPermission();
   scheduleGameNotifications();
