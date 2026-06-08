@@ -1031,7 +1031,7 @@ async function _loadBoloesFromSupabase() {
   if(!_sb || !state.user) return;
   try {
     const { data, error } = await _sb.from('boloes').select('*').order('created_at', {ascending:false});
-    if(error || !data) return;
+    if(error || !data) { showToast('⚠️ Erro ao carregar bolões da nuvem'); return; }
     // Filter: user is creator or participant
     const mine = data.filter(row =>
       row.creator_id === state.user.email ||
@@ -1042,7 +1042,7 @@ async function _loadBoloesFromSupabase() {
     const localOnly = state.boloes.filter(b => !sbBoloes.find(s => s.id === b.id));
     state.boloes = [...sbBoloes, ...localOnly];
     try { localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes)); } catch(e) {}
-  } catch(e) {}
+  } catch(e) { showToast('⚠️ Sem conexão — usando dados locais'); }
 }
 
 async function _syncBolaoToSupabase(b) {
@@ -1195,6 +1195,8 @@ function back() {
   document.getElementById(prev).classList.remove('prev');
   document.getElementById(prev).classList.add('active');
   updateGlobalNav(prev);
+  if(prev === 's-detail' && state.currentBolaoId) renderDetail();
+  if(prev === 's-home') renderHome();
 }
 
 function showToast(msg) {
@@ -1365,7 +1367,7 @@ async function loginSuccess() {
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
-  window._liveInterval = setInterval(()=>{ fetchTabelaScores(); renderLiveScores(); }, 60000);
+  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
   setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
   requestNotificationPermission();
   scheduleGameNotifications();
@@ -1409,7 +1411,7 @@ function goRegister() {
 
 // ===== HOME =====
 function renderHome() {
-  document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name.split(' ')[0]} 👋`;
+  document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name?.split(' ')[0] || 'amigo'} 👋`;
   renderMyBoloes();
   renderGames();
   renderLiveScores();
@@ -2508,8 +2510,9 @@ function calcPoints(p, result, b) {
 function buildResultCard(b, prize) {
   const h = b.result.home, a = b.result.away;
   const resultText = h>a?`Vitória de ${b.game.home.name}`:a>h?`Vitória de ${b.game.away.name}`:'Empate';
-  const maxPts = b.pointsExact ?? 3;
-  const winners = b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts);
+  const allPts = b.participants.map(p=>calcPoints(p,b.result,b));
+  const maxPts = allPts.length>0 ? Math.max(...allPts) : 0;
+  const winners = maxPts>0 ? b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts) : [];
   const prizeEach = winners.length>0 ? Math.floor(prize/winners.length) : 0;
   return `<div class="result-final">
     <div class="result-final-lbl">Resultado Oficial</div>
