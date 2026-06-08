@@ -2314,29 +2314,57 @@ function scheduleGameNotifications() {
 }
 
 // ===== PIX =====
-function openPix(id) {
+async function openPix(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
   state.pixBolaoId = id;
-  const creator = USERS.find(x=>x.email===b.creatorId);
-  const pixKey = b.creatorPixKey || creator?.pix || '';
+  go('s-pix');
   document.getElementById('pix-content').innerHTML=`
     <div class="pix-icon">🏦</div>
     <div class="pix-title">Pagamento via Pix</div>
     <div class="pix-amount">R$${b.amount}</div>
-    ${pixKey ? `
-    <div style="background:rgba(50,188,173,.1);border:1px solid rgba(50,188,173,.3);border-radius:14px;padding:16px;text-align:center;margin:16px 0">
-      <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Chave Pix do organizador</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Para: <strong style="color:var(--text)">${esc(b.creatorName)}</strong></div>
-      <div style="font-size:16px;color:var(--pix);font-weight:700;word-break:break-all;margin-bottom:8px">${esc(pixKey)}</div>
-      <button class="btn btn-ghost btn-sm" data-pix="${esc(pixKey)}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('Chave copiada!'))">Copiar chave</button>
-    </div>` : `
-    <div class="qr-mock"><span style="font-size:80px;line-height:1">📱</span></div>
-    <div class="pix-key">Entre em contato com ${esc(b.creatorName)} para obter a chave Pix</div>`}
-    <div class="pix-info">Transfira exatamente <strong>R$${b.amount}</strong> para a chave Pix acima e depois toque em "Confirmar pagamento".</div>
-    <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">Confirmar pagamento</button>
+    <div style="text-align:center;padding:28px 0;color:var(--text3)">
+      <div style="font-size:36px;margin-bottom:10px">⏳</div>
+      <div style="font-size:13px">Gerando QR Code...</div>
+    </div>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
-  go('s-pix');
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-pix`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      body: JSON.stringify({
+        bolaoId: b.id,
+        amount: b.amount,
+        payerEmail: state.user.email,
+        description: `Bolão: ${b.title}`,
+      }),
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    const qrHtml = data.qrCodeBase64
+      ? `<img src="data:image/png;base64,${data.qrCodeBase64}" style="width:200px;height:200px;border-radius:12px;margin:8px auto;display:block;background:#fff;padding:8px">`
+      : `<div class="qr-mock"><span style="font-size:80px;line-height:1">📱</span></div>`;
+    document.getElementById('pix-content').innerHTML=`
+      <div class="pix-icon">🏦</div>
+      <div class="pix-title">Pagamento via Pix</div>
+      <div class="pix-amount">R$${b.amount}</div>
+      ${qrHtml}
+      <div style="margin:12px 0;text-align:center">
+        <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pix Copia e Cola</div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;max-height:72px;overflow:hidden">${data.qrCode||'—'}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pix="${data.qrCode||''}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('✅ Código copiado!'))">📋 Copiar código PIX</button>
+      </div>
+      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. Após pagar, toque em "Confirmar".</div>
+      <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Confirmar pagamento</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
+  } catch(e) {
+    document.getElementById('pix-content').innerHTML=`
+      <div class="pix-icon">⚠️</div>
+      <div class="pix-title" style="color:var(--warn)">Erro ao gerar PIX</div>
+      <div class="pix-info" style="margin-top:8px">${e.message||'Verifique sua conexão e tente novamente.'}</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="openPix('${b.id}')">Tentar novamente</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
+  }
 }
 
 function confirmPix() {
