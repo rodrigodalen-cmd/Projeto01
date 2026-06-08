@@ -961,7 +961,7 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="scroll" id="championships-content"></div>
 </div>
 
-<!-- === CRIAR BOLÃO PERSONALIZADO (campeonatos) === -->
+<!-- === CRIAR BOLÃO PERSONALIZADO === -->
 <div class="screen" id="s-custom-create">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title" id="custom-create-title">Criar Bolão</span></div>
   <div class="scroll" id="custom-create-content"></div>
@@ -1116,8 +1116,6 @@ let state = {
   createData: {},
   currentBolaoId: null,
   betScores: {home:0, away:0},
-  customChampionship: null,
-  pixTimerInterval: null,
   betBolaoId: null,
   pixBolaoId: null,
   editingBet: {},
@@ -1217,41 +1215,37 @@ const USERS = [];
 
 // ===== CAMPEONATOS =====
 const CHAMPIONSHIPS = [
-  { category: '🌍 Seleções', items: [
-    { id: 'copa-mundo',      name: 'Copa do Mundo FIFA',     flag: '🌍', region: 'Mundial' },
-    { id: 'eurocopa',        name: 'Eurocopa UEFA',          flag: '🇪🇺', region: 'Europa' },
-    { id: 'copa-america',    name: 'Copa América',           flag: '🌎', region: 'América do Sul' },
-    { id: 'afcon',           name: 'Copa Africana (AFCON)',  flag: '🌍', region: 'África' },
-    { id: 'copa-asiatica',   name: 'Copa Asiática AFC',      flag: '🌏', region: 'Ásia' },
-    { id: 'gold-cup',        name: 'Gold Cup CONCACAF',      flag: '🌎', region: 'América do Norte' },
-    { id: 'nations-league',  name: 'UEFA Nations League',    flag: '🇪🇺', region: 'Europa' },
+  { category: '🌍 Seleções', espn: 'selecoes', items: [
+    { id: 'copa-mundo',      name: 'Copa do Mundo FIFA',     flag: '🌍', region: 'Mundial',         espn: 'fifa.world' },
+    { id: 'eurocopa',        name: 'Eurocopa UEFA',          flag: '🇪🇺', region: 'Europa',          espn: 'uefa.euro' },
+    { id: 'copa-america',    name: 'Copa América',           flag: '🌎', region: 'América do Sul',   espn: 'conmebol.america' },
+    { id: 'afcon',           name: 'Copa Africana (AFCON)',  flag: '🌍', region: 'África',           espn: 'caf.nations' },
+    { id: 'gold-cup',        name: 'Gold Cup CONCACAF',      flag: '🌎', region: 'América do Norte', espn: 'concacaf.gold' },
+    { id: 'nations-league',  name: 'UEFA Nations League',    flag: '🇪🇺', region: 'Europa',          espn: 'uefa.nations' },
   ]},
   { category: '🏆 Clubes — Internacional', items: [
-    { id: 'champions',       name: 'UEFA Champions League',  flag: '⭐', region: 'Europa' },
-    { id: 'europa-league',   name: 'UEFA Europa League',     flag: '🟠', region: 'Europa' },
-    { id: 'conference',      name: 'UEFA Conference League', flag: '🟢', region: 'Europa' },
-    { id: 'libertadores',    name: 'Copa Libertadores',      flag: '🌎', region: 'América do Sul' },
-    { id: 'sudamericana',    name: 'Copa Sudamericana',      flag: '🌎', region: 'América do Sul' },
-    { id: 'mundial-clubes',  name: 'Mundial de Clubes FIFA', flag: '🌍', region: 'Mundial' },
-    { id: 'afc-champions',   name: 'AFC Champions League',   flag: '🌏', region: 'Ásia' },
-    { id: 'caf-champions',   name: 'CAF Champions League',   flag: '🌍', region: 'África' },
+    { id: 'champions',       name: 'UEFA Champions League',  flag: '⭐', region: 'Europa',           espn: 'uefa.champions' },
+    { id: 'europa-league',   name: 'UEFA Europa League',     flag: '🟠', region: 'Europa',           espn: 'uefa.europa' },
+    { id: 'conference',      name: 'UEFA Conference League', flag: '🟢', region: 'Europa',           espn: 'uefa.europa.conference' },
+    { id: 'libertadores',    name: 'Copa Libertadores',      flag: '🌎', region: 'América do Sul',   espn: 'conmebol.libertadores' },
+    { id: 'sudamericana',    name: 'Copa Sudamericana',      flag: '🌎', region: 'América do Sul',   espn: 'conmebol.sudamericana' },
+    { id: 'mundial-clubes',  name: 'Mundial de Clubes FIFA', flag: '🌍', region: 'Mundial',          espn: 'fifa.cwc' },
   ]},
   { category: '⚽ Ligas Nacionais', items: [
-    { id: 'premier-league',  name: 'Premier League',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', region: 'Inglaterra' },
-    { id: 'la-liga',         name: 'La Liga',                flag: '🇪🇸', region: 'Espanha' },
-    { id: 'bundesliga',      name: 'Bundesliga',             flag: '🇩🇪', region: 'Alemanha' },
-    { id: 'serie-a',         name: 'Serie A',                flag: '🇮🇹', region: 'Itália' },
-    { id: 'ligue-1',         name: 'Ligue 1',                flag: '🇫🇷', region: 'França' },
-    { id: 'brasileirao',     name: 'Brasileirão Série A',    flag: '🇧🇷', region: 'Brasil' },
-    { id: 'copa-brasil',     name: 'Copa do Brasil',         flag: '🇧🇷', region: 'Brasil' },
-    { id: 'liga-mx',         name: 'Liga MX',                flag: '🇲🇽', region: 'México' },
-    { id: 'mls',             name: 'MLS',                    flag: '🇺🇸', region: 'EUA/Canadá' },
-    { id: 'eredivisie',      name: 'Eredivisie',             flag: '🇳🇱', region: 'Holanda' },
-    { id: 'primeira-liga',   name: 'Primeira Liga',          flag: '🇵🇹', region: 'Portugal' },
-    { id: 'argentina-pd',    name: 'Primera División',       flag: '🇦🇷', region: 'Argentina' },
-    { id: 'super-lig',       name: 'Süper Lig',              flag: '🇹🇷', region: 'Turquia' },
-    { id: 'saudi-pro',       name: 'Saudi Pro League',       flag: '🇸🇦', region: 'Arábia Saudita' },
-    { id: 'scottish-prem',   name: 'Scottish Premiership',   flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', region: 'Escócia' },
+    { id: 'premier-league',  name: 'Premier League',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', region: 'Inglaterra',    espn: 'eng.1' },
+    { id: 'la-liga',         name: 'La Liga',                flag: '🇪🇸', region: 'Espanha',         espn: 'esp.1' },
+    { id: 'bundesliga',      name: 'Bundesliga',             flag: '🇩🇪', region: 'Alemanha',        espn: 'ger.1' },
+    { id: 'serie-a',         name: 'Serie A',                flag: '🇮🇹', region: 'Itália',          espn: 'ita.1' },
+    { id: 'ligue-1',         name: 'Ligue 1',                flag: '🇫🇷', region: 'França',          espn: 'fra.1' },
+    { id: 'brasileirao',     name: 'Brasileirão Série A',    flag: '🇧🇷', region: 'Brasil',          espn: 'bra.1' },
+    { id: 'copa-brasil',     name: 'Copa do Brasil',         flag: '🇧🇷', region: 'Brasil',          espn: 'bra.cup' },
+    { id: 'liga-mx',         name: 'Liga MX',                flag: '🇲🇽', region: 'México',          espn: 'mex.1' },
+    { id: 'mls',             name: 'MLS',                    flag: '🇺🇸', region: 'EUA/Canadá',      espn: 'usa.1' },
+    { id: 'eredivisie',      name: 'Eredivisie',             flag: '🇳🇱', region: 'Holanda',         espn: 'ned.1' },
+    { id: 'primeira-liga',   name: 'Primeira Liga',          flag: '🇵🇹', region: 'Portugal',        espn: 'por.1' },
+    { id: 'argentina-pd',    name: 'Primera División',       flag: '🇦🇷', region: 'Argentina',       espn: 'arg.1' },
+    { id: 'super-lig',       name: 'Süper Lig',              flag: '🇹🇷', region: 'Turquia',         espn: 'tur.1' },
+    { id: 'saudi-pro',       name: 'Saudi Pro League',       flag: '🇸🇦', region: 'Arábia Saudita',  espn: 'ksa.1' },
   ]},
 ];
 
@@ -1904,7 +1898,7 @@ function renderDetail() {
     deadlineBadge = `<div class="deadline-badge deadline-open">✅ Apostas abertas — fecha em ${countdown}</div>`;
   }
 
-  // 1b. PAINEL DE PAGAMENTOS (visível para todos)
+  // 1b. PAINEL DE PAGAMENTOS
   const unpaidList = b.participants.filter(p=>!p.paid);
   const paymentPanel = b.participants.length > 0 && !b.result ? `
     <div style="background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:12px">
@@ -1915,8 +1909,7 @@ function renderDetail() {
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${b.participants.map(p=>`
           <div style="display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${p.paid?'rgba(39,174,96,.12)':'rgba(243,156,18,.1)'};color:${p.paid?'var(--ok)':'var(--warn)'}">
-            <span>${p.paid?'✅':'⏳'}</span>
-            <span>${esc(p.name.split(' ')[0])}</span>
+            <span>${p.paid?'✅':'⏳'}</span><span>${esc(p.name.split(' ')[0])}</span>
           </div>`).join('')}
       </div>
       ${unpaidList.length>0?`<div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">Aguardando: ${unpaidList.map(p=>esc(p.name.split(' ')[0])).join(', ')}</div>`:''}
@@ -2047,6 +2040,7 @@ function renderDetail() {
         </div>
       </div>`;
     } else {
+      // Locked: read-only view + pix if needed
       actionBox = `<div class="action-box">
         ${me.homeScore!=null
           ? `<div class="my-bet-box">
@@ -2079,16 +2073,11 @@ function renderDetail() {
         const av = photo
           ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}">`
           : `<div class="part-av-init">${esc(p.name.charAt(0).toUpperCase())}</div>`;
-        const notParticipating = b.result && !p.paid;
-        const payCtrl = notParticipating
-          ? `<div class="paid-badge" style="background:rgba(231,76,60,.15);color:var(--err)">❌ Não participou</div>`
-          : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
-        return `<div class="part-row" style="${notParticipating?'opacity:.6':''}">
+        const payCtrl = `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
+        return `<div class="part-row">
           ${av}
           <div style="flex:1;min-width:0">
-            <div class="part-name" style="${notParticipating?'text-decoration:line-through;color:var(--text3)':''}">
-              ${esc(p.name)}${notParticipating?' <span style="font-size:10px;color:var(--err)">(só no grupo)</span>':''}
-            </div>
+            <div class="part-name">${esc(p.name)}</div>
             <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
           </div>
           ${payCtrl}
@@ -2458,7 +2447,7 @@ async function openPix(id) {
       <div class="pix-amount">R$${b.amount}</div>
       ${qrHtml}
       ${copiaCola}
-      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. A confirmação é automática.</div>
+      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco.</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0;padding:10px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)">
         <span style="font-size:20px">⏱️</span>
         <div style="text-align:left">
@@ -2466,10 +2455,10 @@ async function openPix(id) {
           <div id="pix-timer" style="font-size:22px;font-weight:900;color:var(--secondary);letter-spacing:1px;line-height:1.2">10:00</div>
         </div>
       </div>
-      <div id="pix-status" style="text-align:center;font-size:12px;color:var(--text3);margin:4px 0">⏳ Aguardando pagamento...</div>
+      <div style="text-align:center;font-size:12px;color:var(--text3);margin:4px 0">⏳ Aguardando pagamento...</div>
       <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="back()">Cancelar</button>`;
 
-    if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
+    if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
     if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
 
     let secsLeft = 600;
@@ -2517,7 +2506,6 @@ async function openPix(id) {
 }
 
 function confirmPix() {
-  if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
   const b = state.boloes.find(x=>x.id===state.pixBolaoId);
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
@@ -2543,7 +2531,7 @@ function _autoConfirmPix(bolaoId) {
   }
   document.getElementById('pix-content').innerHTML=`
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;animation:pixPop .5s cubic-bezier(.34,1.56,.64,1) both">
-      <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#00b894,#00cec9);display:flex;align-items:center;justify-content:center;font-size:52px;box-shadow:0 0 0 0 rgba(0,184,148,.4);animation:pixPulse 1s ease-out 3">✅</div>
+      <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#00b894,#00cec9);display:flex;align-items:center;justify-content:center;font-size:52px;animation:pixPulse 1s ease-out 3">✅</div>
       <div style="font-size:26px;font-weight:900;color:#00b894;margin:20px 0 8px;letter-spacing:-.5px">PIX Confirmado!</div>
       <div style="font-size:15px;color:var(--text2);text-align:center">Pagamento de <b style="color:var(--text1)">R$${b.amount}</b> recebido.<br>Boa sorte no bolão! 🏆</div>
       <div style="margin-top:28px;font-size:13px;color:var(--text3)">Voltando em instantes...</div>
@@ -2557,7 +2545,6 @@ function _notifyCreator(b, payerName) {
   new Notification(`💸 Pagamento recebido — ${b.title}`, {
     body: `${payerName} pagou R$${b.amount} no seu bolão!`,
     icon: '/Projeto01/icon.svg',
-    badge: '/Projeto01/icon.svg',
     tag: `pix-${b.id}-${Date.now()}`,
   });
 }
@@ -2824,7 +2811,7 @@ function buildRanking(b) {
       ${av}
       <div class="rank-info">
         <div class="rank-name" style="text-decoration:line-through;color:var(--text3)">${esc(p.name)}</div>
-        <div class="rank-bet" style="color:var(--err)">❌ Não participou — pagamento pendente</div>
+        <div class="rank-bet" style="color:var(--err)">❌ Não efetuou o pagamento</div>
       </div>
       <div class="rank-pts" style="color:var(--text3)">—</div>
     </div>`;
@@ -3092,20 +3079,47 @@ function drawerGo(tab) {
 }
 
 // ===== CAMPEONATOS =====
+const _champScores = {};
+
+async function fetchChampionshipScores(espnCode, containerId) {
+  try {
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/scoreboard`);
+    if(!r.ok) return [];
+    const data = await r.json();
+    return (data.events||[]).slice(0,6).map(ev=>{
+      const comp = ev.competitions?.[0];
+      const competitors = comp?.competitors||[];
+      const hc = competitors.find(c=>c.homeAway==='home');
+      const ac = competitors.find(c=>c.homeAway==='away');
+      const st = comp?.status?.type;
+      const isLive = st?.state==='in';
+      const isDone = st?.state==='post';
+      const min = comp?.status?.displayClock||'';
+      return {
+        home: hc?.team?.shortDisplayName||hc?.team?.name||'?',
+        away: ac?.team?.shortDisplayName||ac?.team?.name||'?',
+        homeScore: hc?.score||'',
+        awayScore: ac?.score||'',
+        isLive, isDone, min,
+        date: ev.date ? new Date(ev.date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '',
+        time: ev.date ? new Date(ev.date).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '',
+      };
+    });
+  } catch(_){ return []; }
+}
+
 function renderChampionships() {
   const el = document.getElementById('championships-content');
   if(!el) return;
   el.innerHTML = `
     <div style="padding-bottom:8px">
-      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.5">
-        Escolha um campeonato para criar um bolão com seus amigos.
-      </div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.5">Escolha um campeonato para ver os jogos ao vivo ou criar um bolão.</div>
       ${CHAMPIONSHIPS.map(cat=>`
         <div style="margin-bottom:24px">
           <div class="section-title" style="margin-bottom:10px">${esc(cat.category)}</div>
           ${cat.items.map(c=>`
             <div onclick="openChampionship(${JSON.stringify(c).replace(/"/g,'&quot;')})"
-              style="display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer;transition:background .15s"
+              style="display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer"
               ontouchstart="this.style.background='var(--surface2)'" ontouchend="this.style.background='var(--surface)'">
               <div style="font-size:28px;line-height:1;width:36px;text-align:center">${c.flag}</div>
               <div style="flex:1;min-width:0">
@@ -3113,31 +3127,29 @@ function renderChampionships() {
                 <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(c.region)}</div>
               </div>
               <div style="color:var(--text3);font-size:18px">›</div>
-            </div>
-          `).join('')}
-        </div>
-      `).join('')}
+            </div>`).join('')}
+        </div>`).join('')}
     </div>`;
 }
 
 function openChampionship(c) {
   state.customChampionship = c;
   document.getElementById('custom-create-title').textContent = c.name;
-  renderCustomCreate();
+  renderCustomCreate(c);
   go('s-custom-create');
 }
 
-function renderCustomCreate() {
-  const c = state.customChampionship;
+async function renderCustomCreate(c) {
   const el = document.getElementById('custom-create-content');
   if(!el || !c) return;
   el.innerHTML = `
     <div style="background:var(--surface);border-radius:16px;padding:20px;border:1px solid var(--border);margin-bottom:16px;text-align:center">
       <div style="font-size:40px;margin-bottom:6px">${c.flag}</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text)">${esc(c.name)}</div>
+      <div style="font-size:18px;font-weight:800">${esc(c.name)}</div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px">${esc(c.region)}</div>
     </div>
-    <div class="section-title" style="margin-bottom:10px">Times da partida</div>
+    ${c.espn ? `<div id="live-champ-section"><div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Buscando jogos ao vivo...</div></div>` : ''}
+    <div class="section-title" style="margin-bottom:10px;margin-top:8px">Criar bolão — informe os times</div>
     <div style="background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:16px">
       <div style="margin-bottom:14px">
         <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Time da Casa</label>
@@ -3148,7 +3160,7 @@ function renderCustomCreate() {
             style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit">
         </div>
       </div>
-      <div style="text-align:center;font-size:22px;font-weight:900;color:var(--text3);margin:4px 0">VS</div>
+      <div style="text-align:center;font-size:20px;font-weight:900;color:var(--text3);margin:4px 0">VS</div>
       <div style="margin-top:10px">
         <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Time Visitante</label>
         <div style="display:flex;gap:8px;margin-top:6px">
@@ -3159,7 +3171,6 @@ function renderCustomCreate() {
         </div>
       </div>
     </div>
-    <div class="section-title" style="margin-bottom:10px">Data e fase</div>
     <div style="background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:24px">
       <div style="display:flex;gap:10px;margin-bottom:12px">
         <div style="flex:1">
@@ -3177,8 +3188,29 @@ function renderCustomCreate() {
           style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box">
       </div>
     </div>
-    <button class="btn btn-primary" style="width:100%" onclick="submitCustomCreate()">Continuar →</button>
-  `;
+    <button class="btn btn-primary" style="width:100%" onclick="submitCustomCreate()">Continuar →</button>`;
+
+  if(c.espn) {
+    const games = await fetchChampionshipScores(c.espn);
+    const liveSection = document.getElementById('live-champ-section');
+    if(!liveSection) return;
+    if(!games.length) { liveSection.innerHTML=''; return; }
+    liveSection.innerHTML = `
+      <div class="section-title" style="margin-bottom:10px">Jogos ao vivo / hoje</div>
+      ${games.map(g=>`
+        <div style="background:var(--surface);border-radius:12px;padding:10px 14px;border:1px solid ${g.isLive?'rgba(231,76,60,.35)':'var(--border)'};margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="flex:1;text-align:right;font-size:13px;font-weight:700">${esc(g.home)}</div>
+            <div style="min-width:64px;text-align:center">
+              ${g.isLive||g.isDone
+                ? `<div style="font-size:17px;font-weight:900;color:${g.isLive?'var(--err)':'var(--text)'}">${g.homeScore} × ${g.awayScore}</div>
+                   <div style="font-size:9px;font-weight:700;color:${g.isLive?'var(--err)':'var(--text3)'}">${g.isLive?`🔴 ${g.min}`:'Encerrado'}</div>`
+                : `<div style="font-size:12px;font-weight:700;color:var(--text2)">${g.time||g.date}</div>`}
+            </div>
+            <div style="flex:1;text-align:left;font-size:13px;font-weight:700">${esc(g.away)}</div>
+          </div>
+        </div>`).join('')}`;
+  }
 }
 
 function submitCustomCreate() {
@@ -3190,36 +3222,23 @@ function submitCustomCreate() {
   const dateVal  = document.getElementById('cc-date').value;
   const timeVal  = document.getElementById('cc-time').value || '00:00';
   const stage    = document.getElementById('cc-stage').value.trim() || c.name;
-
   if(!homeName || !awayName) { showToast('⚠️ Informe os nomes dos dois times'); return; }
   if(!dateVal) { showToast('⚠️ Informe a data da partida'); return; }
-
   const d = new Date(dateVal);
   const dateFmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-  const homeCode = homeName.substring(0,3).toUpperCase();
-  const awayCode = awayName.substring(0,3).toUpperCase();
-
   const customGame = {
     id: 'custom-' + Date.now(),
-    home:  { name: homeName, code: homeCode, flag: homeFlag },
-    away:  { name: awayName, code: awayCode, flag: awayFlag },
-    date:  dateFmt,
-    time:  timeVal,
-    stage: stage,
-    group: '',
-    venue: c.name,
-    championship: c.id,
+    home:  { name: homeName, code: homeName.substring(0,3).toUpperCase(), flag: homeFlag },
+    away:  { name: awayName, code: awayName.substring(0,3).toUpperCase(), flag: awayFlag },
+    date: dateFmt, time: timeVal, stage, group: '', venue: c.name, championship: c.id,
   };
-
   createState = {
     step:1, title:`${homeName} x ${awayName}`, game: customGame,
-    amount:50, maxPart:20, hasPw:false, pw:'',
-    pointsExact:3, pointsResult:1, _customAmt:false
+    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
   };
   renderCreateStep();
   go('s-create');
 }
-
 
 // ===== AVATAR / DRAWER USER =====
 function updateFloatingAvatar() {
