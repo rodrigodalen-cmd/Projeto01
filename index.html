@@ -1138,9 +1138,10 @@ let state = {
   pixPollInterval: null,
   pixTimerInterval: null,
   customChampionship: null,
-  champFilter: 'all',
+  champFilter: 'next',
   champRound: 'all',
   champGames: [],
+  champPollInterval: null,
 };
 
 const GAMES = [
@@ -1306,6 +1307,9 @@ function back() {
   if(cur === 's-pix') {
     if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
     if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
+  }
+  if(cur === 's-custom-create') {
+    if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
   }
   const prev = state.screenStack[state.screenStack.length-1];
   document.getElementById(cur).classList.remove('active');
@@ -3459,8 +3463,11 @@ function setChampRound(r, el) {
 }
 
 function openChampionship(c) {
+  // Clear any previous poll
+  if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
+
   state.customChampionship = c;
-  state.champFilter = 'all';
+  state.champFilter = 'next'; // default: upcoming games
   state.champRound = 'all';
   state.champGames = [];
   document.getElementById('custom-create-title').textContent = c.name;
@@ -3475,10 +3482,17 @@ function openChampionship(c) {
       <div style="font-size:13px">Buscando jogos...</div>
     </div>`;
   go('s-custom-create');
-  fetchChampionshipScores(c.espn||'').then(games=>{
+
+  const doFetch = () => fetchChampionshipScores(c.espn||'').then(games=>{
     state.champGames = games;
     renderChampionshipDetail();
   }).catch(()=>renderChampionshipDetail());
+
+  doFetch();
+  // Refresh every 60s while on this screen
+  state.champPollInterval = setInterval(()=>{
+    if(state.screenStack[state.screenStack.length-1]==='s-custom-create') doFetch();
+  }, 60000);
 }
 
 function renderChampionshipDetail() {
@@ -3508,8 +3522,24 @@ function renderChampionshipDetail() {
       ${rounds.map(r=>`<button class="t-chip${state.champRound===r?' active':''}" onclick="setChampRound(${JSON.stringify(r)},this)">${esc(r)}</button>`).join('')}
     </div>`:'';
 
+  const hasLive = games.some(g=>g.isLive);
+  const emptyMsg = games.length===0
+    ? `<div style="text-align:center;padding:40px 20px;color:var(--text3)">
+         <div style="font-size:36px;margin-bottom:12px">📅</div>
+         <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">Nenhum jogo agendado</div>
+         <div style="font-size:12px;line-height:1.6">A ESPN não retornou jogos para este campeonato no momento.</div>
+       </div>`
+    : state.champFilter==='next'
+      ? `<div style="text-align:center;padding:32px 20px;color:var(--text3)">
+           <div style="font-size:36px;margin-bottom:12px">${hasLive?'🔴':'✅'}</div>
+           <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">${hasLive?'Jogos em andamento agora':'Nenhum próximo jogo agendado'}</div>
+           <div style="font-size:12px;margin-bottom:16px">${hasLive?'Veja os placares ao vivo na aba abaixo.':'Todos os jogos deste campeonato foram concluídos.'}</div>
+           <button class="btn btn-ghost btn-sm" onclick="setChampFilter('${hasLive?'live':'done'}',this.previousElementSibling?.previousElementSibling||document.querySelector('#champ-main-filter .t-chip'))">Ver ${hasLive?'ao vivo':'encerrados'}</button>
+         </div>`
+      : `<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">Nenhum jogo para este filtro</div>`;
+
   const gamesHTML = filtered.length===0
-    ?`<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">${games.length===0?'Nenhum jogo disponível no momento':'Nenhum jogo para este filtro'}</div>`
+    ? emptyMsg
     :Object.entries(byDate).map(([date,gs])=>{
         const dayPt=gs[0].dateObj?gs[0].dateObj.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}):date;
         const cards=gs.map(g=>{
@@ -3551,12 +3581,20 @@ function renderChampionshipDetail() {
         return `<div class="t-date-hdr">${dayPt}</div><div class="t-grid">${cards}</div>`;
       }).join('');
 
+  const updatedAt = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const liveCount = games.filter(g=>g.isLive).length;
+  const nextCount = games.filter(g=>!g.isLive&&!g.isDone).length;
   el.innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:14px">
       <div style="font-size:32px">${c.flag}</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:800">${esc(c.name)}</div>
-        <div style="font-size:11px;color:var(--text3)">${esc(c.region)} · ${games.length} jogo${games.length!==1?'s':''}</div>
+        <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+          <span>${esc(c.region)}</span>
+          ${liveCount>0?`<span style="color:var(--err);font-weight:700">🔴 ${liveCount} ao vivo</span>`:''}
+          ${nextCount>0?`<span style="color:var(--primary);font-weight:700">📅 ${nextCount} próximo${nextCount!==1?'s':''}</span>`:''}
+          <span style="margin-left:auto;color:var(--text3)">↻ ${updatedAt}</span>
+        </div>
       </div>
     </div>
     <div class="t-filter-row" id="champ-main-filter">
