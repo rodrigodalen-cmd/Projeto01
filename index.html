@@ -3894,6 +3894,8 @@ async function initAppBoloes() {
         } else state.boloes.push(b);
       });
     } catch(_){}
+    // Persiste estado merged no localStorage para não perder bets após navegação
+    try { localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes)); } catch(_) {}
   }
   APP_AMOUNTS.forEach(amount=>{
     const id=`season-${amount}`;
@@ -3979,22 +3981,23 @@ function renderAppBoloes() {
     const players=(bolao?.participants||[]).filter(p=>p.paid).length;
     const prize=players*amount;
     const me=(bolao?.participants||[]).find(p=>p.email===state.user?.email);
-    const joined=!!(me?.paid);
-    const myPts=joined?_calcSeasonPts(me,bolao):null;
-    const myRank=joined?_seasonRanking(bolao).findIndex(p=>p.email===state.user?.email)+1:null;
+    const joined=!!(me);        // joined = entrou, independente de ter pago
+    const hasPaid=!!(me?.paid); // hasPaid = pagamento confirmado
+    const myPts=hasPaid?_calcSeasonPts(me,bolao):null;
+    const myRank=hasPaid?_seasonRanking(bolao).findIndex(p=>p.email===state.user?.email)+1:null;
     return `<div class="app-bolao-card" style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
           <div style="font-size:17px;font-weight:900;color:var(--text)">Bolão R$${amount}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">${players} jogador${players!==1?'es':''} · Prêmio <span style="color:var(--secondary);font-weight:800">R$${prize.toLocaleString('pt-BR')}</span></div>
         </div>
-        ${joined?'<span class="badge badge-green" style="font-size:10px">✅ Participando</span>':''}
+        ${hasPaid?'<span class="badge badge-green" style="font-size:10px">✅ Confirmado</span>':joined?'<span class="badge badge-yellow" style="font-size:10px">⏳ Pix pendente</span>':''}
       </div>
       <div style="padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:10px;border:1px solid var(--border)">
         <div style="font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${betStatus}</div>
         <div style="font-size:13px;font-weight:700;color:var(--text)">${gameLabel}</div>
       </div>
-      ${joined?`<div style="display:flex;gap:10px;margin-bottom:10px">
+      ${hasPaid?`<div style="display:flex;gap:10px;margin-bottom:10px">
         <div style="flex:1;padding:8px;background:rgba(39,174,96,.08);border-radius:10px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:var(--ok)">${myPts}</div>
           <div style="font-size:10px;color:var(--text3)">seus pontos</div>
