@@ -1515,6 +1515,14 @@ function fmtLoginCPF(input) {
   }
 }
 
+// Wraps any promise with a max wait; rejects with timeout error if exceeded
+function _sbCall(promise, ms = 10000) {
+  return Promise.race([
+    promise,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+  ]);
+}
+
 async function doLogin() {
   const identifier = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
@@ -1530,13 +1538,13 @@ async function doLogin() {
       let email = identifier.toLowerCase();
       if(!identifier.includes('@')) {
         const cleanCPF = identifier.replace(/\D/g,'');
-        const { data: emailData, error: rpcErr } = await _sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF});
+        const { data: emailData, error: rpcErr } = await _sbCall(_sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF}));
         if(rpcErr || !emailData) { showToast('❌ Dados incorretos'); return; }
         email = emailData;
       }
-      const { data, error } = await _sb.auth.signInWithPassword({email, password: pass});
+      const { data, error } = await _sbCall(_sb.auth.signInWithPassword({email, password: pass}));
       if(error) { showToast('❌ Dados incorretos'); return; }
-      const { data: profile } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
+      const { data: profile } = await _sbCall(_sb.from('profiles').select('*').eq('id', data.user.id).single());
       if(!profile) { showToast('❌ Perfil não encontrado'); return; }
       state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
       if(!state.user.photo) {
@@ -1558,6 +1566,11 @@ async function doLogin() {
     state.user = {...u};
     if(remember) saveSession(state.user); else clearSession();
     await loginSuccess();
+  } catch(e) {
+    const msg = e?.message === 'timeout'
+      ? '⏱️ Sem resposta do servidor — verifique sua conexão'
+      : '❌ Erro ao entrar. Tente novamente';
+    showToast(msg);
   } finally {
     if(btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
   }
@@ -1717,15 +1730,10 @@ async function doRegister() {
 }
 
 async function loginSuccess() {
-  if(_sb) await _loadBoloesFromSupabase();
+  // Mostra a home imediatamente sem esperar pela rede
   await initAppBoloes();
   updateProfileUI();
   renderHome();
-  if(window._liveInterval) clearInterval(window._liveInterval);
-  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
-  setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
-  requestNotificationPermission();
-  scheduleGameNotifications();
   // Clear stack and go home
   state.screenStack = ['s-home'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
@@ -1734,6 +1742,18 @@ async function loginSuccess() {
   updateFloatingAvatar();
   checkDeepLink();
   setTimeout(checkOnboarding, 600);
+  if(window._liveInterval) clearInterval(window._liveInterval);
+  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
+  setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
+  requestNotificationPermission();
+  scheduleGameNotifications();
+  // Carrega dados do Supabase em background — não bloqueia a tela
+  if(_sb) {
+    _sbCall(_loadBoloesFromSupabase(), 12000)
+      .then(() => initAppBoloes())
+      .then(() => { renderHome(); updateProfileUI(); })
+      .catch(() => {});
+  }
 }
 
 function doLogout() {
