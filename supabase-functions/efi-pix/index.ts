@@ -79,17 +79,17 @@ async function createCharge(amount: number, bolaoId: string, description: string
   const pixKey = Deno.env.get('EFI_PIX_KEY')
   if (!pixKey) throw new Error('EFI_PIX_KEY não configurada no Supabase Secrets')
 
-  // txid: alphanumeric 26-35 chars
   const txid = `bolao${bolaoId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}${Date.now().toString().slice(-8)}`
 
   const body = {
     calendario: { expiracao: 3600 },
-    txid,
-    valor: { original: amount.toFixed(2) },
+    valor: { original: Number(amount).toFixed(2) },
     chave: pixKey,
     solicitacaoPagador: description.substring(0, 140),
     infoAdicionais: [{ nome: 'BolaoId', valor: String(bolaoId) }],
   }
+
+  console.log('[EFI] createCharge body:', JSON.stringify(body))
 
   const res = await fetch(`${getBase()}/v2/cob/${txid}`, {
     method: 'PUT',
@@ -101,25 +101,38 @@ async function createCharge(amount: number, bolaoId: string, description: string
     client,
   })
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Erro ao criar cobrança (${res.status}): ${err}`)
+  const cobText = await res.text()
+  console.log('[EFI] cob status:', res.status, 'body:', cobText)
+
+  if (!res.ok) throw new Error(`Erro ao criar cobrança (${res.status}): ${cobText}`)
+
+  const cob = JSON.parse(cobText)
+
+  if (!cob.loc?.id) {
+    console.log('[EFI] sem loc.id, retornando sem QR code')
+    return { txid: cob.txid ?? txid, status: cob.status, copiaECola: null, qrCodeBase64: null }
   }
 
-  const cob = await res.json()
-
-  // Fetch QR Code
   const qrRes = await fetch(`${getBase()}/v2/loc/${cob.loc.id}/qrcode`, {
     headers: { 'Authorization': `Bearer ${token}` },
     client,
   })
-  const qr = qrRes.ok ? await qrRes.json() : { qrcode: null, imagemQrcode: null }
+  const qrText = await qrRes.text()
+  console.log('[EFI] qrcode status:', qrRes.status, 'body:', qrText)
+
+  const qr = qrRes.ok ? JSON.parse(qrText) : { qrcode: null, imagemQrcode: null }
+
+  // imagemQrcode pode vir como data URI ou só base64
+  let qrCodeBase64 = qr.imagemQrcode ?? null
+  if (qrCodeBase64?.startsWith('data:')) {
+    qrCodeBase64 = qrCodeBase64.split(',')[1] ?? null
+  }
 
   return {
-    txid: cob.txid,
+    txid: cob.txid ?? txid,
     status: cob.status,
     copiaECola: qr.qrcode ?? null,
-    qrCodeBase64: qr.imagemQrcode ?? null,
+    qrCodeBase64,
   }
 }
 
