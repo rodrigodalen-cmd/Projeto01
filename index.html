@@ -491,7 +491,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div class="auth-logo">
       <img src="icon.svg" class="auth-icon" alt="Bolão">
-      <span class="auth-appname">Bolão</span>
+      <span class="auth-appname">Bolão FC</span>
       <span class="auth-tagline">Copa 2026</span>
     </div>
     <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" oninput="fmtLoginCPF(this)"></div>
@@ -514,7 +514,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <img src="icon.svg" style="width:44px;height:44px;border-radius:11px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.4)" alt="Bolão">
       <div>
-        <div style="font-size:18px;font-weight:900;color:var(--secondary);line-height:1">Bolão</div>
+        <div style="font-size:18px;font-weight:900;color:var(--secondary);line-height:1">Bolão FC</div>
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-top:2px">Copa 2026</div>
       </div>
     </div>
@@ -1008,7 +1008,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar bolão
     </button>
     <button class="drawer-item" id="di-app-boloes" onclick="drawerGo('app-boloes')" style="color:var(--secondary)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Bolão do App
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Bolão Copa
     </button>
     <button class="drawer-item" id="di-ranking" onclick="drawerGo('ranking')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4H2v16h5V4zm5-2H8v18h4V2zm5 5h-4v13h4V7zm5 2h-4v11h4V9z"/></svg>Ranking
@@ -1051,7 +1051,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === BOLÃO DO APP === -->
 <div class="screen" id="s-app-boloes">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">⚽ Bolão do App</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">⚽ Bolão Copa</span></div>
   <div class="scroll" style="padding-bottom:40px">
     <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(244,208,63,.25)">
       <div style="font-size:14px;font-weight:800;color:var(--secondary);margin-bottom:4px">🏟️ Bolões oficiais do Bolão FC</div>
@@ -3916,8 +3916,10 @@ function renderSeasonDetail() {
   const players=(bolao.participants||[]).filter(p=>p.paid).length;
   const prize=players*bolao.amount;
   const prizeBanner=document.getElementById('season-prize-banner');
+  const me=(bolao.participants||[]).find(p=>p.email===state.user?.email);
+  const hasPaid=me?.paid||false;
   if(prizeBanner) prizeBanner.innerHTML=`
-    <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid rgba(244,208,63,.25)">
+    <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:16px;margin-bottom:${me&&!hasPaid?'8':'16'}px;border:1px solid rgba(244,208,63,.25)">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.5px">PRÊMIO TOTAL</div>
@@ -3928,7 +3930,14 @@ function renderSeasonDetail() {
           <div style="font-size:26px;font-weight:900;color:var(--text)">${players}</div>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${me&&!hasPaid?`<div style="background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:8px">⚠️ Pagamento pendente — sua vaga ainda não está confirmada</div>
+      <button class="btn btn-pix" style="width:100%" onclick="openPix('${bolao.id}')">💳 Pagar R$${bolao.amount} via Pix</button>
+    </div>`:''}
+    ${me&&hasPaid?`<div style="background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.3);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:12px;font-weight:700;color:#2ecc71;text-align:center">
+      ✅ Pagamento confirmado — você está na disputa!
+    </div>`:''}  `;
   _renderSeasonCurrentGame(bolao);
   _renderSeasonRanking(bolao);
   _renderSeasonHistory(bolao);
