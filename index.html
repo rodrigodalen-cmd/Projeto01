@@ -1234,9 +1234,26 @@ async function _loadBoloesFromSupabase() {
       (row.participants||[]).some(p => p.email === state.user.email)
     );
     const sbBoloes = mine.map(_sbRowToBolao);
-    // Merge: Supabase wins on matching IDs
+    // Merge: Supabase wins, but preserve user's local bets for season bolões
+    // (season bolão upsert may fail RLS since creator is app@bolaofc.com)
+    const userEmail = state.user.email;
+    const merged = sbBoloes.map(sb => {
+      const local = state.boloes.find(b => b.id === sb.id);
+      if(local && sb.isSeason && userEmail) {
+        const localMe = (local.participants||[]).find(p => p.email === userEmail);
+        const sbMe = (sb.participants||[]).find(p => p.email === userEmail);
+        if(localMe && sbMe) {
+          // Merge bets: keep local bets that Supabase doesn't have (failed to sync)
+          sbMe.bets = Object.assign({}, localMe.bets||{}, sbMe.bets||{});
+          if(!sbMe.paid && localMe.paid) sbMe.paid = true;
+        } else if(localMe && !sbMe) {
+          sb.participants.push({...localMe});
+        }
+      }
+      return sb;
+    });
     const localOnly = state.boloes.filter(b => !sbBoloes.find(s => s.id === b.id));
-    state.boloes = [...sbBoloes, ...localOnly];
+    state.boloes = [...merged, ...localOnly];
     try { localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes)); } catch(e) {}
   } catch(e) { showToast('⚠️ Sem conexão — usando dados locais'); }
 }
@@ -3852,7 +3869,21 @@ async function initAppBoloes() {
       if(data) data.forEach(row=>{
         const b = _sbRowToBolao(row);
         const idx = state.boloes.findIndex(x=>x.id===b.id);
-        if(idx>=0) state.boloes[idx]=b; else state.boloes.push(b);
+        if(idx >= 0) {
+          // Preserve user's local bets — Supabase upsert fails for season bolões (RLS)
+          const userEmail = state.user?.email;
+          if(b.isSeason && userEmail) {
+            const localMe = (state.boloes[idx].participants||[]).find(p=>p.email===userEmail);
+            const sbMe   = (b.participants||[]).find(p=>p.email===userEmail);
+            if(localMe && sbMe) {
+              sbMe.bets = Object.assign({}, localMe.bets||{}, sbMe.bets||{});
+              if(!sbMe.paid && localMe.paid) sbMe.paid = true;
+            } else if(localMe && !sbMe) {
+              b.participants.push({...localMe});
+            }
+          }
+          state.boloes[idx] = b;
+        } else state.boloes.push(b);
       });
     } catch(_){}
   }
