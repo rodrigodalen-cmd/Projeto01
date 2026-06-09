@@ -765,7 +765,8 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
     <!-- PÓDIO RANKING -->
-    <div id="home-podium" style="margin-bottom:4px"></div>
+    <div class="section-title" style="margin-bottom:10px">🏅 Ranking Global</div>
+    <div id="home-podium" style="margin-bottom:16px"></div>
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
@@ -4446,11 +4447,18 @@ async function renderPodium() {
   const el=document.getElementById('home-podium');
   if(!el) return;
   const data=await fetchGlobalRanking();
-  if(data.length<1){el.innerHTML='';return;}
+  if(data.length<1) {
+    el.innerHTML=`<div class="podium-section" style="text-align:center;padding:24px 16px">
+      <div style="font-size:48px;margin-bottom:10px">🏆</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Ranking começa na 1ª rodada</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6">Assim que os jogos começarem e os resultados forem lançados, o pódio com os melhores apostadores aparecerá aqui.</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:14px;width:auto" onclick="openRanking()">Ver ranking →</button>
+    </div>`;
+    return;
+  }
   const [p1,p2,p3]=[data[0],data[1],data[2]];
-  function slot(p,rank,cls) {
+  function slot(p,rank) {
     if(!p) return `<div class="podium-slot podium-slot-${rank}"></div>`;
-    const size=rank===1?72:rank===2?60:54;
     const av=p.photo
       ?`<img src="${p.photo}" class="podium-av-${rank}" alt="${esc(p.name)}">`
       :`<div class="podium-av-${rank}" style="background:${_avColor(p.email)};display:flex;align-items:center;justify-content:center;font-size:${rank===1?26:22}px;font-weight:900;color:#fff">${p.name.charAt(0).toUpperCase()}</div>`;
@@ -4458,14 +4466,14 @@ async function renderPodium() {
     return `<div class="podium-slot podium-slot-${rank}" onclick="openRanking()">
       ${trophy}
       ${av}
-      <div class="podium-title-${rank}">${rank===1?'Bola de Ouro':rank===2?'Bola de Prata':'Bola de Bronze'}</div>
+      <div class="podium-title-${rank}">${rank===1?'🥇 1°':rank===2?'🥈 2°':'🥉 3°'}</div>
       <div class="podium-name">${esc(p.name.split(' ')[0])}</div>
       <div class="podium-pts">${p.pts}pts</div>
     </div>`;
   }
   el.innerHTML=`<div class="podium-section">
     <div class="podium-header">
-      <div style="font-size:13px;font-weight:800;color:var(--text)">🏅 Ranking Global</div>
+      <div style="font-size:12px;color:var(--text3)">Baseado em todos os bolões</div>
       <button class="btn-link" onclick="openRanking()" style="font-size:12px">Ver todos →</button>
     </div>
     <div class="podium-wrap">
