@@ -1077,6 +1077,8 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div id="season-current-game"></div>
     <div id="season-ranking"></div>
     <div id="season-history"></div>
+    <div id="season-participants"></div>
+    <div id="season-chat"></div>
   </div>
 </div>
 
@@ -4101,6 +4103,8 @@ function renderSeasonDetail() {
   _renderSeasonCurrentGame(bolao);
   _renderSeasonRanking(bolao);
   _renderSeasonHistory(bolao);
+  _renderSeasonParticipants(bolao);
+  _renderSeasonChat(bolao);
 }
 
 function _renderSeasonCurrentGame(bolao) {
@@ -4241,6 +4245,90 @@ function _renderSeasonHistory(bolao) {
   el.innerHTML=`<div class="section-title" style="margin-top:8px">📋 Histórico de jogos</div>${rows}`;
 }
 
+function _renderSeasonParticipants(bolao) {
+  const el=document.getElementById('season-participants');
+  if(!el) return;
+  const all=(bolao.participants||[]);
+  if(!all.length){el.innerHTML='';return;}
+  const current=_getSeasonCurrentGame();
+  const gameId=current?.game?.id;
+  const rows=all.map(p=>{
+    const ur=USERS.find(u=>u.email===p.email);
+    const av=_avHtml(p.email,p.name,ur?.photo||p.photo,40);
+    const isMe=p.email===state.user?.email;
+    const bet=gameId&&p.bets?.[gameId];
+    const betStr=bet!=null?`${bet.home}×${bet.away}`:'—';
+    const paidBadge=p.paid
+      ?'<span class="badge badge-green">✅ Pago</span>'
+      :'<span class="badge badge-yellow">⏳ Pendente</span>';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:8px${isMe?';border-color:var(--primary)':''}">
+      ${av}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(p.name)}${isMe?' (você)':''}</div>
+        ${gameId?`<div style="font-size:11px;color:var(--text3);margin-top:2px">Palpite: ${betStr}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        ${paidBadge}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="section-title" style="margin-top:8px">👥 Participantes (${all.length})</div>${rows}`;
+}
+
+function _renderSeasonChat(bolao) {
+  const el=document.getElementById('season-chat');
+  if(!el) return;
+  const msgs=(bolao.messages||[]);
+  const rows=msgs.slice(-50).map(m=>{
+    if(m.system) return `<div class="sys-msg">${esc(m.text)}</div>`;
+    const isMine=m.email===state.user?.email;
+    const ur=USERS.find(u=>u.email===m.email);
+    const av=_avHtml(m.email,m.name,ur?.photo||m.photo,30);
+    const t=new Date(m.time);
+    const timeStr=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+    return `<div class="chat-msg" style="${isMine?'flex-direction:row-reverse':''}">
+      ${av}
+      <div class="chat-bubble${isMine?' mine':''}">
+        ${!isMine?`<div class="chat-name">${esc(m.name)}</div>`:''}
+        <div class="chat-text">${esc(m.text)}</div>
+        <div class="chat-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="chat-section" style="margin-top:8px">
+    <div class="section-title">💬 Chat do Bolão</div>
+    <div id="chat-msgs-${bolao.id}" style="max-height:300px;overflow-y:auto;margin-bottom:8px">
+      ${rows||'<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Nenhuma mensagem ainda. Seja o primeiro!</div>'}
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input-${bolao.id}" placeholder="Escreva uma mensagem..." maxlength="200" onkeydown="if(event.key==='Enter')sendSeasonMessage('${bolao.id}')">
+      <button class="chat-send" onclick="sendSeasonMessage('${bolao.id}')">Enviar</button>
+    </div>
+  </div>`;
+  setTimeout(()=>{
+    const c=document.getElementById(`chat-msgs-${bolao.id}`);
+    if(c) c.scrollTop=c.scrollHeight;
+  },50);
+}
+
+function sendSeasonMessage(bolaoId) {
+  const b=state.boloes.find(x=>x.id===bolaoId);
+  const input=document.getElementById(`chat-input-${bolaoId}`);
+  if(!b||!input||!state.user) return;
+  const text=input.value.trim();
+  if(!text) return;
+  if(!b.messages) b.messages=[];
+  const ur=USERS.find(x=>x.email===state.user.email)||state.user;
+  b.messages.push({email:state.user.email,name:state.user.name,photo:ur.photo||state.user.photo,text,time:new Date().toISOString()});
+  input.value='';
+  saveBoloes(b);
+  renderSeasonDetail();
+  setTimeout(()=>{
+    const c=document.getElementById(`chat-msgs-${bolaoId}`);
+    if(c) c.scrollTop=c.scrollHeight;
+  },100);
+}
+
 async function submitSeasonBet(bolaoId, gameId) {
   const h=parseInt(document.getElementById('sb-home')?.value??'');
   const a=parseInt(document.getElementById('sb-away')?.value??'');
@@ -4252,7 +4340,13 @@ async function submitSeasonBet(bolaoId, gameId) {
   const me=bolao.participants.find(p=>p.email===state.user?.email);
   if(!me){showToast('❌ Você não está neste bolão');return;}
   if(!me.bets) me.bets={};
+  const isEdit = !!me.bets[gameId];
   me.bets[gameId]={home:h,away:a};
+  const hf=game?.home?.flag||''; const af=game?.away?.flag||'';
+  const betMsg = isEdit
+    ? `✏️ ${state.user.name} alterou o palpite: ${hf} ${h}×${a} ${af}`
+    : `⚽ ${state.user.name} apostou: ${hf} ${h}×${a} ${af}`;
+  addSystemMessage(bolaoId, betMsg);
   saveBoloes(bolao);
   showToast('✅ Palpite confirmado!');
   renderSeasonDetail();
