@@ -1879,14 +1879,41 @@ function renderCreateStep() {
       ${s.hasPw?`<div class="field"><label>Senha do bolão</label><input type="password" id="c-pw" placeholder="Senha" value="${s.pw}" oninput="createState.pw=this.value"></div>`:''}
       <div class="section-title" style="margin-top:16px;margin-bottom:4px">Pontuação personalizada</div>
       <div class="section-sub">Defina quantos pontos cada acerto vale</div>
+      <div style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:8px;letter-spacing:.3px">COMO FUNCIONA — EXEMPLO</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Jogo real: 🇧🇷 Brasil <strong>2 × 1</strong> Marrocos 🇲🇦</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🎯</span>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">Acertou o placar exato</div>
+              <div style="font-size:11px;color:var(--text3)">Apostou <strong>2×1</strong> e deu <strong>2×1</strong> → <strong style="color:var(--secondary)">${s.pointsExact} pontos</strong></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">✅</span>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">Acertou só o resultado</div>
+              <div style="font-size:11px;color:var(--text3)">Apostou <strong>3×0</strong> mas deu <strong>2×1</strong> — Brasil ganhou nos dois → <strong style="color:var(--ok)">${s.pointsResult} ponto</strong></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">❌</span>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">Errou o resultado</div>
+              <div style="font-size:11px;color:var(--text3)">Apostou que <strong>Marrocos ganhava</strong> → <strong style="color:var(--err)">0 pontos</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="score-rule-row">
-        <div class="score-rule-lbl">⚽ Placar exato</div>
-        <input class="score-rule-input" type="number" min="1" max="10" value="${s.pointsExact}" oninput="createState.pointsExact=Math.max(1,isNaN(parseInt(this.value))?1:parseInt(this.value))">
+        <div class="score-rule-lbl">🎯 Placar exato</div>
+        <input class="score-rule-input" type="number" min="1" max="10" value="${s.pointsExact}" oninput="createState.pointsExact=Math.max(1,isNaN(parseInt(this.value))?1:parseInt(this.value));renderCreateStep()">
         <span class="score-rule-pts">pts</span>
       </div>
       <div class="score-rule-row">
-        <div class="score-rule-lbl">✅ Resultado certo (V/E/D)</div>
-        <input class="score-rule-input" type="number" min="0" max="9" value="${s.pointsResult}" oninput="createState.pointsResult=Math.max(0,isNaN(parseInt(this.value))?0:parseInt(this.value))">
+        <div class="score-rule-lbl">✅ Resultado certo</div>
+        <input class="score-rule-input" type="number" min="0" max="9" value="${s.pointsResult}" oninput="createState.pointsResult=Math.max(0,isNaN(parseInt(this.value))?0:parseInt(this.value));renderCreateStep()">
         <span class="score-rule-pts">pts</span>
       </div>
       <div class="btn-row">
