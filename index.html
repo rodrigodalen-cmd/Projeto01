@@ -2823,12 +2823,16 @@ async function openPix(id) {
           <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pix="${data.copiaECola}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('✅ Código copiado!'))">📋 Copiar código PIX</button>
         </div>`
       : '';
+    const debugHtml = data._debug
+      ? `<div style="background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.25);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:9.5px;color:var(--text3);word-break:break-all;text-align:left;line-height:1.5"><strong>Debug:</strong> ${String(data._debug).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
+      : '';
     document.getElementById('pix-content').innerHTML=`
       <div class="pix-icon">🏦</div>
       <div class="pix-title">Pagamento via Pix</div>
       <div class="pix-amount">R$${b.amount}</div>
       ${qrHtml}
       ${copiaCola}
+      ${debugHtml}
       <div id="pix-timer" style="text-align:center;font-size:26px;font-weight:900;color:var(--secondary);letter-spacing:2px;margin:8px 0">10:00</div>
       <div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:12px">tempo para pagar · confirmação automática</div>
       <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. O pagamento é confirmado automaticamente — não é necessário nenhuma ação.</div>

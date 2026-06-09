@@ -109,18 +109,28 @@ async function createCharge(amount: number, bolaoId: string, description: string
   const cob = JSON.parse(cobText)
 
   if (!cob.loc?.id) {
-    console.log('[EFI] sem loc.id, retornando sem QR code')
-    return { txid: cob.txid ?? txid, status: cob.status, copiaECola: null, qrCodeBase64: null }
+    const dbg = `sem_loc | cob_status=${res.status} | loc=${JSON.stringify(cob.loc)} | campos=${Object.keys(cob).join(',')}`
+    console.log('[EFI]', dbg)
+    return { txid: cob.txid ?? txid, status: cob.status, copiaECola: null, qrCodeBase64: null, _debug: dbg }
   }
 
-  const qrRes = await fetch(`${getBase()}/v2/loc/${cob.loc.id}/qrcode`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-    client,
-  })
-  const qrText = await qrRes.text()
-  console.log('[EFI] qrcode status:', qrRes.status, 'body:', qrText)
+  let qrStatus = 0
+  let qrText = ''
+  let qr: { qrcode?: string | null; imagemQrcode?: string | null } = { qrcode: null, imagemQrcode: null }
 
-  const qr = qrRes.ok ? JSON.parse(qrText) : { qrcode: null, imagemQrcode: null }
+  try {
+    const qrRes = await fetch(`${getBase()}/v2/loc/${cob.loc.id}/qrcode`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      client,
+    })
+    qrStatus = qrRes.status
+    qrText = await qrRes.text()
+    console.log('[EFI] qrcode status:', qrRes.status, 'body:', qrText)
+    if (qrRes.ok) qr = JSON.parse(qrText)
+  } catch (qrErr) {
+    qrText = String(qrErr)
+    console.error('[EFI] qrcode fetch error:', qrText)
+  }
 
   // imagemQrcode pode vir como data URI ou só base64
   let qrCodeBase64 = qr.imagemQrcode ?? null
@@ -128,11 +138,16 @@ async function createCharge(amount: number, bolaoId: string, description: string
     qrCodeBase64 = qrCodeBase64.split(',')[1] ?? null
   }
 
+  const _debug = qrCodeBase64
+    ? undefined
+    : `loc_id=${cob.loc.id} | qr_status=${qrStatus} | qr_body=${qrText.substring(0, 200)}`
+
   return {
     txid: cob.txid ?? txid,
     status: cob.status,
     copiaECola: qr.qrcode ?? null,
     qrCodeBase64,
+    _debug,
   }
 }
 
