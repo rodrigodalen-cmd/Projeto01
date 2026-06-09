@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Bolão FC</title>
+<title>Bolão Copa 2026</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#006B3F">
 <meta name="description" content="Bolão da Copa do Mundo 2026 · Aposte com seus amigos">
@@ -23,6 +23,11 @@
   --text:#fff;--text2:#8FA3B8;--text3:#4A6278;
   --ok:#27AE60;--err:#E74C3C;--warn:#F39C12;
   --gold:#FFD700;--pix:#32BCAD;--border:#1E3448;
+}
+[data-theme="light"]{
+  --bg:#F0F4F8;--surface:#fff;--surface2:#E8EEF4;
+  --text:#0D1B2A;--text2:#4A6278;--text3:#8FA3B8;
+  --border:#D0DCE8;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
@@ -219,13 +224,11 @@ input:checked+.slider:before{transform:translateX(18px)}
 .av-edit-badge{position:absolute;bottom:0;right:0;background:var(--secondary);width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid var(--bg)}
 .photo-input{display:none}
 .part-av-img{width:38px;height:38px;border-radius:19px;object-fit:cover;flex-shrink:0;border:2px solid var(--primary)}
-.part-av-init{width:38px;height:38px;border-radius:19px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+.part-av-init{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
 /* LIVE SCORES */
 .live-pill{display:inline-flex;align-items:center;gap:4px;background:var(--err);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.5px}
 .live-dot{width:6px;height:6px;border-radius:3px;background:#fff;animation:blink 1.2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes pixPop{0%{opacity:0;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
-@keyframes pixPulse{0%{box-shadow:0 0 0 0 rgba(0,184,148,.5)}70%{box-shadow:0 0 0 24px rgba(0,184,148,0)}100%{box-shadow:0 0 0 0 rgba(0,184,148,0)}}
 .live-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid rgba(231,76,60,.25);margin-bottom:10px;cursor:default}
 .live-score-big{color:var(--secondary);font-size:28px;font-weight:900;text-align:center;letter-spacing:2px}
 .live-min{color:var(--err);font-size:11px;font-weight:700;text-align:center;margin-top:2px}
@@ -306,11 +309,6 @@ input:checked+.slider:before{transform:translateX(18px)}
 .t-gcell.bra{border-left:3px solid #009B3A}
 .t-gcell.live{border-color:var(--err)}
 .t-done{color:var(--ok);font-weight:700}
-/* br-carousel */
-.br-card{flex-shrink:0;width:148px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
-.br-card.live{border-color:var(--err)}
-.br-card:active{opacity:.82}
-#br-carousel::-webkit-scrollbar{display:none}
 /* TERMS */
 .terms-section{margin-top:20px}
 .terms-title{color:var(--secondary);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -330,23 +328,12 @@ input:checked+.slider:before{transform:translateX(18px)}
 .tip-card{background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:16px}
 .tip-title{color:var(--secondary);font-size:13px;font-weight:700;margin-bottom:8px}
 .tip-text{color:var(--text2);font-size:12px;line-height:1.8}
-/* DOB drum-roll picker */
-.dob-picker{position:relative;display:flex;align-items:stretch;height:220px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:pan-y}
-.dob-col{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior:none}
-.dob-col::-webkit-scrollbar{display:none}
-.dob-item{height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:var(--text);scroll-snap-align:center;letter-spacing:.3px}
-.dob-divider{width:16px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--border);flex-shrink:0;z-index:3;background:var(--surface)}
-.dob-sel-bar{position:absolute;left:0;right:0;top:calc(50% - 22px);height:44px;border-top:1.5px solid var(--primary-light);border-bottom:1.5px solid var(--primary-light);pointer-events:none;z-index:2}
-.dob-fade-top{position:absolute;left:0;right:0;top:0;height:88px;background:linear-gradient(to bottom,#152536 0%,rgba(21,37,54,0) 100%);pointer-events:none;z-index:1}
-.dob-fade-bot{position:absolute;left:0;right:0;bottom:0;height:88px;background:linear-gradient(to top,#152536 0%,rgba(21,37,54,0) 100%);pointer-events:none;z-index:1}
 /* Auth screen */
 .auth-wrapper{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:32px 24px}
 .auth-logo{text-align:center;margin-bottom:36px}
-.auth-icon{width:96px;height:96px;border-radius:24px;display:block;margin:0 auto 18px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
-.auth-brand{display:block;line-height:1;margin-bottom:10px}
-.auth-appname{color:#fff;font-size:44px;font-weight:900;letter-spacing:-2px;font-style:italic;display:inline}
-.auth-fc{color:#FFD700;font-size:44px;font-weight:900;letter-spacing:-2px;font-style:italic;display:inline}
-.auth-tagline{color:rgba(255,255,255,0.38);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:4px;margin-top:2px;display:block}
+.auth-icon{width:90px;height:90px;border-radius:22px;display:block;margin:0 auto 14px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.auth-appname{color:var(--secondary);font-size:38px;font-weight:900;letter-spacing:-1px;display:block;line-height:1}
+.auth-tagline{color:var(--text3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:3px;margin-top:6px;display:block}
 .divider{display:flex;align-items:center;gap:12px;margin:16px 0}
 .div-line{flex:1;height:1px;background:var(--border)}
 .div-text{color:var(--text3);font-size:12px}
@@ -416,8 +403,8 @@ input:checked+.slider:before{transform:translateX(18px)}
   .btn{padding:14px;font-size:14px}
   .btn-sm{padding:9px 14px;font-size:12px}
   .auth-wrapper{padding:24px 18px}
-  .auth-appname,.auth-fc{font-size:36px}
-  .auth-icon{width:80px;height:80px;border-radius:20px}
+  .auth-appname{font-size:30px}
+  .auth-icon{width:74px;height:74px;border-radius:18px}
   .auth-logo{margin-bottom:26px}
   .flag{font-size:26px}
   .bet-flag{font-size:36px}
@@ -446,7 +433,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 @media (max-width:320px){
   .btn{padding:12px;font-size:13px}
   .flag{font-size:22px}
-  .auth-appname,.auth-fc{font-size:30px}
+  .auth-appname{font-size:26px}
   .score-num{font-size:20px}
   .prize-val{font-size:26px}
 }
@@ -467,9 +454,9 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div style="font-size:12px;color:var(--text2)">Faça login ou crie uma conta gratuita para entrar no bolão.</div>
     </div>
     <div class="auth-logo">
-      <img src="icon.svg" class="auth-icon" alt="Bolão FC">
-      <span class="auth-brand"><span class="auth-appname">BOLÃO</span><span class="auth-fc"> FC</span></span>
-      <span class="auth-tagline">Aposte com seus amigos</span>
+      <img src="icon.svg" class="auth-icon" alt="Bolão">
+      <span class="auth-appname">Bolão</span>
+      <span class="auth-tagline">Copa 2026</span>
     </div>
     <div class="field"><label>E-mail ou CPF</label><input id="li-email" placeholder="seu@email.com ou 000.000.000-00" oninput="fmtLoginCPF(this)"></div>
     <div class="field"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••"></div>
@@ -500,20 +487,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
     <div class="field"><label>CPF</label><input id="rg-cpf" placeholder="000.000.000-00" maxlength="14" oninput="fmtCPF(this)"></div>
     <div style="color:var(--text3);font-size:11px;margin:-8px 0 14px;padding:0 2px">Usado apenas para verificação de identidade (18+)</div>
-    <div class="field">
-      <label>Data de Nascimento</label>
-      <div class="dob-picker">
-        <div class="dob-fade-top"></div>
-        <div class="dob-fade-bot"></div>
-        <div class="dob-sel-bar"></div>
-        <div class="dob-col" id="dob-col-day"></div>
-        <div class="dob-divider">/</div>
-        <div class="dob-col" id="dob-col-mon"></div>
-        <div class="dob-divider">/</div>
-        <div class="dob-col" id="dob-col-yr"></div>
-      </div>
-      <input type="hidden" id="rg-dob">
-    </div>
+    <div class="field"><label>Data de Nascimento</label><input id="rg-dob" type="date" placeholder="dd/mm/aaaa" style="color-scheme:dark"></div>
     <div style="color:var(--warn);font-size:11px;margin:-8px 0 14px;padding:0 2px">Apenas maiores de 18 anos podem participar</div>
     <div class="field"><label>Chave Pix</label><input id="rg-pix" placeholder="CPF, e-mail, telefone..."></div>
     <div style="color:var(--pix);font-size:11px;margin:-8px 0 14px;padding:0 2px">Sua chave Pix será usada para receber prêmios</div>
@@ -565,7 +539,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
       <div style="text-align:center;padding:20px 0 12px">
         <div style="font-size:32px">🏆⚖️</div>
-        <div style="font-size:16px;font-weight:800;margin-top:8px">Bolão FC</div>
+        <div style="font-size:16px;font-weight:800;margin-top:8px">Bolão Copa</div>
         <div style="color:var(--text3);font-size:11px;margin-top:4px">Termos de Uso · Política de Privacidade · Regras do Bolão</div>
         <div style="color:var(--text3);font-size:10px;margin-top:2px">Última atualização: Junho de 2026</div>
       </div>
@@ -573,7 +547,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="terms-section">
         <div class="terms-title">1. IDENTIFICAÇÃO E NATUREZA DO SERVIÇO</div>
         <div class="terms-text">
-          O Bolão FC é uma plataforma digital destinada exclusivamente à organização de bolões informais entre grupos de amigos, familiares ou colegas previamente conhecidos ("usuários"). O serviço <strong>não constitui casa de apostas, jogo de azar comercial ou operação de loteria</strong>, sendo classificado como entretenimento privado entre conhecidos, nos termos do § 2° do Art. 50 da Lei de Contravenções Penais (Decreto-Lei n° 3.688/1941), que isenta de punição os jogos realizados em âmbito privado, sem finalidade lucrativa pública.<br><br>
+          O Bolão Copa é uma plataforma digital destinada exclusivamente à organização de bolões informais entre grupos de amigos, familiares ou colegas previamente conhecidos ("usuários"). O serviço <strong>não constitui casa de apostas, jogo de azar comercial ou operação de loteria</strong>, sendo classificado como entretenimento privado entre conhecidos, nos termos do § 2° do Art. 50 da Lei de Contravenções Penais (Decreto-Lei n° 3.688/1941), que isenta de punição os jogos realizados em âmbito privado, sem finalidade lucrativa pública.<br><br>
           A plataforma não possui licença da Secretaria de Prêmios e Apostas (SPA/MF), razão pela qual seu uso deve se restringir a grupos fechados de pessoas físicas maiores de 18 anos.
         </div>
       </div>
@@ -599,7 +573,7 @@ input:checked+.slider:before{transform:translateX(18px)}
           • Quem acertar o placar exato divide o prêmio igualmente;<br>
           • Se ninguém acertar o placar exato, o prêmio vai para quem chegou mais próximo (menor diferença de gols);<br>
           • Em caso de empate na aproximação, o prêmio é dividido igualmente entre os finalistas;<br>
-          • Sobre o valor total arrecadado, incide taxa de <strong>5% (cinco por cento)</strong> retida pela plataforma para custeio operacional.<br><br>
+          • Sobre o valor total arrecadado, incide taxa de <strong>10% (dez por cento)</strong> retida pela plataforma para custeio operacional.<br><br>
           <strong>3.4 Limite:</strong> O máximo de 50 participantes por bolão visa manter o caráter privado e informal da atividade.
         </div>
       </div>
@@ -662,7 +636,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="terms-section">
         <div class="terms-title">7. LIMITAÇÃO DE RESPONSABILIDADE</div>
         <div class="terms-text">
-          <strong>7.1</strong> A plataforma Bolão FC atua como intermediária tecnológica e não se responsabiliza por:<br>
+          <strong>7.1</strong> A plataforma Bolão Copa atua como intermediária tecnológica e não se responsabiliza por:<br>
           • Resultados das apostas ou dos jogos;<br>
           • Inadimplência de participantes no pagamento via Pix;<br>
           • Problemas técnicos de conectividade ou nos sistemas do Banco Central;<br>
@@ -740,16 +714,17 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
-    <div class="section-title">Próximos Jogos · Copa 2026</div>
+    <div class="section-title">Meus Bolões</div>
+    <div class="filter-chips" id="home-filters">
+      <button class="chip-btn active" onclick="setHomeFilter('all',this)">Todos</button>
+      <button class="chip-btn" onclick="setHomeFilter('mine',this)">Meus</button>
+      <button class="chip-btn" onclick="setHomeFilter('open',this)">Abertos</button>
+      <button class="chip-btn" onclick="setHomeFilter('closed',this)">Encerrados</button>
+    </div>
+    <div id="my-boloes-list"></div>
+    <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:8px">
-      <div class="section-title" style="margin-bottom:0">⚽ Jogos do Brasil</div>
-      <div id="br-live-badge" style="display:none"><span class="live-pill"><span class="live-dot"></span>AO VIVO</span></div>
-    </div>
-    <div id="br-carousel" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:8px;-ms-overflow-style:none;scrollbar-width:none;margin-bottom:4px">
-      <div style="color:var(--text3);font-size:12px;padding:16px 0">Carregando jogos...</div>
-    </div>
     <div id="live-section">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div class="section-title" style="margin-bottom:0">Placares ao Vivo</div>
@@ -762,7 +737,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === TABELA === -->
 <div class="screen" id="s-tabela">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Tabela Copa 2026</span></div>
+  <div class="topbar"><span class="topbar-title">Tabela Copa 2026</span></div>
   <div class="scroll">
     <div id="t-main-filter" class="t-filter-row">
       <button class="t-chip active" onclick="setTF('all',this)">Todos</button>
@@ -841,7 +816,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === PROFILE (tab dentro do home) === -->
 <div class="screen" id="s-profile">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Perfil</span></div>
+  <div class="topbar"><span class="topbar-title" style="flex:0;margin-right:auto">Perfil</span></div>
   <div class="scroll" style="padding-top:16px">
     <div class="avatar-card">
       <div class="avatar-upload" onclick="document.getElementById('photo-input').click()">
@@ -886,6 +861,12 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div class="section-title" style="margin-top:20px">Histórico de apostas</div>
     <div id="bet-history"></div>
+    <div class="section-title" style="margin-top:20px">Preferências</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <button id="theme-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="toggleTheme()">☀️ Modo claro</button>
+      <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">🔔 Ativar notificações</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">🏅 Ranking com amigos</button>
+    </div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
 </div>
@@ -960,14 +941,8 @@ input:checked+.slider:before{transform:translateX(18px)}
     <button class="drawer-item active" id="di-home" onclick="drawerGo('home')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Início
     </button>
-    <button class="drawer-item" id="di-meuboloes" onclick="drawerGo('meuboloes')">
-      <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>Meus Bolões
-    </button>
     <button class="drawer-item" id="di-tabela" onclick="drawerGo('tabela')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela Copa 2026
-    </button>
-    <button class="drawer-item" id="di-championships" onclick="drawerGo('championships')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>Campeonatos
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela
     </button>
     <button class="drawer-item" id="di-join" onclick="drawerGo('join')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar bolão
@@ -986,26 +961,18 @@ input:checked+.slider:before{transform:translateX(18px)}
   </div>
 </div>
 
-<!-- === MEUS BOLÕES === -->
-<div class="screen" id="s-meuboloes">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Meus Bolões</span></div>
-  <div class="scroll" id="meuboloes-content" style="padding-top:16px"></div>
-</div>
-
-<!-- === CAMPEONATOS === -->
-<div class="screen" id="s-championships">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Campeonatos</span></div>
-  <div class="scroll" id="championships-content"></div>
-</div>
-
-<!-- === CRIAR BOLÃO PERSONALIZADO === -->
-<div class="screen" id="s-custom-create">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title" id="custom-create-title">Criar Bolão</span></div>
-  <div class="scroll" id="custom-create-content"></div>
-</div>
-
 <!-- CONFETTI -->
 <canvas id="confetti-canvas"></canvas>
+
+<!-- === RANKING GERAL === -->
+<div class="screen" id="s-ranking-geral">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">🏅 Ranking com Amigos</span></div>
+  <div class="scroll" style="padding-bottom:40px">
+    <div id="ranking-geral-content" style="padding-top:8px">
+      <div style="text-align:center;color:var(--text3);padding:48px 0">Carregando...</div>
+    </div>
+  </div>
+</div>
 
 </div><!-- #app -->
 
@@ -1013,7 +980,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div class="ob-overlay" id="ob-overlay">
   <div class="ob-modal">
     <div id="ob-icon" class="ob-icon">🏆</div>
-    <div id="ob-title" class="ob-title">Bem-vindo ao Bolão FC!</div>
+    <div id="ob-title" class="ob-title">Bem-vindo ao Bolão Copa!</div>
     <div id="ob-text" class="ob-text">Aposte com amigos nos jogos da Copa do Mundo 2026. Crie bolões privados e torça junto!</div>
     <div class="ob-dots" id="ob-dots">
       <div class="ob-dot active"></div>
@@ -1126,13 +1093,10 @@ async function _loadBoloesFromSupabase() {
   try {
     const { data, error } = await _sb.from('boloes').select('*').order('created_at', {ascending:false});
     if(error || !data) { showToast('⚠️ Erro ao carregar bolões da nuvem'); return; }
-    const _deleted = _getDeleted();
-    // Filter: user is creator or participant, excluding locally-deleted IDs
+    // Filter: user is creator or participant
     const mine = data.filter(row =>
-      !_deleted.includes(row.id) && (
-        row.creator_id === state.user.email ||
-        (row.participants||[]).some(p => p.email === state.user.email)
-      )
+      row.creator_id === state.user.email ||
+      (row.participants||[]).some(p => p.email === state.user.email)
     );
     const sbBoloes = mine.map(_sbRowToBolao);
     // Merge: Supabase wins on matching IDs
@@ -1159,13 +1123,6 @@ let state = {
   betBolaoId: null,
   pixBolaoId: null,
   editingBet: {},
-  pixPollInterval: null,
-  pixTimerInterval: null,
-  customChampionship: null,
-  champFilter: 'next',
-  champRound: 'all',
-  champGames: [],
-  champPollInterval: null,
 };
 
 const GAMES = [
@@ -1257,44 +1214,6 @@ const GAMES = [
 
 const USERS = [];
 
-// ===== CAMPEONATOS (apenas ativos em junho 2026) =====
-const CHAMPIONSHIPS = [
-  { category: '🏆 Copa do Mundo 2026', items: [
-    { id: 'copa-mundo',    name: 'Copa do Mundo FIFA 2026', flag: '🏆', region: 'Mundial · 11 Jun – 19 Jul', espn: 'fifa.world', national: true },
-  ]},
-  { category: '🇧🇷 Brasil', items: [
-    { id: 'brasileirao',   name: 'Brasileirão Série A',     flag: '🇧🇷', region: 'Brasil',         espn: 'bra.1',                national: false },
-    { id: 'libertadores',  name: 'Copa Libertadores',       flag: '🌎', region: 'América do Sul', espn: 'conmebol.libertadores', national: false },
-    { id: 'sudamericana',  name: 'Copa Sudamericana',       flag: '🌎', region: 'América do Sul', espn: 'conmebol.sudamericana', national: false },
-  ]},
-  { category: '🏆 Europa — Top 5 Ligas', items: [
-    { id: 'premier-league', name: 'Premier League',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', region: 'Inglaterra', espn: 'eng.1', national: false },
-    { id: 'la-liga',        name: 'La Liga',                flag: '🇪🇸', region: 'Espanha',    espn: 'esp.1', national: false },
-    { id: 'serie-a',        name: 'Serie A',                flag: '🇮🇹', region: 'Itália',     espn: 'ita.1', national: false },
-    { id: 'bundesliga',     name: 'Bundesliga',             flag: '🇩🇪', region: 'Alemanha',   espn: 'ger.1', national: false },
-    { id: 'ligue-1',        name: 'Ligue 1',                flag: '🇫🇷', region: 'França',     espn: 'fra.1', national: false },
-  ]},
-  { category: '⭐ Europa — Copas', items: [
-    { id: 'champions',      name: 'Champions League',       flag: '⭐', region: 'Europa',      espn: 'uefa.champions', national: false },
-    { id: 'europa-league',  name: 'Europa League',          flag: '🟠', region: 'Europa',      espn: 'uefa.europa',    national: false },
-  ]},
-];
-
-// Mapa de código de país ESPN → bandeira emoji (para competições de seleções)
-const FLAG_MAP = {
-  BRA:'🇧🇷',ARG:'🇦🇷',URU:'🇺🇾',COL:'🇨🇴',CHI:'🇨🇱',ECU:'🇪🇨',PAR:'🇵🇾',PER:'🇵🇪',VEN:'🇻🇪',BOL:'🇧🇴',
-  MEX:'🇲🇽',USA:'🇺🇸',CAN:'🇨🇦',CRC:'🇨🇷',PAN:'🇵🇦',JAM:'🇯🇲',HAI:'🇭🇹',HON:'🇭🇳',SLV:'🇸🇻',GTM:'🇬🇹',
-  ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',WAL:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',
-  ESP:'🇪🇸',FRA:'🇫🇷',GER:'🇩🇪',ITA:'🇮🇹',POR:'🇵🇹',NED:'🇳🇱',BEL:'🇧🇪',CRO:'🇭🇷',DEN:'🇩🇰',SUI:'🇨🇭',
-  AUT:'🇦🇹',SRB:'🇷🇸',POL:'🇵🇱',SVK:'🇸🇰',CZE:'🇨🇿',HUN:'🇭🇺',ROM:'🇷🇴',UKR:'🇺🇦',TUR:'🇹🇷',GRE:'🇬🇷',
-  SWE:'🇸🇪',NOR:'🇳🇴',FIN:'🇫🇮',ISL:'🇮🇸',IRL:'🇮🇪',SVN:'🇸🇮',ALB:'🇦🇱',MNE:'🇲🇪',MKD:'🇲🇰',GEO:'🇬🇪',
-  SEN:'🇸🇳',MAR:'🇲🇦',NGA:'🇳🇬',GHA:'🇬🇭',EGY:'🇪🇬',CMR:'🇨🇲',RSA:'🇿🇦',CIV:'🇨🇮',ALG:'🇩🇿',TUN:'🇹🇳',
-  MLI:'🇲🇱',COD:'🇨🇩',MOZ:'🇲🇿',ZIM:'🇿🇼',ZAM:'🇿🇲',ANG:'🇦🇴',KEN:'🇰🇪',ETH:'🇪🇹',
-  JPN:'🇯🇵',KOR:'🇰🇷',AUS:'🇦🇺',IRI:'🇮🇷',SAU:'🇸🇦',QAT:'🇶🇦',UAE:'🇦🇪',IRQ:'🇮🇶',JOR:'🇯🇴',
-  CHN:'🇨🇳',IND:'🇮🇳',THA:'🇹🇭',VIE:'🇻🇳',IDN:'🇮🇩',NZL:'🇳🇿',ISR:'🇮🇱',UZB:'🇺🇿',KAZ:'🇰🇿',
-  GUY:'🇬🇾',SUR:'🇸🇷',TRI:'🇹🇹',HAT:'🇭🇹',
-};
-
 // ===== PERSISTÊNCIA (localStorage) =====
 function loadPersistedData() {
   try {
@@ -1312,8 +1231,6 @@ function saveBoloes(bolaoToSync)  {
 function saveBolao(b) { saveBoloes(b); }
 function saveSession(u){ try{localStorage.setItem('bolao_session',JSON.stringify(u));}catch(e){} }
 function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){} }
-function _markDeleted(id){ try{ const d=JSON.parse(localStorage.getItem('bolao_deleted')||'[]'); if(!d.includes(id))d.push(id); localStorage.setItem('bolao_deleted',JSON.stringify(d)); }catch(e){} }
-function _getDeleted(){ try{ return JSON.parse(localStorage.getItem('bolao_deleted')||'[]'); }catch(e){ return []; } }
 
 // ===== NAV =====
 function _navCore(screenId, push=true) {
@@ -1334,13 +1251,6 @@ function go(screenId, push=true) {
 function back() {
   if(state.screenStack.length <= 1) return;
   const cur = state.screenStack.pop();
-  if(cur === 's-pix') {
-    if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
-    if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-  }
-  if(cur === 's-custom-create') {
-    if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
-  }
   const prev = state.screenStack[state.screenStack.length-1];
   document.getElementById(cur).classList.remove('active');
   document.getElementById(prev).classList.remove('prev');
@@ -1348,7 +1258,6 @@ function back() {
   updateGlobalNav(prev);
   if(prev === 's-detail' && state.currentBolaoId) renderDetail();
   if(prev === 's-home') renderHome();
-  if(prev === 's-meuboloes') renderMeusBoloes();
 }
 
 function showToast(msg) {
@@ -1519,7 +1428,7 @@ async function loginSuccess() {
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
-  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); renderBRCarousel(); } }, 60000);
+  window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
   setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
   requestNotificationPermission();
   scheduleGameNotifications();
@@ -1554,70 +1463,19 @@ async function confirmLogout() {
 function cancelLogout() {
   document.getElementById('logout-modal').style.display = 'none';
 }
-function initDobPicker() {
-  const H = 44;
-  const MONS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const now  = new Date();
-  const curY = now.getFullYear();
-  const defY = curY - 25;
-  const defM = now.getMonth();
-  const defD = Math.min(now.getDate() - 1, 30);
-  const days  = Array.from({length:31}, (_,i) => String(i+1).padStart(2,'0'));
-  const years = Array.from({length: curY - 1919}, (_,i) => String(curY - i));
-  const defYIdx = Math.max(years.indexOf(String(defY)), 0);
-
-  function fill(colEl, items, selIdx) {
-    colEl.innerHTML = '';
-    const pt = document.createElement('div'); pt.style.height = (H*2)+'px'; colEl.appendChild(pt);
-    items.forEach(t => { const el = document.createElement('div'); el.className='dob-item'; el.textContent=t; colEl.appendChild(el); });
-    const pb = document.createElement('div'); pb.style.height = (H*2)+'px'; colEl.appendChild(pb);
-    requestAnimationFrame(() => { colEl.scrollTop = selIdx * H; });
-  }
-
-  function sync() {
-    const di = Math.round(document.getElementById('dob-col-day').scrollTop / H);
-    const mi = Math.round(document.getElementById('dob-col-mon').scrollTop / H);
-    const yi = Math.round(document.getElementById('dob-col-yr').scrollTop  / H);
-    const d  = Math.min(Math.max(di,0),30) + 1;
-    const m  = Math.min(Math.max(mi,0),11) + 1;
-    const y  = years[Math.min(Math.max(yi,0), years.length-1)];
-    const inp = document.getElementById('rg-dob');
-    if(inp) inp.value = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  }
-
-  function wire(colEl) {
-    let t;
-    colEl.addEventListener('scroll', () => {
-      clearTimeout(t);
-      t = setTimeout(() => {
-        const idx = Math.round(colEl.scrollTop / H);
-        colEl.scrollTo({top: idx * H, behavior:'smooth'});
-        sync();
-      }, 120);
-    }, {passive:true});
-  }
-
-  fill(document.getElementById('dob-col-day'), days,  defD);
-  fill(document.getElementById('dob-col-mon'), MONS,  defM);
-  fill(document.getElementById('dob-col-yr'),  years, defYIdx);
-  ['dob-col-day','dob-col-mon','dob-col-yr'].forEach(id => wire(document.getElementById(id)));
-  setTimeout(sync, 60);
-}
-
 function goRegister() {
   clearSession();
   state.user = null;
   go('s-register');
-  requestAnimationFrame(initDobPicker);
 }
 
 
 // ===== HOME =====
 function renderHome() {
   document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name?.split(' ')[0] || 'amigo'} 👋`;
+  renderMyBoloes();
   renderGames();
   renderLiveScores();
-  renderBRCarousel();
 }
 
 function setHomeFilter(filter, btn) {
@@ -1699,7 +1557,7 @@ function esc(s) {
 }
 
 function fmtPrize(b) {
-  return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.95);
+  return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
 }
 
 function renderLiveScores() {
@@ -1854,7 +1712,7 @@ function renderCreateStep() {
       </div>`:``}
       <div class="prize-preview">
         <span style="font-size:20px">🏆</span>
-        <span class="prize-preview-text">Com 10 participantes → prêmio de <span class="prize-preview-val">R$${Math.floor(s.amount*10*0.95)}</span> (após 5% do app)</span>
+        <span class="prize-preview-text">Com 10 participantes → prêmio de <span class="prize-preview-val">R$${Math.floor(s.amount*10*0.9)}</span> (após 10% do app)</span>
       </div>
       <div class="section-title" style="margin-top:16px;margin-bottom:4px">Limite de Participantes</div>
       <div class="section-sub">Máximo 50 para manter privacidade</div>
@@ -1893,7 +1751,7 @@ function renderCreateStep() {
         ${summaryRow('👥','Máx. participantes',`${s.maxPart} pessoas`)}
         ${summaryRow('🔒','Senha',s.hasPw?'✅ Sim':'🔓 Sem senha')}
         ${summaryRow('🎯','Pontuação',`Exato: ${s.pointsExact}pts · Resultado: ${s.pointsResult}pt`)}
-        ${summaryRow('📊','Taxa do app','5% do prêmio total')}
+        ${summaryRow('📊','Taxa do app','10% do prêmio total')}
       </div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="createState.step=2;renderCreateStep()">← Voltar</button>
@@ -1924,49 +1782,7 @@ function nextCreateStep() {
   renderCreateStep();
 }
 
-function showTermsModal(onAccept) {
-  if(localStorage.getItem('bolao_terms_dismissed')==='1') { onAccept(); return; }
-  const el = document.createElement('div');
-  el.id = 'terms-overlay';
-  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:0';
-  el.innerHTML=`
-    <div style="background:var(--surface);border-radius:22px 22px 0 0;width:100%;max-width:500px;padding:28px 22px calc(env(safe-area-inset-bottom,0px)+28px);box-shadow:0 -8px 32px rgba(0,0,0,.35)">
-      <div style="width:38px;height:4px;background:var(--border);border-radius:9px;margin:0 auto 20px"></div>
-      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px">📋 Regras do Bolão</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Leia antes de continuar</div>
-      <div style="background:var(--surface2);border-radius:14px;padding:14px 16px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.6">
-        <div style="margin-bottom:8px">🏆 <strong style="color:var(--text)">Como funciona:</strong> Apostas no placar final. Mais pontos = mais perto do prêmio.</div>
-        <div style="margin-bottom:8px">🎯 Acerto exato: <strong>${'<span style=\'color:var(--pix)\'>'}3 pts</span></strong> · Resultado correto: <span style="color:var(--pix)">1 pt</span></div>
-        <div style="margin-bottom:8px">💸 Prêmio = total arrecadado menos a taxa do app.</div>
-        <div style="margin-bottom:8px">⏰ Apostas fecham quando o jogo começa.</div>
-        <div>🔒 Ao entrar/criar, você concorda com as regras do bolão.</div>
-      </div>
-      <div style="background:rgba(231,76,60,.09);border:1px solid rgba(231,76,60,.25);border-radius:12px;padding:12px 16px;margin-bottom:18px;text-align:center">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:2px">Taxa de manutenção do app</div>
-        <div style="font-size:22px;font-weight:900;color:var(--err)">5%</div>
-        <div style="font-size:12px;color:var(--text2)">descontado automaticamente do prêmio</div>
-      </div>
-      <label style="display:flex;align-items:center;gap:10px;margin-bottom:18px;cursor:pointer;user-select:none">
-        <input type="checkbox" id="terms-no-show" style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer">
-        <span style="font-size:13px;color:var(--text2)">Não mostrar esta mensagem novamente</span>
-      </label>
-      <button class="btn btn-primary" style="width:100%" onclick="(function(){
-        if(document.getElementById('terms-no-show').checked) localStorage.setItem('bolao_terms_dismissed','1');
-        document.getElementById('terms-overlay').remove();
-        (_termsAcceptCb)();
-      })()">Estou ciente, continuar →</button>
-      <button class="btn" style="width:100%;margin-top:10px;background:transparent;color:var(--text2);border:1.5px solid var(--border)" onclick="document.getElementById('terms-overlay').remove()">Cancelar</button>
-    </div>`;
-  window._termsAcceptCb = onAccept;
-  document.body.appendChild(el);
-  el.addEventListener('click', e=>{ if(e.target===el) el.remove(); });
-}
-
 function finishCreate() {
-  showTermsModal(_doFinishCreate);
-}
-
-function _doFinishCreate() {
   const s = createState;
   const code = genCode();
   const bolao = {
@@ -2014,7 +1830,7 @@ function renderDetail() {
   if(!b) return;
   document.getElementById('detail-title').textContent = b.title;
   const paidCount = b.participants.filter(p=>p.paid).length;
-  const prize = Math.floor(paidCount * b.amount * 0.95);
+  const prize = Math.floor(paidCount * b.amount * 0.9);
   const me = b.participants.find(p=>p.email===state.user?.email);
   const isCreator = b.creatorId===state.user?.email;
   const betClosed = isBetClosed(b.game);
@@ -2043,23 +1859,6 @@ function renderDetail() {
     deadlineBadge = `<div class="deadline-badge deadline-open">✅ Apostas abertas — fecha em ${countdown}</div>`;
   }
 
-  // 1b. PAINEL DE PAGAMENTOS
-  const unpaidList = b.participants.filter(p=>!p.paid);
-  const paymentPanel = b.participants.length > 0 && !b.result ? `
-    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Status de Pagamentos</div>
-        <div style="font-size:11px;color:var(--text3)">${paidCount}/${b.participants.length} pagaram</div>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${b.participants.map(p=>`
-          <div style="display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${p.paid?'rgba(39,174,96,.12)':'rgba(243,156,18,.1)'};color:${p.paid?'var(--ok)':'var(--warn)'}">
-            <span>${p.paid?'✅':'⏳'}</span><span>${esc(p.name.split(' ')[0])}</span>
-          </div>`).join('')}
-      </div>
-      ${unpaidList.length>0?`<div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">Aguardando: ${unpaidList.map(p=>esc(p.name.split(' ')[0])).join(', ')}</div>`:''}
-    </div>` : '';
-
   // 2. PRIZE CARD or RESULT CARD
   const prizeSection = b.result
     ? buildResultCard(b, prize)
@@ -2067,11 +1866,11 @@ function renderDetail() {
         <div class="prize-main">
           <div class="prize-lbl">Prêmio Acumulado</div>
           <div class="prize-val">R$${prize}</div>
-          <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 5% do app descontado</div>
+          <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 10% do app descontado</div>
         </div>
         <div class="prize-proj">
           <span class="proj-lbl">Potencial máximo</span>
-          <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.95)}</span>
+          <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.9)}</span>
         </div>
       </div>`;
 
@@ -2176,30 +1975,21 @@ function renderDetail() {
       <button class="btn btn-primary" onclick="joinAndBet('${b.id}')">Entrar e fazer palpite</button>
     </div>`;
   } else if(locked && me) {
-    if(!me.paid && b.result) {
-      actionBox = `<div class="action-box">
-        <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);border-radius:14px;padding:16px;text-align:center">
-          <div style="font-size:32px;margin-bottom:8px">😔</div>
-          <div style="font-size:14px;font-weight:800;color:var(--err);margin-bottom:6px">Você não participou deste bolão</div>
-          <div style="font-size:12px;color:var(--text3);line-height:1.5">O pagamento não foi efetuado antes do resultado.<br>Você está no grupo, mas não concorreu ao prêmio.</div>
-        </div>
-      </div>`;
-    } else {
-      // Locked: read-only view + pix if needed
-      actionBox = `<div class="action-box">
-        ${me.homeScore!=null
-          ? `<div class="my-bet-box">
-               <div class="my-bet-lbl">Meu palpite registrado</div>
-               <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
-               <div style="font-size:11px;color:var(--err);font-weight:600;margin-top:4px">Apostas encerradas</div>
-             </div>`
-          : `<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Você não registrou um palpite</div>`}
-        ${!me.paid && !b.result ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
-      </div>`;
-    }
+    // Locked: read-only view + pix if needed
+    actionBox = `<div class="action-box">
+      ${me.homeScore!=null
+        ? `<div class="my-bet-box">
+             <div class="my-bet-lbl">Meu palpite registrado</div>
+             <div class="my-bet-score">${b.game.home.flag} ${me.homeScore} × ${me.awayScore} ${b.game.away.flag}</div>
+             <div style="font-size:11px;color:var(--err);font-weight:600;margin-top:4px">Apostas encerradas</div>
+           </div>`
+        : `<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Você não registrou um palpite</div>`}
+      ${!me.paid && !b.result ? `<button class="btn btn-pix" style="margin-top:8px" onclick="openPix('${b.id}')">Pagar R$${b.amount} via Pix</button>` : ''}
+    </div>`;
   }
 
-  // 8. RANKING (if result exists)
+  // 8. LIVE RANKING + FINAL RANKING
+  const liveRankingSection = buildLiveRanking(b);
   const rankingSection = buildRanking(b);
 
   const exportBtn = b.result
@@ -2214,20 +2004,12 @@ function renderDetail() {
     ? `<div class="empty-box"><div class="empty-text">Nenhum participante ainda. Compartilhe o código!</div></div>`
     : b.participants.map(p => {
         const ur = USERS.find(u=>u.email===p.email);
-        const photo = ur?.photo || p.photo;
-        const av = photo
-          ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}">`
-          : `<div class="part-av-init">${esc(p.name.charAt(0).toUpperCase())}</div>`;
-        const notParticipating = b.result && !p.paid;
-        const payCtrl = notParticipating
-          ? `<div class="paid-badge" style="background:rgba(231,76,60,.15);color:var(--err)">❌ Não participou</div>`
-          : `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
-        return `<div class="part-row" style="${notParticipating?'opacity:.6':''}">
+        const av = _avHtml(p.email, p.name, ur?.photo||p.photo, 38);
+        const payCtrl = `<div class="paid-badge ${p.paid?'paid-ok':'paid-no'}">${p.paid?'✅ Pago':'⏳ Pendente'}</div>`;
+        return `<div class="part-row">
           ${av}
           <div style="flex:1;min-width:0">
-            <div class="part-name" style="${notParticipating?'text-decoration:line-through;color:var(--text3)':''}">
-              ${esc(p.name)}${notParticipating?' <span style="font-size:10px;color:var(--err)">(só no grupo)</span>':''}
-            </div>
+            <div class="part-name">${esc(p.name)}</div>
             <div class="part-bet">${p.homeScore!=null?`Palpite: ${p.homeScore} × ${p.awayScore}`:'Sem palpite ainda'}</div>
           </div>
           ${payCtrl}
@@ -2244,8 +2026,8 @@ function renderDetail() {
       </div>
     </div>
     ${deadlineBadge}
-    ${paymentPanel}
     ${prizeSection}
+    ${liveRankingSection}
     ${rankingSection}
     ${exportBtn}
     ${insertBtn}
@@ -2253,7 +2035,7 @@ function renderDetail() {
     ${pixCard}
     ${creatorBtns}
     ${actionBox}
-    <div class="section-title" style="margin-top:4px">Participantes <span style="font-weight:400;font-size:12px;color:var(--text3)">(${paidCount} pagantes · ${b.participants.length} no grupo)</span></div>
+    <div class="section-title" style="margin-top:4px">Participantes (${b.participants.length}/${b.maxPart})</div>
     ${participantsHTML}
     ${chatHTML}`;
 }
@@ -2276,7 +2058,7 @@ function shareWhatsApp(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
   const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
-  const msg = `🏆 *${b.title}* — Bolão FC!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
+  const msg = `🏆 *${b.title}* — Bolão Copa 2026!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -2308,6 +2090,7 @@ function _doJoinAndBet(id) {
   if(!b.participants.find(p=>p.email===state.user.email)) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
     addSystemMessage(id, `🎉 ${state.user.name} entrou no bolão!`);
+    _localNotify('🎉 Novo participante!', `${state.user.name} entrou no bolão "${b.title}"`);
     saveBoloes(b);
   }
   state.betScores = {home:0, away:0};
@@ -2403,11 +2186,6 @@ function doJoin(id) {
     if(pw!==b.pw) { showToast('❌ Senha incorreta'); return; }
   }
   if(b.participants.length>=b.maxPart) { showToast('❌ Bolão lotado'); return; }
-  showTermsModal(()=>_doJoin(id));
-}
-
-function _doJoin(id) {
-  const b = state.boloes.find(x=>x.id===id);
   const isNew = !b.participants.find(p=>p.email===state.user.email);
   if(isNew) {
     b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
@@ -2532,7 +2310,7 @@ function scheduleGameNotifications() {
       _notifTimeouts.push(setTimeout(() => {
         const me = state.boloes.find(x=>x.id===b.id)?.participants.find(p=>p.email===state.user?.email);
         if(me?.homeScore == null) {
-          new Notification('⚽ Bolão FC — faltam 1h!', {
+          new Notification('⚽ Bolão Copa — faltam 1h!', {
             body: `${b.game.home.name} × ${b.game.away.name} começa em 1h. Registre seu palpite em "${b.title}"!`,
             icon: './icon.svg',
             tag: `bet-1h-${b.id}`
@@ -2566,9 +2344,6 @@ async function openPix(id) {
     <div class="pix-icon">🏦</div>
     <div class="pix-title">Pagamento via Pix</div>
     <div class="pix-amount">R$${b.amount}</div>
-    <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;text-align:center;color:var(--text2)">
-      <strong style="color:var(--err)">5% de taxa do app</strong> descontado do prêmio — você paga R$${b.amount} integral
-    </div>
     <div style="text-align:center;padding:28px 0;color:var(--text3)">
       <div style="font-size:36px;margin-bottom:10px">⏳</div>
       <div style="font-size:13px">Gerando QR Code...</div>
@@ -2603,59 +2378,11 @@ async function openPix(id) {
       <div class="pix-icon">🏦</div>
       <div class="pix-title">Pagamento via Pix</div>
       <div class="pix-amount">R$${b.amount}</div>
-      <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;text-align:center;color:var(--text2)">
-        <strong style="color:var(--err)">5% de taxa do app</strong> descontado do prêmio — você paga R$${b.amount} integral
-      </div>
       ${qrHtml}
       ${copiaCola}
-      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco.</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0;padding:10px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)">
-        <span style="font-size:20px">⏱️</span>
-        <div style="text-align:left">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Tempo restante</div>
-          <div id="pix-timer" style="font-size:22px;font-weight:900;color:var(--secondary);letter-spacing:1px;line-height:1.2">10:00</div>
-        </div>
-      </div>
-      <div style="text-align:center;font-size:12px;color:var(--text3);margin:4px 0">⏳ Aguardando pagamento...</div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="back()">Cancelar</button>`;
-
-    if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
-    if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-
-    let secsLeft = 600;
-    state.pixTimerInterval = setInterval(()=>{
-      secsLeft--;
-      const el = document.getElementById('pix-timer');
-      if(el) {
-        const m = String(Math.floor(secsLeft/60)).padStart(2,'0');
-        const s = String(secsLeft%60).padStart(2,'0');
-        el.textContent = `${m}:${s}`;
-        if(secsLeft <= 60) el.style.color = 'var(--err)';
-        else if(secsLeft <= 120) el.style.color = 'var(--warn)';
-      }
-      if(secsLeft <= 0) {
-        clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
-        clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
-        showToast('⏱️ Tempo esgotado — PIX cancelado');
-        back();
-      }
-    }, 1000);
-
-    state.pixPollInterval = setInterval(async ()=>{
-      try {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/boloes?id=eq.${b.id}&select=participants`,{
-          headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`}
-        });
-        const rows = await r.json();
-        if(!rows?.length) return;
-        const me = (rows[0].participants||[]).find(p=>p.email===state.user.email);
-        if(me?.paid) {
-          clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
-          clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
-          _autoConfirmPix(b.id);
-        }
-      } catch(_){}
-    }, 5000);
+      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. Após pagar, toque em "Confirmar".</div>
+      <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Confirmar pagamento</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   } catch(e) {
     document.getElementById('pix-content').innerHTML=`
       <div class="pix-icon">⚠️</div>
@@ -2667,7 +2394,6 @@ async function openPix(id) {
 }
 
 function confirmPix() {
-  if(state.pixPollInterval) { clearInterval(state.pixPollInterval); state.pixPollInterval = null; }
   const b = state.boloes.find(x=>x.id===state.pixBolaoId);
   if(!b) return;
   const me = b.participants.find(p=>p.email===state.user.email);
@@ -2675,40 +2401,10 @@ function confirmPix() {
   me.paid = true;
   addSystemMessage(b.id, `💸 ${state.user.name} confirmou o pagamento · R$${b.amount}`);
   saveBoloes(b);
+  _localNotify('💸 Pagamento confirmado!', `Bolão "${b.title}" · R$${b.amount}`);
   showToast('✅ Pagamento confirmado! Boa sorte!');
   back();
   setTimeout(()=>renderDetail(), 300);
-}
-
-function _autoConfirmPix(bolaoId) {
-  if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-  const b = state.boloes.find(x=>x.id===bolaoId);
-  if(!b) return;
-  const me = b.participants.find(p=>p.email===state.user.email);
-  if(me && !me.paid) {
-    me.paid = true;
-    addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
-    saveBoloes(b);
-    _notifyCreator(b, state.user.name);
-  }
-  document.getElementById('pix-content').innerHTML=`
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;animation:pixPop .5s cubic-bezier(.34,1.56,.64,1) both">
-      <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#00b894,#00cec9);display:flex;align-items:center;justify-content:center;font-size:52px;animation:pixPulse 1s ease-out 3">✅</div>
-      <div style="font-size:26px;font-weight:900;color:#00b894;margin:20px 0 8px;letter-spacing:-.5px">PIX Confirmado!</div>
-      <div style="font-size:15px;color:var(--text2);text-align:center">Pagamento de <b style="color:var(--text1)">R$${b.amount}</b> recebido.<br>Boa sorte no bolão! 🏆</div>
-      <div style="margin-top:28px;font-size:13px;color:var(--text3)">Voltando em instantes...</div>
-    </div>`;
-  setTimeout(()=>{ back(); setTimeout(()=>renderDetail(), 300); }, 2800);
-}
-
-function _notifyCreator(b, payerName) {
-  if(!b || b.creatorId === state.user?.email) return;
-  if(!('Notification' in window) || Notification.permission !== 'granted') return;
-  new Notification(`💸 Pagamento recebido — ${b.title}`, {
-    body: `${payerName} pagou R$${b.amount} no seu bolão!`,
-    icon: '/Projeto01/icon.svg',
-    tag: `pix-${b.id}-${Date.now()}`,
-  });
 }
 
 // ===== PROFILE =====
@@ -2718,14 +2414,15 @@ function updateProfileUI() {
   // Sync latest data from USERS array
   const stored = USERS.find(x=>x.email===u.email);
   if(stored) Object.assign(state.user, stored);
-  // Update avatar (photo or initials)
+  // Update avatar (photo or initials with color)
   const wrap = document.getElementById('prof-avatar-wrap');
-  const photo = state.user.photo;
-  const initial = state.user.name?.charAt(0)?.toUpperCase() || '?';
   if(wrap) {
+    const photo = state.user.photo;
+    const ini = state.user.name?.charAt(0)?.toUpperCase() || '?';
+    const col = _avColor(state.user.email||'');
     wrap.innerHTML = photo
       ? `<img class="av-img" src="${photo}" alt="foto">`
-      : `<div class="av-init" id="prof-avatar">${initial}</div>`;
+      : `<div class="av-init" id="prof-avatar" style="background:${col}">${ini}</div>`;
   }
   // Update floating avatar + home badge
   updateFloatingAvatar();
@@ -2764,37 +2461,21 @@ function updateProfileUI() {
   renderBetHistory();
 }
 
-function _resizePhoto(dataURL) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 280;
-      let w = img.width, h = img.height;
-      const ratio = Math.min(MAX / w, MAX / h, 1);
-      w = Math.round(w * ratio); h = Math.round(h * ratio);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.82));
-    };
-    img.onerror = () => resolve(dataURL);
-    img.src = dataURL;
-  });
-}
-
 function uploadPhoto(input) {
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 15*1024*1024) { showToast('❌ Imagem muito grande (máx 15MB)'); return; }
+  if(file.size > 5*1024*1024) { showToast('❌ Imagem muito grande (máx 5MB)'); return; }
   const reader = new FileReader();
-  reader.onload = async (e) => {
-    const photo = await _resizePhoto(e.target.result);
+  reader.onload = (e) => {
+    const photo = e.target.result;
     state.user.photo = photo;
+    // Persist keyed by email so it survives logout/login cycles
     try { localStorage.setItem(`bolao_photo_${state.user.email}`, photo); } catch(_) {}
     const u = USERS.find(x=>x.email===state.user.email);
     if(u) u.photo = photo;
     saveUsers();
     saveSession(state.user);
+    // Save to Supabase profiles table if connected
     if(_sb && state.user.id) {
       _sb.from('profiles').update({photo}).eq('id', state.user.id).catch(()=>{});
     }
@@ -2813,7 +2494,7 @@ function openEditProfile() {
   const wrap = document.getElementById('edit-avatar-wrap');
   wrap.innerHTML = u.photo
     ? `<img class="av-img" src="${u.photo}" alt="foto">`
-    : `<div class="av-init">${u.name?.charAt(0)?.toUpperCase() || '?'}</div>`;
+    : `<div class="av-init" style="background:${_avColor(u.email||'')}">${u.name?.charAt(0)?.toUpperCase() || '?'}</div>`;
   go('s-edit-profile');
 }
 
@@ -2906,6 +2587,7 @@ function submitResult() {
   const resultText = home>away?`Vitória de ${b.game.home.name}`:away>home?`Vitória de ${b.game.away.name}`:'Empate';
   addSystemMessage(bolaoId, `Resultado definido: ${b.game.home.flag} ${home} × ${away} ${b.game.away.flag} · ${resultText}`);
   saveBoloes(b);
+  _localNotify('🏆 Resultado do bolão!', `${b.title}: ${b.game.home.name} ${home} × ${away} ${b.game.away.name}`);
   closeResultModal();
   renderDetail();
   showToast('Resultado registrado! Classificação atualizada.');
@@ -2925,10 +2607,9 @@ function calcPoints(p, result, b) {
 function buildResultCard(b, prize) {
   const h = b.result.home, a = b.result.away;
   const resultText = h>a?`Vitória de ${b.game.home.name}`:a>h?`Vitória de ${b.game.away.name}`:'Empate';
-  const paid = b.participants.filter(p=>p.paid);
-  const allPts = paid.map(p=>calcPoints(p,b.result,b));
+  const allPts = b.participants.map(p=>calcPoints(p,b.result,b));
   const maxPts = allPts.length>0 ? Math.max(...allPts) : 0;
-  const winners = maxPts>0 ? paid.filter(p=>calcPoints(p,b.result,b)===maxPts) : [];
+  const winners = maxPts>0 ? b.participants.filter(p=>calcPoints(p,b.result,b)===maxPts) : [];
   const prizeEach = winners.length>0 ? Math.floor(prize/winners.length) : 0;
   return `<div class="result-final">
     <div class="result-final-lbl">Resultado Oficial</div>
@@ -2949,25 +2630,21 @@ function buildResultCard(b, prize) {
 function buildRanking(b) {
   if(!b.result) return '';
   const medals = ['🥇','🥈','🥉'];
-  const paid = b.participants.filter(p=>p.paid);
-  const unpaid = b.participants.filter(p=>!p.paid);
-  if(paid.length===0 && unpaid.length===0) return '';
-  const ranked = paid
+  const ranked = b.participants
     .map(p=>({...p, pts: calcPoints(p, b.result, b)}))
     .sort((a,b)=>b.pts-a.pts);
-  const maxPts = ranked.length>0 ? ranked[0].pts : 0;
-  const myEntry = ranked.find(p=>p.email===state.user?.email);
-  if(myEntry && myEntry.pts===maxPts && maxPts>0 && !_confettiShownIds.has(b.id)) {
+  if(ranked.length===0) return '';
+  const maxPts = ranked[0].pts;
+  // Show confetti if current user is among the winners
+  const myRank = ranked.findIndex(p=>p.email===state.user?.email);
+  if(myRank===0 && maxPts>0 && !_confettiShownIds.has(b.id)) {
     _confettiShownIds.add(b.id);
     setTimeout(showConfetti, 300);
   }
-  const paidRows = ranked.map((p,i)=>{
+  const rows = ranked.map((p,i)=>{
     const isWinner = p.pts===maxPts && maxPts>0;
     const ur = USERS.find(u=>u.email===p.email);
-    const photo = ur?.photo||p.photo;
-    const av = photo
-      ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}" style="width:32px;height:32px">`
-      : `<div class="part-av-init" style="width:32px;height:32px;font-size:13px">${esc(p.name.charAt(0).toUpperCase())}</div>`;
+    const av = _avHtml(p.email, p.name, ur?.photo||p.photo, 32);
     return `<div class="rank-row${isWinner?' winner':''}">
       <div class="rank-pos">${medals[i]||`${i+1}°`}</div>
       ${av}
@@ -2978,26 +2655,9 @@ function buildRanking(b) {
       <div class="rank-pts${isWinner?' gold':''}">${p.pts}pt${p.pts!==1?'s':''}</div>
     </div>`;
   }).join('');
-  const unpaidRows = unpaid.map(p=>{
-    const ur = USERS.find(u=>u.email===p.email);
-    const photo = ur?.photo||p.photo;
-    const av = photo
-      ? `<img class="part-av-img" src="${photo}" alt="${esc(p.name)}" style="width:32px;height:32px;opacity:.45">`
-      : `<div class="part-av-init" style="width:32px;height:32px;font-size:13px;opacity:.45">${esc(p.name.charAt(0).toUpperCase())}</div>`;
-    return `<div class="rank-row" style="opacity:.55">
-      <div class="rank-pos">—</div>
-      ${av}
-      <div class="rank-info">
-        <div class="rank-name" style="text-decoration:line-through;color:var(--text3)">${esc(p.name)}</div>
-        <div class="rank-bet" style="color:var(--err)">❌ Não efetuou o pagamento</div>
-      </div>
-      <div class="rank-pts" style="color:var(--text3)">—</div>
-    </div>`;
-  }).join('');
   return `<div style="margin-bottom:16px">
     <div class="section-title">Classificação Final</div>
-    ${paidRows}
-    ${unpaidRows}
+    ${rows}
   </div>`;
 }
 
@@ -3044,32 +2704,12 @@ function cancelDeleteBolao() {
 async function confirmDeleteBolao() {
   const id = document.getElementById('delete-bolao-modal').dataset.id;
   document.getElementById('delete-bolao-modal').style.display = 'none';
-  // Mark as deleted so it never comes back from Supabase sync
-  _markDeleted(id);
   state.boloes = state.boloes.filter(x=>x.id!==id);
   saveBoloes();
-  // Navigate away BEFORE async Supabase call to avoid blank screen
-  state.currentBolaoId = null;
-  // Go to home cleanly, clearing the detail from the stack
-  const detailIdx = state.screenStack.indexOf('s-detail');
-  if(detailIdx > -1) state.screenStack.splice(detailIdx, 1);
-  const dest = state.screenStack[state.screenStack.length-1] || 's-home';
-  document.querySelectorAll('.screen.active').forEach(s=>s.classList.remove('active'));
-  document.getElementById(dest).classList.add('active');
-  updateGlobalNav(dest);
-  if(dest === 's-home') renderHome();
-  else if(dest === 's-meuboloes') renderMeusBoloes();
-  showToast('✅ Bolão excluído');
-  // Fire-and-forget Supabase delete
-  if(_sb) _sb.from('boloes').delete().eq('id', id).then(({error})=>{
-    if(!error) {
-      // Successfully deleted on server — remove from blacklist
-      try {
-        const d = _getDeleted().filter(x=>x!==id);
-        localStorage.setItem('bolao_deleted', JSON.stringify(d));
-      } catch(e) {}
-    }
-  });
+  if(_sb) await _sb.from('boloes').delete().eq('id', id);
+  showToast('Bolão excluído');
+  back();
+  setTimeout(()=>renderHome(), 300);
 }
 
 // ===== DEEP LINK =====
@@ -3207,8 +2847,7 @@ function renderTabela() {
         bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px;line-height:1.2">📍 ${g.venue.split(',')[0]}<br>em ${cd}</div>`;
       }
 
-      const _closedCopa = isDone ? 'opacity:.55;cursor:not-allowed' : '';
-      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" style="${_closedCopa}" onclick="go_create_from_game('${g.id}')">
+      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
           <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px">Gr. ${grpL}</span>
           ${topStatus}
@@ -3234,10 +2873,6 @@ function renderTabela() {
 function go_create_from_game(gameId) {
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
-  const sc = _ls[gameId];
-  if(sc?.status === 'FT') { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
-  if(sc?.status === 'LIVE') { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
-  if(isBetClosed(g)) { showToast('⏰ Jogo já começou — apostas encerradas'); return; }
   createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false};
   _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
   renderCreateStep();
@@ -3247,71 +2882,13 @@ function go_create_from_game(gameId) {
 // ===== NAV GLOBAL =====
 const AUTH_SCREENS = ['s-login','s-register','s-terms'];
 
-function renderMeusBoloes() {
-  const el = document.getElementById('meuboloes-content');
-  if(!el || !state.user) return;
-  const mine = state.boloes.filter(b=>
-    b.creatorId===state.user.email ||
-    (b.participants||[]).some(p=>p.email===state.user.email)
-  );
-  if(!mine.length) {
-    el.innerHTML = `<div style="text-align:center;padding:60px 24px;color:var(--text3)">
-      <div style="font-size:48px;margin-bottom:16px">🏆</div>
-      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px">Nenhum bolão ainda</div>
-      <div style="font-size:13px;line-height:1.6">Crie um bolão ou entre em um pelo código de um amigo.</div>
-      <button class="btn btn-primary" style="margin-top:24px" onclick="back();go_create()">Criar Bolão</button>
-    </div>`;
-    return;
-  }
-  const now = new Date();
-  const sorted = [...mine].sort((a,b)=>{
-    const pa = a.participants?.some(p=>p.email===state.user.email&&p.paid)?0:1;
-    const pb = b.participants?.some(p=>p.email===state.user.email&&p.paid)?0:1;
-    return pa-pb || (b.createdAt||0)-(a.createdAt||0);
-  });
-  el.innerHTML = `
-    <div class="section-title" style="margin-bottom:12px">Meus Bolões <span style="font-size:11px;font-weight:400;color:var(--text3)">(${mine.length})</span></div>
-    ${sorted.map(b=>{
-      const me = (b.participants||[]).find(p=>p.email===state.user.email);
-      const isCreator = b.creatorId===state.user.email;
-      const paidCount = (b.participants||[]).filter(p=>p.paid).length;
-      const totalPrize = paidCount * (b.amount||0);
-      const locked = b.status==='locked'||b.status==='finished'||b.result;
-      const statusColor = b.result?'var(--ok)':locked?'var(--warn)':'var(--primary-light)';
-      const statusLabel = b.result?'Encerrado':locked?'Apostas fechadas':'Aberto';
-      const myPaid = me?.paid;
-      return `<div class="bolao-card" onclick="openDetail('${b.id}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:15px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.title||'Sem título')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">${b.game?`${b.game.home.flag} ${esc(b.game.home.name)} × ${b.game.away.flag} ${esc(b.game.away.name)}`:'Jogo personalizado'}</div>
-          </div>
-          <div style="font-size:10px;font-weight:800;color:${statusColor};text-transform:uppercase;letter-spacing:.5px;margin-left:8px;flex-shrink:0">${statusLabel}</div>
-        </div>
-        <div style="display:flex;gap:12px;font-size:11px;color:var(--text3)">
-          <span>💰 R$${b.amount||0}/pessoa</span>
-          <span>🏆 Prêmio R$${totalPrize}</span>
-          <span>👥 ${(b.participants||[]).length} participantes</span>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-          ${isCreator?`<span style="font-size:10px;font-weight:700;background:rgba(0,107,63,.15);color:var(--primary-light);border-radius:20px;padding:3px 8px">👑 Criador</span>`:''}
-          ${me&&myPaid?`<span style="font-size:10px;font-weight:700;background:rgba(39,174,96,.12);color:var(--ok);border-radius:20px;padding:3px 8px">✅ Pago</span>`:''}
-          ${me&&!myPaid&&!b.result?`<span style="font-size:10px;font-weight:700;background:rgba(243,156,18,.12);color:var(--warn);border-radius:20px;padding:3px 8px">⏳ Pendente</span>`:''}
-          ${me?.homeScore!=null?`<span style="font-size:10px;font-weight:700;background:var(--surface);color:var(--text2);border-radius:20px;padding:3px 8px">⚽ Palpite: ${me.homeScore}×${me.awayScore}</span>`:''}
-        </div>
-      </div>`;
-    }).join('')}`;
-}
-
 function updateGlobalNav(screenId) {
   const btn = document.getElementById('menu-btn');
   const isAuth = AUTH_SCREENS.includes(screenId);
   if(btn) btn.classList.toggle('visible', !isAuth && !!state.user);
   document.querySelectorAll('.drawer-item').forEach(t=>t.classList.remove('active'));
   if(screenId==='s-home') document.getElementById('di-home')?.classList.add('active');
-  else if(screenId==='s-meuboloes') document.getElementById('di-meuboloes')?.classList.add('active');
   else if(screenId==='s-tabela') document.getElementById('di-tabela')?.classList.add('active');
-  else if(screenId==='s-championships'||screenId==='s-custom-create') document.getElementById('di-championships')?.classList.add('active');
   else if(screenId==='s-join') document.getElementById('di-join')?.classList.add('active');
   else if(screenId==='s-create') document.getElementById('di-create')?.classList.add('active');
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
@@ -3331,432 +2908,177 @@ function closeDrawer() {
 function drawerGo(tab) {
   closeDrawer();
   if(tab==='home') { renderHome(); go('s-home'); }
-  else if(tab==='meuboloes') { renderMeusBoloes(); go('s-meuboloes'); }
   else if(tab==='tabela') { openTabela(); go('s-tabela'); }
-  else if(tab==='championships') { renderChampionships(); go('s-championships'); }
   else if(tab==='join') { go('s-join'); }
   else if(tab==='create') { go_create(); }
   else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
 }
 
-// ===== CAMPEONATOS =====
-
-const NATIONAL_ESPN = new Set(['fifa.world','conmebol.america','uefa.euro','concacaf.gold','caf.nations','uefa.nations','conmebol.preolimpico']);
-
-async function fetchChampionshipScores(espnCode) {
-  const isNational = NATIONAL_ESPN.has(espnCode);
-  const getFlag = code => isNational ? (FLAG_MAP[code]||'🏳️') : '⚽';
-  try {
-    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/scoreboard`);
-    if(!r.ok) return [];
-    const data = await r.json();
-    return (data.events||[]).map(ev=>{
-      const comp = ev.competitions?.[0];
-      const competitors = comp?.competitors||[];
-      const hc = competitors.find(c=>c.homeAway==='home');
-      const ac = competitors.find(c=>c.homeAway==='away');
-      const st = comp?.status?.type;
-      const isLive = st?.state==='in';
-      const isDone = st?.completed||st?.state==='post';
-      const min = comp?.status?.displayClock||'';
-      const notes = comp?.notes||[];
-      const noteText = notes.find(n=>n.type==='event')?.headline||notes[0]?.headline||'';
-      const round = noteText||(ev.week?.number?`Rodada ${ev.week.number}`:'');
-      const evDate = ev.date?new Date(ev.date):null;
-      const hCode = hc?.team?.abbreviation||'HME';
-      const aCode = ac?.team?.abbreviation||'AWY';
-      return {
-        id: ev.id||String(Math.random()),
-        home: {name:hc?.team?.shortDisplayName||hc?.team?.name||'?', code:hCode, flag:getFlag(hCode)},
-        away: {name:ac?.team?.shortDisplayName||ac?.team?.name||'?', code:aCode, flag:getFlag(aCode)},
-        homeScore: hc?.score||'',
-        awayScore: ac?.score||'',
-        isLive, isDone, min, round,
-        date: evDate?evDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'',
-        time: evDate?evDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'',
-        dateObj: evDate,
-        venue: comp?.venue?.fullName||'',
-      };
-    });
-  } catch(_){ return []; }
-}
-
-// ===== JOGOS NO BRASIL (carousel) =====
-const BR_ESPN = ['bra.1','bra.cup','conmebol.libertadores','conmebol.sudamericana'];
-const BR_LABELS = {'bra.1':'Brasileirão','bra.cup':'Copa do Brasil','conmebol.libertadores':'Libertadores','conmebol.sudamericana':'Sudamericana'};
-
-async function renderBRCarousel() {
-  const el = document.getElementById('br-carousel');
-  const badge = document.getElementById('br-live-badge');
-  if(!el) return;
-
-  const brazilGames = GAMES.filter(g=>g.home.code==='BRA'||g.away.code==='BRA')
-    .sort((a,b)=>gameDateTime(a)-gameDateTime(b));
-
-  let espnGames = [];
-  try {
-    const results = await Promise.allSettled(
-      BR_ESPN.map(code=>fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard`)
-        .then(r=>r.ok?r.json():null)
-        .then(data=>(data?.events||[]).map(ev=>{
-          const comp=ev.competitions?.[0];
-          const hc=comp?.competitors?.find(c=>c.homeAway==='home');
-          const ac=comp?.competitors?.find(c=>c.homeAway==='away');
-          const st=comp?.status?.type;
-          const evDate=ev.date?new Date(ev.date):null;
-          const leagueFlag=(code==='bra.1'||code==='bra.cup')?'🇧🇷':'⚽';
-          return {
-            _espn:true, _league:code,
-            id:'espn-'+ev.id,
-            home:{name:hc?.team?.shortDisplayName||'?',code:hc?.team?.abbreviation||'HME',flag:leagueFlag},
-            away:{name:ac?.team?.shortDisplayName||'?',code:ac?.team?.abbreviation||'AWY',flag:leagueFlag},
-            homeScore:hc?.score||'', awayScore:ac?.score||'',
-            isLive:st?.state==='in', isDone:st?.completed||st?.state==='post',
-            min:comp?.status?.displayClock||'',
-            date:evDate?evDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'',
-            time:evDate?evDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'',
-            dateObj:evDate,
-            stage:'', group:'', venue:comp?.venue?.fullName||'', championship:code,
-          };
-        }))
-      )
-    );
-    results.forEach(r=>{ if(r.status==='fulfilled'&&r.value) espnGames.push(...r.value); });
-  } catch(_){}
-
-  const now = new Date();
-  const allCards = [];
-
-  brazilGames.forEach(g=>{
-    const sc = _ls[g.id];
-    const dt = gameDateTime(g);
-    const isLive = sc?.status==='LIVE'||(now-dt>=0&&now-dt<=110*60000&&sc?.status!=='FT');
-    const isDone = sc?.status==='FT'||(now-dt>110*60000);
-    allCards.push({...g, isLive, isDone, homeScore:sc?.h??'', awayScore:sc?.a??'', min:sc?.min||'', _label:'Copa 2026 🌍', dateObj:dt});
-  });
-
-  espnGames.forEach(g=>allCards.push({...g, _label:BR_LABELS[g._league]||g._league}));
-
-  allCards.sort((a,b)=>{
-    if(a.isLive&&!b.isLive) return -1;
-    if(!a.isLive&&b.isLive) return 1;
-    return (a.dateObj||new Date(9e15))-(b.dateObj||new Date(9e15));
-  });
-
-  // Only show upcoming and live — no finished games
-  const visible = allCards.filter(g=>!g.isDone);
-
-  const liveCount = visible.filter(g=>g.isLive).length;
-  if(badge) badge.style.display = liveCount>0?'block':'none';
-
-  if(!visible.length) {
-    el.innerHTML = '<div style="min-width:100%;color:var(--text3);font-size:12px;padding:24px 0;text-align:center">Nenhum próximo jogo disponível</div>';
-    return;
-  }
-
-  const brCardHtml = (g) => {
-    const topStatus = g.isLive
-      ? `<span class="t-live-pill" style="font-size:9px"><span class="t-live-dot"></span>${g.min||'LIVE'}</span>`
-      : `<span style="font-size:9px;font-weight:700;color:var(--text2)">${g.time||g.date||''}</span>`;
-    const mid = g.isLive
-      ? `<div style="font-size:18px;font-weight:900;color:var(--err);letter-spacing:1px;margin:4px 0">${g.homeScore}–${g.awayScore}</div>`
-      : `<div style="font-size:11px;font-weight:800;color:var(--text3);margin:4px 0">VS</div>`;
-    const gJson = JSON.stringify({
-      id:'custom-'+Date.now()+Math.random(),
-      home:g.home, away:g.away,
-      date:g.date, time:g.time||'',
-      stage:g.stage||g._label||'', group:g.group||'', venue:g.venue||'', championship:g.championship||''
-    }).replace(/"/g,'&quot;');
-    return `<div class="t-gcell${g.isLive?' live':''}" style="flex:1;min-width:0" onclick="go_create_from_brcard(JSON.parse(this.dataset.g))" data-g="${gJson}">
-      <div style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.3px;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">${esc(g._label||'')}</div>
-      ${topStatus}
-      <div style="display:flex;align-items:center;justify-content:space-around;width:100%;gap:4px;margin-top:6px">
-        <div style="text-align:center;flex:1;min-width:0">
-          <div style="font-size:22px;line-height:1.2">${g.home.flag||'🏳️'}</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;margin-top:2px;word-break:break-word">${esc(g.home.name)}</div>
-        </div>
-        <div style="text-align:center;flex-shrink:0;padding:0 4px">${mid}</div>
-        <div style="text-align:center;flex:1;min-width:0">
-          <div style="font-size:22px;line-height:1.2">${g.away.flag||'🏳️'}</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;margin-top:2px;word-break:break-word">${esc(g.away.name)}</div>
-        </div>
-      </div>
-    </div>`;
-  };
-
-  // Group into pages of 2 cards each
-  const pages = [];
-  for(let i=0; i<visible.length; i+=2) pages.push(visible.slice(i,i+2));
-
-  el.innerHTML = pages.map(page=>`
-    <div style="min-width:calc(100% - 4px);display:flex;gap:8px;scroll-snap-align:start;box-sizing:border-box;padding:0 2px">
-      ${page.map(g=>brCardHtml(g)).join('')}
-      ${page.length===1?`<div class="t-gcell" style="flex:1;min-width:0;opacity:0;pointer-events:none"></div>`:''}
-    </div>`).join('');
-}
-
-function go_create_from_brcard(g) {
-  if(g.isDone) { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
-  if(g.isLive) { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
-  createState = {
-    step:1, title:`${g.home.name} × ${g.away.name}`, game:g,
-    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
-  };
-  renderCreateStep();
-  go('s-create');
-}
-
-function renderChampionships() {
-  const el = document.getElementById('championships-content');
-  if(!el) return;
-  el.innerHTML = `
-    <div style="padding-bottom:8px">
-      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.5">Escolha um campeonato para ver os jogos ao vivo ou criar um bolão.</div>
-      ${CHAMPIONSHIPS.map(cat=>`
-        <div style="margin-bottom:24px">
-          <div class="section-title" style="margin-bottom:10px">${esc(cat.category)}</div>
-          ${cat.items.map(c=>`
-            <div onclick="openChampionship(${JSON.stringify(c).replace(/"/g,'&quot;')})"
-              style="display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer"
-              ontouchstart="this.style.background='var(--surface2)'" ontouchend="this.style.background='var(--surface)'">
-              <div style="font-size:28px;line-height:1;width:36px;text-align:center">${c.flag}</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(c.name)}</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(c.region)}</div>
-              </div>
-              <div style="color:var(--text3);font-size:18px">›</div>
-            </div>`).join('')}
-        </div>`).join('')}
-    </div>`;
-}
-
-function setChampFilter(f, el) {
-  state.champFilter = f;
-  document.querySelectorAll('#champ-main-filter .t-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderChampionshipDetail();
-}
-
-function setChampRound(r, el) {
-  state.champRound = r;
-  document.querySelectorAll('#champ-round-filter .t-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderChampionshipDetail();
-}
-
-function openChampionship(c) {
-  // Clear any previous poll
-  if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
-
-  state.customChampionship = c;
-  state.champFilter = 'next'; // default: upcoming games
-  state.champRound = 'all';
-  state.champGames = [];
-  document.getElementById('custom-create-title').textContent = c.name;
-  const el = document.getElementById('custom-create-content');
-  if(el) el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:16px">
-      <div style="font-size:32px">${c.flag}</div>
-      <div><div style="font-size:15px;font-weight:800">${esc(c.name)}</div><div style="font-size:11px;color:var(--text3)">${esc(c.region)}</div></div>
-    </div>
-    <div style="text-align:center;padding:32px 0;color:var(--text3)">
-      <div style="font-size:28px;margin-bottom:10px">⏳</div>
-      <div style="font-size:13px">Buscando jogos...</div>
-    </div>`;
-  go('s-custom-create');
-
-  const doFetch = () => fetchChampionshipScores(c.espn||'').then(games=>{
-    state.champGames = games;
-    renderChampionshipDetail();
-  }).catch(()=>renderChampionshipDetail());
-
-  doFetch();
-  // Refresh every 60s while on this screen
-  state.champPollInterval = setInterval(()=>{
-    if(state.screenStack[state.screenStack.length-1]==='s-custom-create') doFetch();
-  }, 60000);
-}
-
-function renderChampionshipDetail() {
-  const el = document.getElementById('custom-create-content');
-  if(!el) return;
-  const c = state.customChampionship;
-  const games = state.champGames||[];
-  const now = new Date();
-
-  const rounds = [];
-  games.forEach(g=>{ if(g.round&&!rounds.includes(g.round)) rounds.push(g.round); });
-
-  const filtered = games.filter(g=>{
-    if(state.champFilter==='live'&&!g.isLive) return false;
-    if(state.champFilter==='next'&&(g.isLive||g.isDone)) return false;
-    if(state.champFilter==='done'&&!g.isDone) return false;
-    if(state.champRound!=='all'&&g.round!==state.champRound) return false;
-    return true;
-  }).sort((a,b)=>(a.dateObj||new Date(0))-(b.dateObj||new Date(0)));
-
-  const byDate={};
-  filtered.forEach(g=>{ const k=g.date||'?'; (byDate[k]||(byDate[k]=[])).push(g); });
-
-  const roundChips = rounds.length>1?`
-    <div class="t-filter-row" id="champ-round-filter">
-      <button class="t-chip${state.champRound==='all'?' active':''}" onclick="setChampRound('all',this)">Todas</button>
-      ${rounds.map(r=>`<button class="t-chip${state.champRound===r?' active':''}" onclick="setChampRound(${JSON.stringify(r)},this)">${esc(r)}</button>`).join('')}
-    </div>`:'';
-
-  const hasLive = games.some(g=>g.isLive);
-  const emptyMsg = games.length===0
-    ? `<div style="text-align:center;padding:40px 20px;color:var(--text3)">
-         <div style="font-size:36px;margin-bottom:12px">📅</div>
-         <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">Nenhum jogo agendado</div>
-         <div style="font-size:12px;line-height:1.6">A ESPN não retornou jogos para este campeonato no momento.</div>
-       </div>`
-    : state.champFilter==='next'
-      ? `<div style="text-align:center;padding:32px 20px;color:var(--text3)">
-           <div style="font-size:36px;margin-bottom:12px">${hasLive?'🔴':'✅'}</div>
-           <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">${hasLive?'Jogos em andamento agora':'Nenhum próximo jogo agendado'}</div>
-           <div style="font-size:12px;margin-bottom:16px">${hasLive?'Veja os placares ao vivo na aba abaixo.':'Todos os jogos deste campeonato foram concluídos.'}</div>
-           <button class="btn btn-ghost btn-sm" onclick="setChampFilter('${hasLive?'live':'done'}',this.previousElementSibling?.previousElementSibling||document.querySelector('#champ-main-filter .t-chip'))">Ver ${hasLive?'ao vivo':'encerrados'}</button>
-         </div>`
-      : `<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">Nenhum jogo para este filtro</div>`;
-
-  const gamesHTML = filtered.length===0
-    ? emptyMsg
-    :Object.entries(byDate).map(([date,gs])=>{
-        const dayPt=gs[0].dateObj?gs[0].dateObj.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}):date;
-        const cards=gs.map(g=>{
-          const topStatus=g.isLive
-            ?`<span class="t-live-pill" style="font-size:9px"><span class="t-live-dot"></span>${g.min||'LIVE'}</span>`
-            :g.isDone
-              ?`<span style="color:var(--ok);font-size:9px;font-weight:800">✓ FIM</span>`
-              :`<span style="color:var(--text2);font-size:9px;font-weight:700">${g.time||''}</span>`;
-          const midContent=(g.isDone||g.isLive)
-            ?`<div style="font-size:18px;font-weight:900;color:${g.isLive?'var(--err)':'var(--text)'};letter-spacing:1px">${g.homeScore}–${g.awayScore}</div>`
-            :`<div style="font-size:10px;font-weight:800;color:var(--text3)">VS</div>`;
-          let bottom='';
-          if(!g.isDone&&!g.isLive&&g.dateObj&&g.dateObj>now){
-            const diff=g.dateObj-now,d=Math.floor(diff/86400000),h2=Math.floor((diff%86400000)/3600000),m2=Math.floor((diff%3600000)/60000);
-            const cd=d>0?`${d}d ${h2}h`:h2>0?`${h2}h ${m2}min`:`${m2}min`;
-            bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px">em ${cd}</div>`;
-          }
-          const gJson=JSON.stringify(g).replace(/"/g,'&quot;');
-          const closedStyle=g.isDone?'opacity:.55;cursor:not-allowed':'';
-          return `<div class="t-gcell${g.isLive?' live':''}" style="${closedStyle}" onclick="go_create_from_champ_game(JSON.parse(this.dataset.g))" data-g="${gJson}">
-            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
-              <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.round||'')}</span>
-              ${topStatus}
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-around;width:100%;gap:4px">
-              <div style="text-align:center;flex:1;min-width:0">
-                <div style="font-size:20px;line-height:1.2">${g.home.flag||'⚽'}</div>
-                <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word;margin-top:2px">${esc(g.home.name)}</div>
-              </div>
-              <div style="text-align:center;flex-shrink:0;padding:0 4px">${midContent}</div>
-              <div style="text-align:center;flex:1;min-width:0">
-                <div style="font-size:20px;line-height:1.2">${g.away.flag||'⚽'}</div>
-                <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word;margin-top:2px">${esc(g.away.name)}</div>
-              </div>
-            </div>
-            ${bottom}
-          </div>`;
-        }).join('');
-        return `<div class="t-date-hdr">${dayPt}</div><div class="t-grid">${cards}</div>`;
-      }).join('');
-
-  const updatedAt = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  const liveCount = games.filter(g=>g.isLive).length;
-  const nextCount = games.filter(g=>!g.isLive&&!g.isDone).length;
-  el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:14px">
-      <div style="font-size:32px">${c.flag}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:15px;font-weight:800">${esc(c.name)}</div>
-        <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
-          <span>${esc(c.region)}</span>
-          ${liveCount>0?`<span style="color:var(--err);font-weight:700">🔴 ${liveCount} ao vivo</span>`:''}
-          ${nextCount>0?`<span style="color:var(--primary);font-weight:700">📅 ${nextCount} próximo${nextCount!==1?'s':''}</span>`:''}
-          <span style="margin-left:auto;color:var(--text3)">↻ ${updatedAt}</span>
-        </div>
-      </div>
-    </div>
-    <div class="t-filter-row" id="champ-main-filter">
-      <button class="t-chip${state.champFilter==='all'?' active':''}" onclick="setChampFilter('all',this)">Todos</button>
-      <button class="t-chip${state.champFilter==='live'?' active':''}" onclick="setChampFilter('live',this)">🔴 Ao Vivo</button>
-      <button class="t-chip${state.champFilter==='next'?' active':''}" onclick="setChampFilter('next',this)">Próximos</button>
-      <button class="t-chip${state.champFilter==='done'?' active':''}" onclick="setChampFilter('done',this)">Encerrados</button>
-    </div>
-    ${roundChips}
-    ${gamesHTML}
-    <div style="height:20px"></div>`;
-}
-
-function go_create_from_champ_game(g) {
-  if(g.isDone) { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
-  if(g.isLive) { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
-  const c = state.customChampionship;
-  const customGame = {
-    id: 'champ-'+g.id,
-    home: {name:g.home.name, code:g.home.code, flag:g.home.flag||'🏳️'},
-    away: {name:g.away.name, code:g.away.code, flag:g.away.flag||'🏳️'},
-    date: g.date||'', time: g.time||'',
-    stage: g.round||c?.name||'',
-    group: '', venue: g.venue||c?.name||'', championship: c?.id||'',
-  };
-  createState = {
-    step:1, title:`${g.home.name} × ${g.away.name}`, game:customGame,
-    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
-  };
-  renderCreateStep();
-  go('s-create');
-}
-
-function submitCustomCreate() {
-  const c = state.customChampionship;
-  const homeName = document.getElementById('cc-home-name').value.trim();
-  const homeFlag = document.getElementById('cc-home-flag').value.trim()||'🏳️';
-  const awayName = document.getElementById('cc-away-name').value.trim();
-  const awayFlag = document.getElementById('cc-away-flag').value.trim()||'🏳️';
-  const dateVal  = document.getElementById('cc-date').value;
-  const timeVal  = document.getElementById('cc-time').value||'00:00';
-  const stage    = document.getElementById('cc-stage').value.trim()||c?.name||'';
-  if(!homeName||!awayName) { showToast('⚠️ Informe os nomes dos dois times'); return; }
-  if(!dateVal) { showToast('⚠️ Informe a data da partida'); return; }
-  const d = new Date(dateVal);
-  const dateFmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-  const customGame = {
-    id: 'custom-'+Date.now(),
-    home:  {name:homeName, code:homeName.substring(0,3).toUpperCase(), flag:homeFlag},
-    away:  {name:awayName, code:awayName.substring(0,3).toUpperCase(), flag:awayFlag},
-    date: dateFmt, time: timeVal, stage, group: '', venue: c?.name||'', championship: c?.id||'',
-  };
-  createState = {
-    step:1, title:`${homeName} × ${awayName}`, game:customGame,
-    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
-  };
-  renderCreateStep();
-  go('s-create');
-}
 
 // ===== AVATAR / DRAWER USER =====
 function updateFloatingAvatar() {
   if(!state.user) return;
   const u = USERS.find(x=>x.email===state.user.email)||state.user;
   const photo = u.photo||state.user.photo;
-  const initial = (u.name||state.user.name||'?').charAt(0).toUpperCase();
+  const name = u.name||state.user.name||'?';
+  const email = state.user.email||'';
+  const color = _avColor(email);
+  const ini = name.charAt(0).toUpperCase();
   const avEl = document.getElementById('drawer-av');
   if(avEl) avEl.innerHTML = photo
     ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover">`
-    : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff">${initial}</div>`;
+    : `<div style="width:100%;height:100%;background:${color};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff">${ini}</div>`;
   const nameEl = document.getElementById('drawer-uname');
-  if(nameEl) nameEl.textContent = u.name||state.user.name||'Usuário';
+  if(nameEl) nameEl.textContent = name;
   const emailEl = document.getElementById('drawer-email-lbl');
-  if(emailEl) emailEl.textContent = state.user.email||'';
+  if(emailEl) emailEl.textContent = email;
   const badge = document.getElementById('home-av-badge');
   if(badge) {
     badge.innerHTML = photo
       ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-      : `<div style="width:100%;height:100%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${initial}</div>`;
+      : `<div style="width:100%;height:100%;background:${color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;border-radius:50%">${ini}</div>`;
   }
+}
+
+// ===== AVATAR COLOR =====
+function _avColor(str) {
+  const C=['#006B3F','#C0392B','#2980B9','#8E44AD','#D35400','#1ABC9C','#E91E63','#00796B','#F57F17','#455A64','#6D4C41','#0277BD'];
+  let h=0; for(let i=0;i<(str||'').length;i++) h=(h*31+str.charCodeAt(i))>>>0;
+  return C[h%C.length];
+}
+function _avHtml(email, name, photo, size=38) {
+  const ini=(name||'?').charAt(0).toUpperCase();
+  const s=`width:${size}px;height:${size}px;border-radius:50%;flex-shrink:0;`;
+  if(photo) return `<img src="${photo}" style="${s}object-fit:cover;border:2px solid var(--primary)" alt="${esc(name)}">`;
+  return `<div style="${s}background:${_avColor(email)};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.4)}px;font-weight:800;color:#fff">${ini}</div>`;
+}
+
+// ===== DARK/LIGHT MODE =====
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const next = isDark ? 'light' : 'dark';
+  if(next==='light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('bolao_theme', next);
+  const btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = next==='light' ? '🌙 Modo escuro' : '☀️ Modo claro';
+}
+function applyTheme() {
+  const t = localStorage.getItem('bolao_theme');
+  if(t==='light') document.documentElement.setAttribute('data-theme','light');
+  const btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = t==='light' ? '🌙 Modo escuro' : '☀️ Modo claro';
+}
+
+// ===== PUSH NOTIFICATIONS =====
+async function requestNotifications() {
+  if(!('Notification' in window)) { showToast('⚠️ Seu navegador não suporta notificações'); return; }
+  if(Notification.permission==='granted') { showToast('✅ Notificações já estão ativas'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm==='granted') showToast('🔔 Notificações ativadas!');
+  else showToast('❌ Permissão de notificação negada');
+  const btn = document.getElementById('notif-toggle-btn');
+  if(btn) btn.textContent = perm==='granted' ? '🔔 Notificações ativadas' : '🔕 Ativar notificações';
+}
+function _localNotify(title, body) {
+  if(Notification.permission!=='granted') return;
+  try { new Notification(title,{body,icon:'./icon.svg'}); } catch(_){}
+}
+
+// ===== LIVE RANKING (bolão ao vivo) =====
+function buildLiveRanking(b) {
+  const gameId = b.game?.id;
+  const sc = _ls?.[gameId];
+  if(!sc || sc.status!=='LIVE') return '';
+  const liveH = parseInt(sc.h??0), liveA = parseInt(sc.a??0);
+  const fakeResult = {home:liveH, away:liveA};
+  const ranked = b.participants
+    .filter(p=>p.homeScore!=null)
+    .map(p=>({...p, pts:calcPoints(p,fakeResult,b)}))
+    .sort((a,c)=>c.pts-a.pts);
+  if(ranked.length===0) return '';
+  const medals=['🥇','🥈','🥉'];
+  const rows = ranked.map((p,i)=>{
+    const ur=USERS.find(u=>u.email===p.email);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:16px;width:24px;text-align:center">${medals[i]||`${i+1}°`}</div>
+      ${_avHtml(p.email,p.name,ur?.photo||p.photo,30)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(p.name)}${p.email===state.user?.email?' (você)':''}</div>
+        <div style="font-size:11px;color:var(--text3)">Palpite: ${p.homeScore} × ${p.awayScore}</div>
+      </div>
+      <div style="font-size:14px;font-weight:900;color:${p.pts>0?'var(--secondary)':'var(--text3)'}">${p.pts}pts</div>
+    </div>`;
+  }).join('');
+  return `<div style="background:var(--surface);border-radius:16px;padding:16px;border:1px solid rgba(231,76,60,.3);margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span class="live-pill" style="font-size:10px"><span class="live-dot"></span>AO VIVO</span>
+      <span style="font-size:13px;font-weight:800;color:var(--text)">Quem estaria ganhando agora</span>
+    </div>
+    <div style="font-size:22px;font-weight:900;text-align:center;color:var(--err);letter-spacing:2px;margin-bottom:12px">${liveH} – ${liveA}<span style="font-size:11px;font-weight:600;color:var(--text3);margin-left:8px">${sc.min||''}′</span></div>
+    ${rows}
+  </div>`;
+}
+
+// ===== RANKING GERAL DE AMIGOS =====
+function openRankingGeral() {
+  const email = state.user?.email;
+  if(!email) return;
+  const boloes = state.boloes.filter(b=>b.result);
+  const friends = {};
+  boloes.forEach(b=>{
+    b.participants.forEach(p=>{
+      if(p.email===email) return;
+      if(!friends[p.email]) friends[p.email]={email:p.email,name:p.name,photo:p.photo,pts:0,boloes:0,wins:0};
+    });
+    const myPts = calcPoints(b.participants.find(p=>p.email===email)||{},b.result,b);
+    const ranked = b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
+    const myRank = ranked.findIndex(p=>p.email===email);
+    b.participants.forEach(p=>{
+      if(p.email===email) return;
+      if(!friends[p.email]) return;
+      friends[p.email].boloes++;
+      friends[p.email].pts += calcPoints(p,b.result,b);
+      if(ranked[0]?.email===p.email && ranked[0].pts>0) friends[p.email].wins++;
+    });
+  });
+  const myTotalPts = boloes.reduce((s,b)=>{
+    const me=b.participants.find(p=>p.email===email);
+    return s+calcPoints(me||{},b.result,b);
+  },0);
+  const myWins = boloes.filter(b=>{
+    const me=b.participants.find(p=>p.email===email);
+    if(!me) return false;
+    const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
+    return ranked[0]?.email===email && ranked[0].pts>0;
+  }).length;
+  const list = Object.values(friends).sort((a,c)=>c.pts-a.pts);
+  const rows = list.length===0
+    ? `<div style="text-align:center;color:var(--text3);padding:32px 0;font-size:14px">Participe de bolões com resultado para ver o ranking 🏆</div>`
+    : list.map((f,i)=>{
+        const medals=['🥇','🥈','🥉'];
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:18px;width:28px;text-align:center">${medals[i]||`${i+1}°`}</div>
+          ${_avHtml(f.email,f.name,f.photo,40)}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(f.name)}</div>
+            <div style="font-size:11px;color:var(--text3)">${f.boloes} bolão${f.boloes!==1?'s':''} · ${f.wins} vitória${f.wins!==1?'s':''}</div>
+          </div>
+          <div style="font-size:16px;font-weight:900;color:var(--secondary)">${f.pts}pts</div>
+        </div>`;
+      }).join('');
+  const el = document.getElementById('ranking-geral-content');
+  if(el) {
+    el.innerHTML = `
+      <div style="background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:16px;text-align:center">
+        <div style="font-size:13px;color:var(--text3);margin-bottom:4px">Seus pontos totais</div>
+        <div style="font-size:36px;font-weight:900;color:var(--secondary)">${myTotalPts}</div>
+        <div style="font-size:12px;color:var(--ok);margin-top:4px">🏆 ${myWins} vitória${myWins!==1?'s':''} em ${boloes.length} bolão${boloes.length!==1?'s':''}</div>
+      </div>
+      <div class="section-title">Seus amigos</div>
+      <div style="background:var(--surface);border-radius:16px;padding:0 16px;border:1px solid var(--border)">${rows}</div>`;
+  }
+  go('s-ranking-geral');
 }
 
 // ===== SYSTEM MESSAGES =====
@@ -3776,24 +3098,6 @@ const _isStandalone = window.navigator.standalone === true ||
 const _isSafari = /safari/i.test(navigator.userAgent) &&
                   !/chrome|crios|fxios/i.test(navigator.userAgent);
 
-// Swipe-back gesture for iOS/Android
-(function(){
-  let _sx=0,_sy=0,_sTime=0;
-  document.addEventListener('touchstart',e=>{
-    const t=e.touches[0];
-    _sx=t.clientX; _sy=t.clientY; _sTime=Date.now();
-  },{passive:true});
-  document.addEventListener('touchend',e=>{
-    const t=e.changedTouches[0];
-    const dx=t.clientX-_sx, dy=t.clientY-_sy;
-    const dt=Date.now()-_sTime;
-    // Right swipe from left edge (within 40px) — back navigation
-    if(_sx<40 && dx>60 && Math.abs(dy)<80 && dt<400) {
-      if(state.screenStack.length>1) back();
-    }
-  },{passive:true});
-})();
-
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault();
   _pwaPrompt = e;
@@ -3811,7 +3115,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(_isIOS && !_isStandalone && !localStorage.getItem('ios_banner_dismissed')) {
     const banner = document.getElementById('pwa-install-banner');
     if(banner) {
-      banner.querySelector('.pwa-banner-text').textContent = 'Instale o Bolão FC na tela de início do iPhone/iPad';
+      banner.querySelector('.pwa-banner-text').textContent = 'Instale o Bolão Copa na tela de início do iPhone/iPad';
       banner.style.display = 'flex';
     }
   }
@@ -3956,7 +3260,7 @@ function exportResult(bolaoId) {
   });
   // Footer
   c.fillStyle='rgba(255,255,255,.3)'; c.font='12px sans-serif'; c.textAlign='center';
-  c.fillText('Bolão FC · Copa do Mundo 2026', W/2, H-20);
+  c.fillText('Bolão Copa · Copa do Mundo 2026', W/2, H-20);
   cv.toBlob(blob=>{
     if(navigator.share && navigator.canShare?.({files:[]})) {
       navigator.share({title:`Resultado: ${b.title}`, files:[new File([blob],'resultado.png',{type:'image/png'})]}).catch(()=>{});
@@ -3975,10 +3279,7 @@ function buildChat(b) {
     if(m.system) return `<div class="sys-msg">${esc(m.text)}</div>`;
     const isMine = m.email===state.user?.email;
     const ur = USERS.find(u=>u.email===m.email);
-    const photo = ur?.photo||m.photo;
-    const av = photo
-      ? `<img src="${photo}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0">`
-      : `<div class="chat-av">${esc(m.name.charAt(0).toUpperCase())}</div>`;
+    const av = _avHtml(m.email, m.name, ur?.photo||m.photo, 30);
     const t = new Date(m.time);
     const timeStr = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
     return `<div class="chat-msg" style="${isMine?'flex-direction:row-reverse':''}">
@@ -4068,7 +3369,7 @@ function showConfetti() {
 
 // ===== ONBOARDING =====
 const OB_SLIDES = [
-  {icon:'🏆', title:'Bem-vindo ao Bolão FC!', text:'Aposte com amigos nos jogos da Copa do Mundo 2026. Crie bolões privados e torça junto!'},
+  {icon:'🏆', title:'Bem-vindo ao Bolão FC!', text:'Aposte com amigos nos jogos da Copa do Mundo 2026 e nos principais campeonatos. Crie bolões privados e torça junto!'},
   {icon:'⚽', title:'Como funciona', text:'Crie ou entre num bolão, registre seu palpite do placar e pague via Pix. Quem acertar o placar exato ganha o prêmio!'},
   {icon:'🎉', title:'Pronto para começar!', text:'Crie seu primeiro bolão ou use um código de convite para entrar no bolão de um amigo. Boa sorte!'},
 ];
@@ -4100,37 +3401,9 @@ function obClose() {
   document.getElementById('ob-overlay').style.display = 'none';
 }
 
-// ===== SERVICE WORKER =====
-function registerSW() {
-  if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    if (reg.waiting) _showUpdateBanner();
-    reg.addEventListener('updatefound', () => {
-      const sw = reg.installing;
-      sw.addEventListener('statechange', () => {
-        if (sw.state === 'installed' && navigator.serviceWorker.controller) _showUpdateBanner();
-      });
-    });
-    setInterval(() => reg.update(), 60000);
-  }).catch(() => {});
-  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
-}
-function _showUpdateBanner() {
-  if (document.getElementById('sw-update-banner')) return;
-  const el = document.createElement('div');
-  el.id = 'sw-update-banner';
-  el.style.cssText = 'position:fixed;bottom:72px;left:12px;right:12px;z-index:9998;background:#152536;border:1.5px solid #00A651;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 24px rgba(0,0,0,.5)';
-  el.innerHTML = '<span style="flex:1;font-size:13px;color:#fff;font-weight:600">🔄 Nova versão disponível!</span><button onclick="applySwUpdate()" style="background:#006B3F;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">Atualizar</button>';
-  document.body.appendChild(el);
-}
-async function applySwUpdate() {
-  const reg = await navigator.serviceWorker.getRegistration();
-  if (reg?.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
-}
-
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async ()=>{
-  registerSW();
+  applyTheme();
   initSupabase();
   loadPersistedData();
 
@@ -4151,12 +3424,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
         }
         await loginSuccess();
+        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
     }
     // Supabase configured but session missing/expired — show login
     updateGlobalNav('s-login');
     updateFloatingAvatar();
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
     return;
   }
 
@@ -4169,6 +3444,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(found) {
         state.user = {...found};
         await loginSuccess();
+        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
       clearSession();
@@ -4177,6 +3453,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   updateGlobalNav('s-login');
   updateFloatingAvatar();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 </script>
 
@@ -4221,7 +3498,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 <!-- iOS INSTALL MODAL -->
 <div class="ios-modal" id="ios-modal" onclick="if(event.target===this)closeIOSModal()">
   <div class="ios-sheet">
-    <div style="font-size:18px;font-weight:900;margin-bottom:4px">Instalar Bolão FC</div>
+    <div style="font-size:18px;font-weight:900;margin-bottom:4px">Instalar Bolão Copa</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Adicione à tela de início do iPhone/iPad</div>
     <div class="ios-step">
       <div class="ios-step-num">1</div>
