@@ -930,6 +930,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button id="theme-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="toggleTheme()">☀️ Modo claro</button>
       <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">🔔 Ativar notificações</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">🏅 Ranking com amigos</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">📖 Ver tutorial novamente</button>
     </div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
@@ -4814,6 +4815,13 @@ function obNext() {
 function obClose() {
   localStorage.setItem('bolao_ob_done','1');
   document.getElementById('ob-overlay').style.display = 'none';
+}
+
+function resetOnboarding() {
+  localStorage.removeItem('bolao_ob_done');
+  _obSlide = 0;
+  _renderObSlide();
+  document.getElementById('ob-overlay').style.display = 'flex';
 }
 
 // ===== INIT =====
