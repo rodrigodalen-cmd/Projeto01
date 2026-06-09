@@ -975,6 +975,9 @@ input:checked+.slider:before{transform:translateX(18px)}
     <button class="drawer-item" id="di-tabela" onclick="drawerGo('tabela')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela
     </button>
+    <button class="drawer-item" id="di-championships" onclick="drawerGo('championships')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>Campeonatos
+    </button>
     <button class="drawer-item" id="di-join" onclick="drawerGo('join')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar bolão
     </button>
@@ -996,6 +999,18 @@ input:checked+.slider:before{transform:translateX(18px)}
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Sair da conta
     </button>
   </div>
+</div>
+
+<!-- === CAMPEONATOS === -->
+<div class="screen" id="s-championships">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Campeonatos</span></div>
+  <div class="scroll" id="championships-content"></div>
+</div>
+
+<!-- === CRIAR BOLÃO PERSONALIZADO (championship game) === -->
+<div class="screen" id="s-custom-create">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title" id="custom-create-title">Campeonato</span></div>
+  <div class="scroll" id="custom-create-content"></div>
 </div>
 
 <!-- CONFETTI -->
@@ -1348,6 +1363,43 @@ const GAMES = [
   // === FINAL ===
   {id:'132',home:{name:'A Classificar',code:'Semi 3',flag:'⚽'},away:{name:'A Classificar',code:'Semi 4',flag:'⚽'},date:'19 Jul',time:'20:00',stage:'🏆 Final',venue:'MetLife Stadium, Nova York'},
 ];
+
+const CHAMPIONSHIPS = [
+  { category: '🏆 Copa do Mundo 2026', items: [
+    { id: 'copa-mundo',    name: 'Copa do Mundo FIFA 2026', flag: '🏆', region: 'Mundial · 11 Jun – 19 Jul', espn: 'fifa.world', national: true },
+  ]},
+  { category: '🇧🇷 Brasil', items: [
+    { id: 'brasileirao',   name: 'Brasileirão Série A',     flag: '🇧🇷', region: 'Brasil',         espn: 'bra.1',                national: false },
+    { id: 'libertadores',  name: 'Copa Libertadores',       flag: '🌎', region: 'América do Sul', espn: 'conmebol.libertadores', national: false },
+    { id: 'sudamericana',  name: 'Copa Sudamericana',       flag: '🌎', region: 'América do Sul', espn: 'conmebol.sudamericana', national: false },
+  ]},
+  { category: '🏆 Europa — Top 5 Ligas', items: [
+    { id: 'premier-league', name: 'Premier League',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', region: 'Inglaterra', espn: 'eng.1', national: false },
+    { id: 'la-liga',        name: 'La Liga',                flag: '🇪🇸', region: 'Espanha',    espn: 'esp.1', national: false },
+    { id: 'serie-a',        name: 'Serie A',                flag: '🇮🇹', region: 'Itália',     espn: 'ita.1', national: false },
+    { id: 'bundesliga',     name: 'Bundesliga',             flag: '🇩🇪', region: 'Alemanha',   espn: 'ger.1', national: false },
+    { id: 'ligue-1',        name: 'Ligue 1',                flag: '🇫🇷', region: 'França',     espn: 'fra.1', national: false },
+  ]},
+  { category: '⭐ Europa — Copas', items: [
+    { id: 'champions',      name: 'Champions League',       flag: '⭐', region: 'Europa',      espn: 'uefa.champions', national: false },
+    { id: 'europa-league',  name: 'Europa League',          flag: '🟠', region: 'Europa',      espn: 'uefa.europa',    national: false },
+  ]},
+];
+
+const NATIONAL_ESPN = new Set(['fifa.world','conmebol.america','uefa.euro','concacaf.gold','caf.nations','uefa.nations','conmebol.preolimpico']);
+
+const FLAG_MAP = {
+  BRA:'🇧🇷',ARG:'🇦🇷',URU:'🇺🇾',COL:'🇨🇴',CHI:'🇨🇱',ECU:'🇪🇨',PAR:'🇵🇾',PER:'🇵🇪',VEN:'🇻🇪',BOL:'🇧🇴',
+  MEX:'🇲🇽',USA:'🇺🇸',CAN:'🇨🇦',CRC:'🇨🇷',PAN:'🇵🇦',JAM:'🇯🇲',HAI:'🇭🇹',HON:'🇭🇳',SLV:'🇸🇻',GTM:'🇬🇹',
+  ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',WAL:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  ESP:'🇪🇸',FRA:'🇫🇷',GER:'🇩🇪',ITA:'🇮🇹',POR:'🇵🇹',NED:'🇳🇱',BEL:'🇧🇪',CRO:'🇭🇷',DEN:'🇩🇰',SUI:'🇨🇭',
+  AUT:'🇦🇹',SRB:'🇷🇸',POL:'🇵🇱',SVK:'🇸🇰',CZE:'🇨🇿',HUN:'🇭🇺',ROM:'🇷🇴',UKR:'🇺🇦',TUR:'🇹🇷',GRE:'🇬🇷',
+  SWE:'🇸🇪',NOR:'🇳🇴',FIN:'🇫🇮',ISL:'🇮🇸',IRL:'🇮🇪',SVN:'🇸🇮',ALB:'🇦🇱',MNE:'🇲🇪',MKD:'🇲🇰',GEO:'🇬🇪',
+  SEN:'🇸🇳',MAR:'🇲🇦',NGA:'🇳🇬',GHA:'🇬🇭',EGY:'🇪🇬',CMR:'🇨🇲',RSA:'🇿🇦',CIV:'🇨🇮',ALG:'🇩🇿',TUN:'🇹🇳',
+  MLI:'🇲🇱',COD:'🇨🇩',MOZ:'🇲🇿',ZIM:'🇿🇼',ZAM:'🇿🇲',ANG:'🇦🇴',KEN:'🇰🇪',ETH:'🇪🇹',
+  JPN:'🇯🇵',KOR:'🇰🇷',AUS:'🇦🇺',IRI:'🇮🇷',SAU:'🇸🇦',QAT:'🇶🇦',UAE:'🇦🇪',IRQ:'🇮🇶',JOR:'🇯🇴',
+  CHN:'🇨🇳',IND:'🇮🇳',THA:'🇹🇭',VIE:'🇻🇳',IDN:'🇮🇩',NZL:'🇳🇿',ISR:'🇮🇱',UZB:'🇺🇿',KAZ:'🇰🇿',
+};
 
 const USERS = [];
 
@@ -3153,6 +3205,7 @@ function updateGlobalNav(screenId) {
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
   else if(screenId==='s-ranking') document.getElementById('di-ranking')?.classList.add('active');
   else if(screenId==='s-app-boloes') document.getElementById('di-app-boloes')?.classList.add('active');
+  else if(screenId==='s-championships'||screenId==='s-custom-create') document.getElementById('di-championships')?.classList.add('active');
 }
 
 function gnavTo(tab) { drawerGo(tab); }
@@ -3174,6 +3227,7 @@ function drawerGo(tab) {
   else if(tab==='create') { go_create(); }
   else if(tab==='ranking') { openRanking(); }
   else if(tab==='app-boloes') { openAppBoloes(); }
+  else if(tab==='championships') { renderChampionships(); go('s-championships'); }
   else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
 }
 
