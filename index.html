@@ -766,14 +766,6 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <!-- PÓDIO RANKING -->
     <div id="home-podium" style="margin-bottom:4px"></div>
-    <div class="section-title">Meus Bolões</div>
-    <div class="filter-chips" id="home-filters">
-      <button class="chip-btn active" onclick="setHomeFilter('all',this)">Todos</button>
-      <button class="chip-btn" onclick="setHomeFilter('mine',this)">Meus</button>
-      <button class="chip-btn" onclick="setHomeFilter('open',this)">Abertos</button>
-    </div>
-    <div id="my-boloes-list"></div>
-    <div id="home-history"></div>
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
@@ -784,6 +776,23 @@ input:checked+.slider:before{transform:translateX(18px)}
       </div>
       <div id="live-list"></div>
     </div>
+  </div>
+</div>
+
+<!-- === MEUS BOLÕES === -->
+<div class="screen" id="s-meus-boloes">
+  <div class="topbar">
+    <button class="back-btn" onclick="back()">←</button>
+    <span class="topbar-title">Meus Bolões</span>
+  </div>
+  <div class="scroll" style="padding-bottom:48px">
+    <div class="filter-chips" id="mb-filters" style="margin-bottom:12px">
+      <button class="chip-btn active" onclick="setMbFilter('all',this)">Todos</button>
+      <button class="chip-btn" onclick="setMbFilter('mine',this)">Criados</button>
+      <button class="chip-btn" onclick="setMbFilter('open',this)">Abertos</button>
+    </div>
+    <div id="mb-list"></div>
+    <div id="mb-history"></div>
   </div>
 </div>
 
@@ -1498,6 +1507,7 @@ function back() {
   updateGlobalNav(prev);
   if(prev === 's-detail' && state.currentBolaoId) renderDetail();
   if(prev === 's-home') renderHome();
+  if(prev === 's-meus-boloes') renderMyBoloes();
 }
 
 function showToast(msg) {
@@ -1793,23 +1803,22 @@ function goRegister() {
 // ===== HOME =====
 function renderHome() {
   document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name?.split(' ')[0] || 'amigo'} 👋`;
-  renderMyBoloes();
   renderGames();
   renderLiveScores();
   renderPodium();
 }
 
-function setHomeFilter(filter, btn) {
+function setMbFilter(filter, btn) {
   state.homeFilter = filter;
-  document.querySelectorAll('#home-filters .chip-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#mb-filters .chip-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
-  else document.querySelector('#home-filters .chip-btn')?.classList.add('active');
+  else document.querySelector('#mb-filters .chip-btn')?.classList.add('active');
   renderMyBoloes();
 }
 
 function renderMyBoloes() {
-  const el = document.getElementById('my-boloes-list');
-  const histEl = document.getElementById('home-history');
+  const el = document.getElementById('mb-list');
+  const histEl = document.getElementById('mb-history');
   const email = state.user?.email;
   // Season bolões handled separately — exclude from this list
   const allMine = state.boloes.filter(b=>
@@ -3311,6 +3320,7 @@ async function fetchTabelaScores() {
     }
     const _curScreen = state.screenStack[state.screenStack.length-1];
     if(_curScreen === 's-tabela') renderTabela();
+    if(_curScreen === 's-meus-boloes') renderMyBoloes();
     renderLiveScores();
     if(state.currentBolaoId && _curScreen === 's-detail') renderDetail();
     if(_curScreen === 's-season-detail') renderSeasonDetail();
@@ -3440,7 +3450,7 @@ function closeDrawer() {
 function drawerGo(tab) {
   closeDrawer();
   if(tab==='home') { renderHome(); go('s-home'); }
-  else if(tab==='meus-boloes') { renderHome(); go('s-home'); }
+  else if(tab==='meus-boloes') { renderMyBoloes(); go('s-meus-boloes'); }
   else if(tab==='tabela') { openTabela(); go('s-tabela'); }
   else if(tab==='join') { renderPublicBoloes(); go('s-join'); }
   else if(tab==='create') { go_create(); }
