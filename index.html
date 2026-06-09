@@ -260,6 +260,15 @@ input:checked+.slider:before{transform:translateX(18px)}
 .modal-score-col{display:flex;flex-direction:column;align-items:center;gap:6px}
 .modal-input{width:72px;height:72px;font-size:32px;font-weight:900;text-align:center;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);outline:none}
 .modal-input:focus{border-color:var(--primary)}
+/* DOB drum-roll picker */
+.dob-picker{position:relative;display:flex;align-items:stretch;height:220px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:pan-y}
+.dob-col{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior:none}
+.dob-col::-webkit-scrollbar{display:none}
+.dob-item{height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:var(--text);scroll-snap-align:center;letter-spacing:.3px}
+.dob-divider{width:16px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--border);flex-shrink:0;z-index:3;background:var(--surface)}
+.dob-sel-bar{position:absolute;left:0;right:0;top:calc(50% - 22px);height:44px;border-top:1.5px solid var(--primary-light);border-bottom:1.5px solid var(--primary-light);pointer-events:none;z-index:2}
+.dob-fade-top{position:absolute;left:0;right:0;top:0;height:88px;background:linear-gradient(to bottom,#152536 0%,rgba(21,37,54,0) 100%);pointer-events:none;z-index:1}
+.dob-fade-bot{position:absolute;left:0;right:0;bottom:0;height:88px;background:linear-gradient(to top,#152536 0%,rgba(21,37,54,0) 100%);pointer-events:none;z-index:1}
 /* HAMBURGER MENU BUTTON */
 .menu-btn{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:12px;z-index:998;width:42px;height:42px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .menu-btn.visible{display:flex}
@@ -514,7 +523,20 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
     <div class="field"><label>CPF</label><input id="rg-cpf" placeholder="000.000.000-00" maxlength="14" oninput="fmtCPF(this)"></div>
     <div style="color:var(--text3);font-size:11px;margin:-8px 0 14px;padding:0 2px">Usado apenas para verificação de identidade (18+)</div>
-    <div class="field"><label>Data de Nascimento</label><input id="rg-dob" type="date" placeholder="dd/mm/aaaa" style="color-scheme:dark"></div>
+    <div class="field">
+      <label>Data de Nascimento</label>
+      <div class="dob-picker">
+        <div class="dob-fade-top"></div>
+        <div class="dob-fade-bot"></div>
+        <div class="dob-sel-bar"></div>
+        <div class="dob-col" id="dob-col-day"></div>
+        <div class="dob-divider">/</div>
+        <div class="dob-col" id="dob-col-mon"></div>
+        <div class="dob-divider">/</div>
+        <div class="dob-col" id="dob-col-yr"></div>
+      </div>
+      <input type="hidden" id="rg-dob">
+    </div>
     <div style="color:var(--warn);font-size:11px;margin:-8px 0 14px;padding:0 2px">Apenas maiores de 18 anos podem participar</div>
     <div class="field"><label>Chave Pix</label><input id="rg-pix" placeholder="CPF, e-mail, telefone..."></div>
     <div style="color:var(--pix);font-size:11px;margin:-8px 0 14px;padding:0 2px">Sua chave Pix será usada para receber prêmios</div>
@@ -975,6 +997,9 @@ input:checked+.slider:before{transform:translateX(18px)}
     <button class="drawer-item" id="di-tabela" onclick="drawerGo('tabela')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Tabela
     </button>
+    <button class="drawer-item" id="di-championships" onclick="drawerGo('championships')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>Campeonatos
+    </button>
     <button class="drawer-item" id="di-join" onclick="drawerGo('join')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Buscar bolão
     </button>
@@ -996,6 +1021,18 @@ input:checked+.slider:before{transform:translateX(18px)}
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Sair da conta
     </button>
   </div>
+</div>
+
+<!-- === CAMPEONATOS === -->
+<div class="screen" id="s-championships">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Campeonatos</span></div>
+  <div class="scroll" id="championships-content"></div>
+</div>
+
+<!-- === CRIAR BOLÃO PERSONALIZADO (championship game) === -->
+<div class="screen" id="s-custom-create">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title" id="custom-create-title">Campeonato</span></div>
+  <div class="scroll" id="custom-create-content"></div>
 </div>
 
 <!-- CONFETTI -->
@@ -1349,6 +1386,43 @@ const GAMES = [
   {id:'132',home:{name:'A Classificar',code:'Semi 3',flag:'⚽'},away:{name:'A Classificar',code:'Semi 4',flag:'⚽'},date:'19 Jul',time:'20:00',stage:'🏆 Final',venue:'MetLife Stadium, Nova York'},
 ];
 
+const CHAMPIONSHIPS = [
+  { category: '🏆 Copa do Mundo 2026', items: [
+    { id: 'copa-mundo',    name: 'Copa do Mundo FIFA 2026', flag: '🏆', region: 'Mundial · 11 Jun – 19 Jul', espn: 'fifa.world', national: true },
+  ]},
+  { category: '🇧🇷 Brasil', items: [
+    { id: 'brasileirao',   name: 'Brasileirão Série A',     flag: '🇧🇷', region: 'Brasil',         espn: 'bra.1',                national: false },
+    { id: 'libertadores',  name: 'Copa Libertadores',       flag: '🌎', region: 'América do Sul', espn: 'conmebol.libertadores', national: false },
+    { id: 'sudamericana',  name: 'Copa Sudamericana',       flag: '🌎', region: 'América do Sul', espn: 'conmebol.sudamericana', national: false },
+  ]},
+  { category: '🏆 Europa — Top 5 Ligas', items: [
+    { id: 'premier-league', name: 'Premier League',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', region: 'Inglaterra', espn: 'eng.1', national: false },
+    { id: 'la-liga',        name: 'La Liga',                flag: '🇪🇸', region: 'Espanha',    espn: 'esp.1', national: false },
+    { id: 'serie-a',        name: 'Serie A',                flag: '🇮🇹', region: 'Itália',     espn: 'ita.1', national: false },
+    { id: 'bundesliga',     name: 'Bundesliga',             flag: '🇩🇪', region: 'Alemanha',   espn: 'ger.1', national: false },
+    { id: 'ligue-1',        name: 'Ligue 1',                flag: '🇫🇷', region: 'França',     espn: 'fra.1', national: false },
+  ]},
+  { category: '⭐ Europa — Copas', items: [
+    { id: 'champions',      name: 'Champions League',       flag: '⭐', region: 'Europa',      espn: 'uefa.champions', national: false },
+    { id: 'europa-league',  name: 'Europa League',          flag: '🟠', region: 'Europa',      espn: 'uefa.europa',    national: false },
+  ]},
+];
+
+const NATIONAL_ESPN = new Set(['fifa.world','conmebol.america','uefa.euro','concacaf.gold','caf.nations','uefa.nations','conmebol.preolimpico']);
+
+const FLAG_MAP = {
+  BRA:'🇧🇷',ARG:'🇦🇷',URU:'🇺🇾',COL:'🇨🇴',CHI:'🇨🇱',ECU:'🇪🇨',PAR:'🇵🇾',PER:'🇵🇪',VEN:'🇻🇪',BOL:'🇧🇴',
+  MEX:'🇲🇽',USA:'🇺🇸',CAN:'🇨🇦',CRC:'🇨🇷',PAN:'🇵🇦',JAM:'🇯🇲',HAI:'🇭🇹',HON:'🇭🇳',SLV:'🇸🇻',GTM:'🇬🇹',
+  ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',WAL:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  ESP:'🇪🇸',FRA:'🇫🇷',GER:'🇩🇪',ITA:'🇮🇹',POR:'🇵🇹',NED:'🇳🇱',BEL:'🇧🇪',CRO:'🇭🇷',DEN:'🇩🇰',SUI:'🇨🇭',
+  AUT:'🇦🇹',SRB:'🇷🇸',POL:'🇵🇱',SVK:'🇸🇰',CZE:'🇨🇿',HUN:'🇭🇺',ROM:'🇷🇴',UKR:'🇺🇦',TUR:'🇹🇷',GRE:'🇬🇷',
+  SWE:'🇸🇪',NOR:'🇳🇴',FIN:'🇫🇮',ISL:'🇮🇸',IRL:'🇮🇪',SVN:'🇸🇮',ALB:'🇦🇱',MNE:'🇲🇪',MKD:'🇲🇰',GEO:'🇬🇪',
+  SEN:'🇸🇳',MAR:'🇲🇦',NGA:'🇳🇬',GHA:'🇬🇭',EGY:'🇪🇬',CMR:'🇨🇲',RSA:'🇿🇦',CIV:'🇨🇮',ALG:'🇩🇿',TUN:'🇹🇳',
+  MLI:'🇲🇱',COD:'🇨🇩',MOZ:'🇲🇿',ZIM:'🇿🇼',ZAM:'🇿🇲',ANG:'🇦🇴',KEN:'🇰🇪',ETH:'🇪🇹',
+  JPN:'🇯🇵',KOR:'🇰🇷',AUS:'🇦🇺',IRI:'🇮🇷',SAU:'🇸🇦',QAT:'🇶🇦',UAE:'🇦🇪',IRQ:'🇮🇶',JOR:'🇯🇴',
+  CHN:'🇨🇳',IND:'🇮🇳',THA:'🇹🇭',VIE:'🇻🇳',IDN:'🇮🇩',NZL:'🇳🇿',ISR:'🇮🇱',UZB:'🇺🇿',KAZ:'🇰🇿',
+};
+
 const USERS = [];
 
 // ===== PERSISTÊNCIA (localStorage) =====
@@ -1478,6 +1552,56 @@ function validCPF(cpf) {
   return r===parseInt(cpf[10]);
 }
 
+function initDobPicker() {
+  const H = 44;
+  const MONS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const now  = new Date();
+  const curY = now.getFullYear();
+  const defY = curY - 25;
+  const defM = now.getMonth();
+  const defD = Math.min(now.getDate() - 1, 30);
+  const days  = Array.from({length:31}, (_,i) => String(i+1).padStart(2,'0'));
+  const years = Array.from({length: curY - 1919}, (_,i) => String(curY - i));
+  const defYIdx = Math.max(years.indexOf(String(defY)), 0);
+
+  function fill(colEl, items, selIdx) {
+    colEl.innerHTML = '';
+    const pt = document.createElement('div'); pt.style.height = (H*2)+'px'; colEl.appendChild(pt);
+    items.forEach(t => { const el = document.createElement('div'); el.className='dob-item'; el.textContent=t; colEl.appendChild(el); });
+    const pb = document.createElement('div'); pb.style.height = (H*2)+'px'; colEl.appendChild(pb);
+    requestAnimationFrame(() => { colEl.scrollTop = selIdx * H; });
+  }
+
+  function sync() {
+    const di = Math.round(document.getElementById('dob-col-day').scrollTop / H);
+    const mi = Math.round(document.getElementById('dob-col-mon').scrollTop / H);
+    const yi = Math.round(document.getElementById('dob-col-yr').scrollTop  / H);
+    const d  = Math.min(Math.max(di,0),30) + 1;
+    const m  = Math.min(Math.max(mi,0),11) + 1;
+    const y  = years[Math.min(Math.max(yi,0), years.length-1)];
+    const inp = document.getElementById('rg-dob');
+    if(inp) inp.value = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+
+  function wire(colEl) {
+    let t;
+    colEl.addEventListener('scroll', () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const idx = Math.round(colEl.scrollTop / H);
+        colEl.scrollTo({top: idx * H, behavior:'smooth'});
+        sync();
+      }, 120);
+    }, {passive:true});
+  }
+
+  fill(document.getElementById('dob-col-day'), days,  defD);
+  fill(document.getElementById('dob-col-mon'), MONS,  defM);
+  fill(document.getElementById('dob-col-yr'),  years, defYIdx);
+  ['dob-col-day','dob-col-mon','dob-col-yr'].forEach(id => wire(document.getElementById(id)));
+  setTimeout(sync, 60);
+}
+
 async function doRegister() {
   const name = document.getElementById('rg-name').value.trim();
   const email = document.getElementById('rg-email').value.trim().toLowerCase();
@@ -1605,6 +1729,7 @@ function goRegister() {
   clearSession();
   state.user = null;
   go('s-register');
+  requestAnimationFrame(initDobPicker);
 }
 
 
@@ -3153,6 +3278,7 @@ function updateGlobalNav(screenId) {
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
   else if(screenId==='s-ranking') document.getElementById('di-ranking')?.classList.add('active');
   else if(screenId==='s-app-boloes') document.getElementById('di-app-boloes')?.classList.add('active');
+  else if(screenId==='s-championships'||screenId==='s-custom-create') document.getElementById('di-championships')?.classList.add('active');
 }
 
 function gnavTo(tab) { drawerGo(tab); }
@@ -3174,9 +3300,228 @@ function drawerGo(tab) {
   else if(tab==='create') { go_create(); }
   else if(tab==='ranking') { openRanking(); }
   else if(tab==='app-boloes') { openAppBoloes(); }
+  else if(tab==='championships') { renderChampionships(); go('s-championships'); }
   else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
 }
 
+
+// ===== CAMPEONATOS =====
+async function fetchChampionshipScores(espnCode) {
+  const isNational = NATIONAL_ESPN.has(espnCode);
+  const getFlag = code => isNational ? (FLAG_MAP[code]||'🏳️') : '⚽';
+  try {
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/scoreboard`);
+    if(!r.ok) return [];
+    const data = await r.json();
+    return (data.events||[]).map(ev=>{
+      const comp = ev.competitions?.[0];
+      const competitors = comp?.competitors||[];
+      const hc = competitors.find(c=>c.homeAway==='home');
+      const ac = competitors.find(c=>c.homeAway==='away');
+      const st = comp?.status?.type;
+      const isLive = st?.state==='in';
+      const isDone = st?.completed||st?.state==='post';
+      const min = comp?.status?.displayClock||'';
+      const notes = comp?.notes||[];
+      const noteText = notes.find(n=>n.type==='event')?.headline||notes[0]?.headline||'';
+      const round = noteText||(ev.week?.number?`Rodada ${ev.week.number}`:'');
+      const evDate = ev.date?new Date(ev.date):null;
+      const hCode = hc?.team?.abbreviation||'HME';
+      const aCode = ac?.team?.abbreviation||'AWY';
+      return {
+        id: ev.id||String(Math.random()),
+        home: {name:hc?.team?.shortDisplayName||hc?.team?.name||'?', code:hCode, flag:getFlag(hCode)},
+        away: {name:ac?.team?.shortDisplayName||ac?.team?.name||'?', code:aCode, flag:getFlag(aCode)},
+        homeScore: hc?.score||'',
+        awayScore: ac?.score||'',
+        isLive, isDone, min, round,
+        date: evDate?evDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'',
+        time: evDate?evDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'',
+        dateObj: evDate,
+        venue: comp?.venue?.fullName||'',
+      };
+    });
+  } catch(_){ return []; }
+}
+
+function renderChampionships() {
+  const el = document.getElementById('championships-content');
+  if(!el) return;
+  el.innerHTML = `
+    <div style="padding-bottom:8px">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.5">Escolha um campeonato para ver os jogos e criar bolões.</div>
+      ${CHAMPIONSHIPS.map(cat=>`
+        <div style="margin-bottom:24px">
+          <div class="section-title" style="margin-bottom:10px">${esc(cat.category)}</div>
+          ${cat.items.map(c=>`
+            <div onclick="openChampionship(${JSON.stringify(c).replace(/"/g,'&quot;')})"
+              style="display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer"
+              ontouchstart="this.style.background='var(--surface2)'" ontouchend="this.style.background='var(--surface)'">
+              <div style="font-size:28px;line-height:1;width:36px;text-align:center">${c.flag}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(c.name)}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(c.region)}</div>
+              </div>
+              <div style="color:var(--text3);font-size:18px">›</div>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+}
+
+function setChampFilter(f, el) {
+  state.champFilter = f;
+  document.querySelectorAll('#champ-main-filter .t-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderChampionshipDetail();
+}
+
+function setChampRound(r, el) {
+  state.champRound = r;
+  document.querySelectorAll('#champ-round-filter .t-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderChampionshipDetail();
+}
+
+function openChampionship(c) {
+  if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
+  state.customChampionship = c;
+  state.champFilter = 'next';
+  state.champRound = 'all';
+  state.champGames = [];
+  document.getElementById('custom-create-title').textContent = c.name;
+  const el = document.getElementById('custom-create-content');
+  if(el) el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:16px">
+      <div style="font-size:32px">${c.flag}</div>
+      <div><div style="font-size:15px;font-weight:800">${esc(c.name)}</div><div style="font-size:11px;color:var(--text3)">${esc(c.region)}</div></div>
+    </div>
+    <div style="text-align:center;padding:32px 0;color:var(--text3)">
+      <div style="font-size:28px;margin-bottom:10px">⏳</div>
+      <div style="font-size:13px">Buscando jogos...</div>
+    </div>`;
+  go('s-custom-create');
+  const doFetch = () => fetchChampionshipScores(c.espn||'').then(games=>{
+    state.champGames = games;
+    renderChampionshipDetail();
+  }).catch(()=>renderChampionshipDetail());
+  doFetch();
+  state.champPollInterval = setInterval(()=>{
+    if(state.screenStack[state.screenStack.length-1]==='s-custom-create') doFetch();
+  }, 60000);
+}
+
+function renderChampionshipDetail() {
+  const el = document.getElementById('custom-create-content');
+  if(!el) return;
+  const c = state.customChampionship;
+  const games = state.champGames||[];
+  const now = new Date();
+  const rounds = [];
+  games.forEach(g=>{ if(g.round&&!rounds.includes(g.round)) rounds.push(g.round); });
+  const filtered = games.filter(g=>{
+    if(state.champFilter==='live'&&!g.isLive) return false;
+    if(state.champFilter==='next'&&(g.isLive||g.isDone)) return false;
+    if(state.champFilter==='done'&&!g.isDone) return false;
+    if(state.champRound!=='all'&&g.round!==state.champRound) return false;
+    return true;
+  }).sort((a,b)=>(a.dateObj||new Date(0))-(b.dateObj||new Date(0)));
+  const byDate={};
+  filtered.forEach(g=>{ const k=g.date||'?'; (byDate[k]||(byDate[k]=[])).push(g); });
+  const roundChips = rounds.length>1?`
+    <div class="t-filter-row" id="champ-round-filter">
+      <button class="t-chip${state.champRound==='all'?' active':''}" onclick="setChampRound('all',this)">Todas</button>
+      ${rounds.map(r=>`<button class="t-chip${state.champRound===r?' active':''}" onclick="setChampRound(${JSON.stringify(r)},this)">${esc(r)}</button>`).join('')}
+    </div>`:'';
+  const hasLive = games.some(g=>g.isLive);
+  const emptyMsg = games.length===0
+    ? `<div style="text-align:center;padding:40px 20px;color:var(--text3)">
+         <div style="font-size:36px;margin-bottom:12px">📅</div>
+         <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">Nenhum jogo agendado</div>
+         <div style="font-size:12px;line-height:1.6">A ESPN não retornou jogos para este campeonato no momento.</div>
+       </div>`
+    : `<div style="text-align:center;padding:32px 20px;color:var(--text3)">
+         <div style="font-size:36px;margin-bottom:12px">${hasLive?'🔴':'✅'}</div>
+         <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">${hasLive?'Jogos em andamento':'Nenhum próximo jogo'}</div>
+       </div>`;
+  const gamesHTML = filtered.length===0 ? emptyMsg : Object.entries(byDate).map(([date,gs])=>{
+    const dayPt=gs[0].dateObj?gs[0].dateObj.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}):date;
+    const cards=gs.map(g=>{
+      const topStatus=g.isLive
+        ?`<span class="t-live-pill" style="font-size:9px"><span class="t-live-dot"></span>${g.min||'LIVE'}</span>`
+        :g.isDone
+          ?`<span style="color:var(--ok);font-size:9px;font-weight:800">✓ FIM</span>`
+          :`<span style="color:var(--text2);font-size:9px;font-weight:700">${g.time||''}</span>`;
+      const midContent=(g.isDone||g.isLive)
+        ?`<div style="font-size:18px;font-weight:900;color:${g.isLive?'var(--err)':'var(--text)'};letter-spacing:1px">${g.homeScore}–${g.awayScore}</div>`
+        :`<div style="font-size:10px;font-weight:800;color:var(--text3)">VS</div>`;
+      const gJson=JSON.stringify(g).replace(/"/g,'&quot;');
+      const closedStyle=g.isDone?'opacity:.55;cursor:not-allowed':'';
+      return `<div class="t-gcell${g.isLive?' live':''}" style="${closedStyle}" onclick="go_create_from_champ_game(JSON.parse(this.dataset.g))" data-g="${gJson}">
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
+          <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.round||'')}</span>
+          ${topStatus}
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-around;width:100%;gap:4px">
+          <div style="text-align:center;flex:1;min-width:0">
+            <div style="font-size:20px;line-height:1.2">${g.home.flag||'⚽'}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word;margin-top:2px">${esc(g.home.name)}</div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;padding:0 4px">${midContent}</div>
+          <div style="text-align:center;flex:1;min-width:0">
+            <div style="font-size:20px;line-height:1.2">${g.away.flag||'⚽'}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word;margin-top:2px">${esc(g.away.name)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="t-date-hdr">${dayPt}</div><div class="t-grid">${cards}</div>`;
+  }).join('');
+  const updatedAt = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const liveCount = games.filter(g=>g.isLive).length;
+  const nextCount = games.filter(g=>!g.isLive&&!g.isDone).length;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:14px">
+      <div style="font-size:32px">${c.flag}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:800">${esc(c.name)}</div>
+        <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+          <span>${esc(c.region)}</span>
+          ${liveCount>0?`<span style="color:var(--err);font-weight:700">🔴 ${liveCount} ao vivo</span>`:''}
+          ${nextCount>0?`<span style="color:var(--primary);font-weight:700">📅 ${nextCount} próximo${nextCount!==1?'s':''}</span>`:''}
+          <span style="margin-left:auto">↻ ${updatedAt}</span>
+        </div>
+      </div>
+    </div>
+    <div class="t-filter-row" id="champ-main-filter">
+      <button class="t-chip${state.champFilter==='all'?' active':''}" onclick="setChampFilter('all',this)">Todos</button>
+      <button class="t-chip${state.champFilter==='live'?' active':''}" onclick="setChampFilter('live',this)">🔴 Ao Vivo</button>
+      <button class="t-chip${state.champFilter==='next'?' active':''}" onclick="setChampFilter('next',this)">Próximos</button>
+      <button class="t-chip${state.champFilter==='done'?' active':''}" onclick="setChampFilter('done',this)">Encerrados</button>
+    </div>
+    ${roundChips}
+    ${gamesHTML}
+    <div style="height:20px"></div>`;
+}
+
+function go_create_from_champ_game(g) {
+  if(g.isDone) { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
+  if(g.isLive) { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
+  const c = state.customChampionship;
+  const customGame = {
+    id: 'champ-'+g.id,
+    home: {name:g.home.name, code:g.home.code, flag:g.home.flag||'🏳️'},
+    away: {name:g.away.name, code:g.away.code, flag:g.away.flag||'🏳️'},
+    date: g.date||'', time: g.time||'',
+    stage: g.round||c?.name||'',
+    group: '', venue: g.venue||c?.name||'', championship: c?.id||'',
+  };
+  createState = {
+    step:1, title:`${g.home.name} × ${g.away.name}`, game:customGame,
+    amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false
+  };
+  renderCreateStep();
+  go('s-create');
+}
 
 function renderPublicBoloes() {
   const el = document.getElementById('public-boloes-list');
