@@ -330,6 +330,15 @@ input:checked+.slider:before{transform:translateX(18px)}
 .tip-card{background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:16px}
 .tip-title{color:var(--secondary);font-size:13px;font-weight:700;margin-bottom:8px}
 .tip-text{color:var(--text2);font-size:12px;line-height:1.8}
+/* DOB drum-roll picker */
+.dob-picker{position:relative;display:flex;align-items:stretch;height:220px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:pan-y}
+.dob-col{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior:none}
+.dob-col::-webkit-scrollbar{display:none}
+.dob-item{height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:var(--text);scroll-snap-align:center;letter-spacing:.3px}
+.dob-divider{width:16px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--border);flex-shrink:0;z-index:3;background:var(--surface)}
+.dob-sel-bar{position:absolute;left:0;right:0;top:calc(50% - 22px);height:44px;border-top:1.5px solid var(--primary-light);border-bottom:1.5px solid var(--primary-light);pointer-events:none;z-index:2}
+.dob-fade-top{position:absolute;left:0;right:0;top:0;height:88px;background:linear-gradient(to bottom,#152536 0%,rgba(21,37,54,0) 100%);pointer-events:none;z-index:1}
+.dob-fade-bot{position:absolute;left:0;right:0;bottom:0;height:88px;background:linear-gradient(to top,#152536 0%,rgba(21,37,54,0) 100%);pointer-events:none;z-index:1}
 /* Auth screen */
 .auth-wrapper{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:32px 24px}
 .auth-logo{text-align:center;margin-bottom:36px}
@@ -491,7 +500,20 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="field"><label>WhatsApp / Telefone</label><input id="rg-phone" type="tel" placeholder="(11) 99999-9999"></div>
     <div class="field"><label>CPF</label><input id="rg-cpf" placeholder="000.000.000-00" maxlength="14" oninput="fmtCPF(this)"></div>
     <div style="color:var(--text3);font-size:11px;margin:-8px 0 14px;padding:0 2px">Usado apenas para verificação de identidade (18+)</div>
-    <div class="field"><label>Data de Nascimento</label><input id="rg-dob" type="date" placeholder="dd/mm/aaaa" style="color-scheme:dark"></div>
+    <div class="field">
+      <label>Data de Nascimento</label>
+      <div class="dob-picker">
+        <div class="dob-fade-top"></div>
+        <div class="dob-fade-bot"></div>
+        <div class="dob-sel-bar"></div>
+        <div class="dob-col" id="dob-col-day"></div>
+        <div class="dob-divider">/</div>
+        <div class="dob-col" id="dob-col-mon"></div>
+        <div class="dob-divider">/</div>
+        <div class="dob-col" id="dob-col-yr"></div>
+      </div>
+      <input type="hidden" id="rg-dob">
+    </div>
     <div style="color:var(--warn);font-size:11px;margin:-8px 0 14px;padding:0 2px">Apenas maiores de 18 anos podem participar</div>
     <div class="field"><label>Chave Pix</label><input id="rg-pix" placeholder="CPF, e-mail, telefone..."></div>
     <div style="color:var(--pix);font-size:11px;margin:-8px 0 14px;padding:0 2px">Sua chave Pix será usada para receber prêmios</div>
@@ -1532,10 +1554,61 @@ async function confirmLogout() {
 function cancelLogout() {
   document.getElementById('logout-modal').style.display = 'none';
 }
+function initDobPicker() {
+  const H = 44;
+  const MONS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const now  = new Date();
+  const curY = now.getFullYear();
+  const defY = curY - 25;
+  const defM = now.getMonth();
+  const defD = Math.min(now.getDate() - 1, 30);
+  const days  = Array.from({length:31}, (_,i) => String(i+1).padStart(2,'0'));
+  const years = Array.from({length: curY - 1919}, (_,i) => String(curY - i));
+  const defYIdx = Math.max(years.indexOf(String(defY)), 0);
+
+  function fill(colEl, items, selIdx) {
+    colEl.innerHTML = '';
+    const pt = document.createElement('div'); pt.style.height = (H*2)+'px'; colEl.appendChild(pt);
+    items.forEach(t => { const el = document.createElement('div'); el.className='dob-item'; el.textContent=t; colEl.appendChild(el); });
+    const pb = document.createElement('div'); pb.style.height = (H*2)+'px'; colEl.appendChild(pb);
+    requestAnimationFrame(() => { colEl.scrollTop = selIdx * H; });
+  }
+
+  function sync() {
+    const di = Math.round(document.getElementById('dob-col-day').scrollTop / H);
+    const mi = Math.round(document.getElementById('dob-col-mon').scrollTop / H);
+    const yi = Math.round(document.getElementById('dob-col-yr').scrollTop  / H);
+    const d  = Math.min(Math.max(di,0),30) + 1;
+    const m  = Math.min(Math.max(mi,0),11) + 1;
+    const y  = years[Math.min(Math.max(yi,0), years.length-1)];
+    const inp = document.getElementById('rg-dob');
+    if(inp) inp.value = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+
+  function wire(colEl) {
+    let t;
+    colEl.addEventListener('scroll', () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const idx = Math.round(colEl.scrollTop / H);
+        colEl.scrollTo({top: idx * H, behavior:'smooth'});
+        sync();
+      }, 120);
+    }, {passive:true});
+  }
+
+  fill(document.getElementById('dob-col-day'), days,  defD);
+  fill(document.getElementById('dob-col-mon'), MONS,  defM);
+  fill(document.getElementById('dob-col-yr'),  years, defYIdx);
+  ['dob-col-day','dob-col-mon','dob-col-yr'].forEach(id => wire(document.getElementById(id)));
+  setTimeout(sync, 60);
+}
+
 function goRegister() {
   clearSession();
   state.user = null;
   go('s-register');
+  requestAnimationFrame(initDobPicker);
 }
 
 
