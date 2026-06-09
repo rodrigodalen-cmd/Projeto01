@@ -1078,6 +1078,25 @@ input:checked+.slider:before{transform:translateX(18px)}
   </div>
 </div>
 
+<!-- TERMS MODAL (season bolão join confirmation) -->
+<div id="terms-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="text-align:center;max-width:360px">
+    <div style="font-size:36px;margin-bottom:8px">⚽</div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:8px">Entrar no Bolão da Copa</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px">
+      Você vai acumular pontos em <strong>todos os jogos</strong> da Copa até a Final.<br><br>
+      Após entrar, faça o Pix para o criador para confirmar sua vaga. Só participantes pagos são contados no prêmio.
+    </div>
+    <div style="background:rgba(244,208,63,.1);border:1px solid rgba(244,208,63,.3);border-radius:10px;padding:10px;font-size:12px;color:var(--text3);margin-bottom:16px;text-align:left">
+      🎯 Placar exato = 3 pts &nbsp;|&nbsp; ✅ Resultado certo = 1 pt &nbsp;|&nbsp; ❌ Errou = 0 pts
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('terms-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="terms-confirm-btn" onclick="_termsConfirm()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- RESULT MODAL -->
 <div id="result-modal" class="modal-overlay" style="display:none">
   <div class="modal-box">
@@ -2010,6 +2029,7 @@ function openDetail(id) {
 function renderDetail() {
   const b = state.boloes.find(x=>x.id===state.currentBolaoId);
   if(!b) return;
+  if(b.isSeason) { _curSeasonBolaoId = b.id; renderSeasonDetail(); return; }
   document.getElementById('detail-title').textContent = b.title;
   const paidCount = b.participants.filter(p=>p.paid).length;
   const prize = Math.floor(paidCount * b.amount * 0.9);
@@ -2969,13 +2989,24 @@ async function fetchTabelaScores() {
         // Season bolão: apply result to results map per gameId
         if(!b.results) b.results = {};
         let changed = false;
+        const newGameIds = [];
         Object.entries(_ls).forEach(([gameId, sc]) => {
           if(sc.status === 'FT' && b.results[gameId] === undefined) {
             b.results[gameId] = {home: sc.h, away: sc.a};
             changed = true;
+            newGameIds.push({gameId, sc});
           }
         });
-        if(changed) _toSync.push(b);
+        if(changed) {
+          newGameIds.forEach(({gameId, sc}) => {
+            const gDef = GAMES.find(x=>String(x.id)===String(gameId));
+            if(gDef) {
+              const scoreStr = `${gDef.home.flag} ${sc.h}×${sc.a} ${gDef.away.flag}`;
+              addSystemMessage(b.id, `⚽ Resultado: ${gDef.home.name} ${scoreStr} ${gDef.away.name}`);
+            }
+          });
+          _toSync.push(b);
+        }
       } else {
         // Regular bolão: apply single result
         if(b.result || !b.game?.id) return;
@@ -3501,6 +3532,16 @@ function renderAppBoloes() {
   }).join('');
 }
 
+let _termsCb = null;
+function showTermsModal(cb) {
+  _termsCb = cb;
+  document.getElementById('terms-modal').style.display = 'flex';
+}
+function _termsConfirm() {
+  document.getElementById('terms-modal').style.display = 'none';
+  if(_termsCb) { _termsCb(); _termsCb = null; }
+}
+
 function joinSeasonBolao(bolaoId) {
   const bolao=state.boloes.find(x=>x.id===bolaoId);
   if(!bolao) return;
@@ -3964,6 +4005,18 @@ function exportResult(bolaoId) {
   const cv = document.createElement('canvas');
   cv.width=W; cv.height=H;
   const c = cv.getContext('2d');
+  // Polyfill for Safari < 16.4 which lacks roundRect
+  if(!c.roundRect) {
+    c.roundRect = function(x,y,w,h,r) {
+      const R=Math.min(r,w/2,h/2);
+      this.moveTo(x+R,y);
+      this.lineTo(x+w-R,y); this.quadraticCurveTo(x+w,y,x+w,y+R);
+      this.lineTo(x+w,y+h-R); this.quadraticCurveTo(x+w,y+h,x+w-R,y+h);
+      this.lineTo(x+R,y+h); this.quadraticCurveTo(x,y+h,x,y+h-R);
+      this.lineTo(x,y+R); this.quadraticCurveTo(x,y,x+R,y);
+      this.closePath();
+    };
+  }
   // Background
   c.fillStyle='#0D1B2A'; c.fillRect(0,0,W,H);
   // Header gradient
