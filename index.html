@@ -4721,7 +4721,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   updateGlobalNav('s-login');
   updateFloatingAvatar();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    // Reload automático quando nova versão do SW ativar
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }
 });
 </script>
 
