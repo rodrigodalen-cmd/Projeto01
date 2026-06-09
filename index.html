@@ -328,6 +328,33 @@ input:checked+.slider:before{transform:translateX(18px)}
 .tip-card{background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:16px}
 .tip-title{color:var(--secondary);font-size:13px;font-weight:700;margin-bottom:8px}
 .tip-text{color:var(--text2);font-size:12px;line-height:1.8}
+/* PÓDIO */
+.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:12px 0 4px}
+.podium-slot{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:110px}
+.podium-slot-1{padding-bottom:0}
+.podium-slot-2{padding-bottom:28px}
+.podium-slot-3{padding-bottom:44px}
+.podium-av-1{width:72px;height:72px;border-radius:50%;border:3px solid #FFD700;box-shadow:0 0 18px rgba(255,215,0,.6);object-fit:cover;flex-shrink:0}
+.podium-av-2{width:60px;height:60px;border-radius:50%;border:3px solid #C0C0C0;box-shadow:0 0 12px rgba(192,192,192,.4);object-fit:cover;flex-shrink:0}
+.podium-av-3{width:54px;height:54px;border-radius:50%;border:3px solid #CD7F32;box-shadow:0 0 10px rgba(205,127,50,.3);object-fit:cover;flex-shrink:0}
+.podium-title-1{font-size:10px;font-weight:900;color:#FFD700;text-align:center;letter-spacing:.5px;text-transform:uppercase}
+.podium-title-2{font-size:9px;font-weight:800;color:#C0C0C0;text-align:center;text-transform:uppercase}
+.podium-title-3{font-size:9px;font-weight:800;color:#CD7F32;text-align:center;text-transform:uppercase}
+.podium-name{font-size:12px;font-weight:700;color:var(--text);text-align:center;max-width:95px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.podium-pts{font-size:11px;color:var(--text3);text-align:center}
+.podium-section{background:var(--surface);border-radius:16px;padding:12px;border:1px solid var(--border);margin-bottom:16px}
+.podium-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+/* RANKING */
+.rank-card{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:8px}
+.rank-badge-gold{background:linear-gradient(135deg,#FFE55C,#FFD700);color:#0D1B2A;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;text-transform:uppercase;white-space:nowrap}
+.rank-badge-silver{background:linear-gradient(135deg,#e8e8e8,#C0C0C0);color:#0D1B2A;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;text-transform:uppercase;white-space:nowrap}
+.rank-badge-bronze{background:linear-gradient(135deg,#e8a87c,#CD7F32);color:#fff;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;text-transform:uppercase;white-space:nowrap}
+/* APP BOLÕES */
+.app-bolao-card{background:var(--surface);border-radius:14px;padding:14px;border:1px solid rgba(244,208,63,.3);margin-bottom:10px}
+.app-tier-btn{flex:1;padding:9px 4px;border-radius:10px;border:none;font-size:12px;font-weight:800;cursor:pointer;min-width:60px}
+.tier-50{background:rgba(0,107,63,.2);color:var(--primary-light);border:1px solid rgba(0,107,63,.4)}
+.tier-250{background:rgba(244,208,63,.15);color:var(--secondary);border:1px solid rgba(244,208,63,.35)}
+.tier-500{background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)}
 /* Auth screen */
 .auth-wrapper{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:32px 24px}
 .auth-logo{text-align:center;margin-bottom:36px}
@@ -714,6 +741,8 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
+    <!-- PÓDIO RANKING -->
+    <div id="home-podium" style="margin-bottom:4px"></div>
     <div class="section-title">Meus Bolões</div>
     <div class="filter-chips" id="home-filters">
       <button class="chip-btn active" onclick="setHomeFilter('all',this)">Todos</button>
@@ -811,6 +840,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <input id="join-code" placeholder="COPA2026" maxlength="8" oninput="checkJoinCode(this.value.toUpperCase());this.value=this.value.toUpperCase()">
     </div>
     <div id="join-result"></div>
+    <div id="public-boloes-list"></div>
   </div>
 </div>
 
@@ -826,6 +856,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <input type="file" id="photo-input" class="photo-input" accept="image/*" onchange="uploadPhoto(this)">
       <div class="profile-name" id="prof-name">João Silva</div>
       <div class="profile-email" id="prof-email">joao@email.com</div>
+      <div id="prof-global-rank" style="margin-top:6px"></div>
       <p style="color:var(--text3);font-size:11px;margin-top:4px">Toque na foto para alterar</p>
     </div>
     <button class="btn btn-ghost" style="margin-bottom:16px" onclick="openEditProfile()">Editar perfil</button>
@@ -950,6 +981,12 @@ input:checked+.slider:before{transform:translateX(18px)}
     <button class="drawer-item create-item" id="di-create" onclick="drawerGo('create')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar bolão
     </button>
+    <button class="drawer-item" id="di-app-boloes" onclick="drawerGo('app-boloes')" style="color:var(--secondary)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Bolão do App
+    </button>
+    <button class="drawer-item" id="di-ranking" onclick="drawerGo('ranking')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4H2v16h5V4zm5-2H8v18h4V2zm5 5h-4v13h4V7zm5 2h-4v11h4V9z"/></svg>Ranking
+    </button>
     <button class="drawer-item" id="di-profile" onclick="drawerGo('profile')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Meu perfil
     </button>
@@ -963,6 +1000,30 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- CONFETTI -->
 <canvas id="confetti-canvas"></canvas>
+
+<!-- === RANKING GLOBAL === -->
+<div class="screen" id="s-ranking">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">🏆 Ranking Global</span></div>
+  <div class="scroll" style="padding-bottom:40px">
+    <div id="ranking-screen-content" style="padding-top:8px">
+      <div style="text-align:center;color:var(--text3);padding:48px 0">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- === BOLÃO DO APP === -->
+<div class="screen" id="s-app-boloes">
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">⚽ Bolão do App</span></div>
+  <div class="scroll" style="padding-bottom:40px">
+    <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(244,208,63,.25)">
+      <div style="font-size:14px;font-weight:800;color:var(--secondary);margin-bottom:4px">🏟️ Bolões oficiais do Bolão FC</div>
+      <div style="font-size:12px;color:var(--text2)">Participe dos bolões da Copa do Mundo com jogadores de todo o app. Escolha o valor que quiser.</div>
+    </div>
+    <div id="app-boloes-list">
+      <div style="text-align:center;color:var(--text3);padding:48px 0">Carregando jogos...</div>
+    </div>
+  </div>
+</div>
 
 <!-- === RANKING GERAL === -->
 <div class="screen" id="s-ranking-geral">
@@ -1425,6 +1486,7 @@ async function doRegister() {
 
 async function loginSuccess() {
   if(_sb) await _loadBoloesFromSupabase();
+  await initAppBoloes();
   updateProfileUI();
   renderHome();
   if(window._liveInterval) clearInterval(window._liveInterval);
@@ -1476,6 +1538,7 @@ function renderHome() {
   renderMyBoloes();
   renderGames();
   renderLiveScores();
+  renderPodium();
 }
 
 function setHomeFilter(filter, btn) {
@@ -2459,6 +2522,18 @@ function updateProfileUI() {
   if(perfAcerto) perfAcerto.innerHTML=`<div class="stat-val" style="color:var(--ok)">${acerto}%</div><div class="stat-lbl">% Acerto</div>`;
   if(perfMelhor) perfMelhor.innerHTML=`<div class="stat-val" style="color:var(--gold)">${bestRank?bestRank+'°':'-'}</div><div class="stat-lbl">Melhor lugar</div>`;
   renderBetHistory();
+  // Async: load global ranking position
+  const rankEl=document.getElementById('prof-global-rank');
+  if(rankEl) {
+    fetchGlobalRanking().then(data=>{
+      const pos=data.findIndex(x=>x.email===u.email);
+      if(pos<0){rankEl.innerHTML='';return;}
+      const [cls,title]=_rankTitle(pos);
+      rankEl.innerHTML=cls
+        ?`<span class="${cls}" style="cursor:pointer" onclick="openRanking()">${title}</span>`
+        :`<span style="font-size:12px;color:var(--text3);cursor:pointer" onclick="openRanking()">${title} · Ver ranking</span>`;
+    }).catch(()=>{});
+  }
 }
 
 function uploadPhoto(input) {
@@ -2892,6 +2967,8 @@ function updateGlobalNav(screenId) {
   else if(screenId==='s-join') document.getElementById('di-join')?.classList.add('active');
   else if(screenId==='s-create') document.getElementById('di-create')?.classList.add('active');
   else if(screenId==='s-profile'||screenId==='s-edit-profile') document.getElementById('di-profile')?.classList.add('active');
+  else if(screenId==='s-ranking') document.getElementById('di-ranking')?.classList.add('active');
+  else if(screenId==='s-app-boloes') document.getElementById('di-app-boloes')?.classList.add('active');
 }
 
 function gnavTo(tab) { drawerGo(tab); }
@@ -2909,11 +2986,42 @@ function drawerGo(tab) {
   closeDrawer();
   if(tab==='home') { renderHome(); go('s-home'); }
   else if(tab==='tabela') { openTabela(); go('s-tabela'); }
-  else if(tab==='join') { go('s-join'); }
+  else if(tab==='join') { renderPublicBoloes(); go('s-join'); }
   else if(tab==='create') { go_create(); }
+  else if(tab==='ranking') { openRanking(); }
+  else if(tab==='app-boloes') { openAppBoloes(); }
   else if(tab==='profile') { updateProfileUI(); go('s-profile'); }
 }
 
+
+function renderPublicBoloes() {
+  const el = document.getElementById('public-boloes-list');
+  if(!el) return;
+  const appBoloes = state.boloes.filter(b=>b.isAppBolao && !isBetClosed(b.game));
+  const publicBoloes = state.boloes.filter(b=>!b.isAppBolao && b.isPublic && !isBetClosed(b.game));
+  const all = [...appBoloes, ...publicBoloes];
+  if(all.length===0) { el.innerHTML=''; return; }
+  el.innerHTML=`<div class="section-title" style="margin-top:20px">Bolões disponíveis</div>`+all.map(b=>{
+    const joined=b.participants.find(p=>p.email===state.user?.email);
+    const cnt=b.participants.length;
+    const tag=b.isAppBolao?`<span class="badge badge-green" style="font-size:9px">Bolão do App</span>`:'';
+    return `<div class="card" style="cursor:pointer" onclick="${b.isAppBolao?`enterAppBolao('${b.game?.id}',${b.amount})`:`openDetail('${b.id}')`}">
+      <div class="bolao-header">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="bolao-title">${esc(b.title)}</span>${tag}
+          ${joined?'<span class="badge badge-green" style="font-size:9px">Participando</span>':''}
+        </div>
+        <span class="badge badge-green">Aberto</span>
+      </div>
+      <div class="bolao-match">${b.game.home.flag} ${b.game.home.code} vs ${b.game.away.code} ${b.game.away.flag}</div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">R$${b.amount}</div><div class="stat-lbl">por aposta</div></div>
+        <div class="stat-div"></div>
+        <div class="stat"><div class="stat-val">${cnt}${b.maxPart>0?'/'+b.maxPart:''}</div><div class="stat-lbl">jogadores</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 // ===== AVATAR / DRAWER USER =====
 function updateFloatingAvatar() {
@@ -3079,6 +3187,241 @@ function openRankingGeral() {
       <div style="background:var(--surface);border-radius:16px;padding:0 16px;border:1px solid var(--border)">${rows}</div>`;
   }
   go('s-ranking-geral');
+}
+
+// ===== APP BOLÕES =====
+const APP_CREATOR_ID = 'app@bolaofc.com';
+const APP_AMOUNTS = [50, 250, 500];
+
+function _appBolaoId(gameId, amount) { return `appbf-${gameId}-${amount}`; }
+function _appBolaoCode(gameId, amount) {
+  const s=`APPBF${String(gameId).padStart(2,'0')}${amount===50?'A':amount===250?'B':'C'}`;
+  return s.substring(0,8).toUpperCase();
+}
+
+function _genAppBolao(g, amount) {
+  return {
+    id: _appBolaoId(g.id, amount),
+    title: `${g.home.flag} ${g.home.name} × ${g.away.name} ${g.away.flag} · R$${amount}`,
+    code: _appBolaoCode(g.id, amount),
+    creatorId: APP_CREATOR_ID, creatorName: 'Bolão FC',
+    creatorPixKey: '', game: g, amount,
+    maxPart: 99999, hasPw: false, pw: '',
+    pointsExact: 3, pointsResult: 1,
+    participants: [], messages: [], result: null, status: 'open',
+    isAppBolao: true,
+  };
+}
+
+async function initAppBoloes() {
+  // Pull existing app bolões from Supabase
+  if(_sb) {
+    try {
+      const {data} = await _sb.from('boloes').select('*').eq('creator_id', APP_CREATOR_ID);
+      if(data) data.forEach(row=>{
+        const b = _sbRowToBolao(row);
+        b.isAppBolao = true;
+        if(!state.boloes.find(x=>x.id===b.id)) state.boloes.push(b);
+        else Object.assign(state.boloes.find(x=>x.id===b.id), b);
+      });
+    } catch(_) {}
+  }
+  // Auto-create for upcoming games
+  const upcoming = GAMES.filter(g=>!isBetClosed(g));
+  const toCreate = [];
+  upcoming.forEach(g=>{
+    APP_AMOUNTS.forEach(amount=>{
+      const id = _appBolaoId(g.id, amount);
+      if(!state.boloes.find(x=>x.id===id)) {
+        const b = _genAppBolao(g, amount);
+        state.boloes.push(b);
+        toCreate.push(b);
+      }
+    });
+  });
+  if(_sb && toCreate.length) {
+    toCreate.forEach(b=>_sb.from('boloes').upsert(_bolaoToSbRow(b),{onConflict:'id'}).then(()=>{}));
+  }
+}
+
+function openAppBoloes() {
+  go('s-app-boloes');
+  renderAppBoloes();
+}
+
+function renderAppBoloes() {
+  const el = document.getElementById('app-boloes-list');
+  if(!el) return;
+  const upcoming = GAMES.filter(g=>!isBetClosed(g)).slice(0,20);
+  if(upcoming.length===0) {
+    el.innerHTML='<div style="text-align:center;color:var(--text3);padding:32px 0">Nenhum jogo disponível no momento</div>';
+    return;
+  }
+  el.innerHTML = upcoming.map(g=>{
+    const boloes = APP_AMOUNTS.map(amount=>{
+      const id = _appBolaoId(g.id, amount);
+      const b = state.boloes.find(x=>x.id===id);
+      const joined = b?.participants.find(p=>p.email===state.user?.email);
+      const cnt = b?.participants.length||0;
+      return `<button class="app-tier-btn tier-${amount}" onclick="enterAppBolao('${g.id}',${amount})">
+        R$${amount}<br><span style="font-size:10px;font-weight:600">${joined?'✅ ':''} ${cnt} jog.</span>
+      </button>`;
+    }).join('');
+    return `<div class="app-bolao-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;color:var(--text3);font-weight:600">${g.stage} · ${g.date} ${g.time}</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="text-align:center;flex:1">
+          <div style="font-size:22px">${g.home.flag}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${g.home.name}</div>
+        </div>
+        <div style="font-size:12px;font-weight:900;color:var(--text3)">VS</div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:22px">${g.away.flag}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${g.away.name}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">${boloes}</div>
+    </div>`;
+  }).join('');
+}
+
+function enterAppBolao(gameId, amount) {
+  const id = _appBolaoId(gameId, amount);
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
+  if(isBetClosed(b.game)) { showToast('⏰ Apostas encerradas'); return; }
+  const already = b.participants.find(p=>p.email===state.user?.email);
+  if(already) {
+    state.currentBolaoId = id;
+    go('s-detail');
+    renderDetail();
+    return;
+  }
+  showTermsModal(()=>{
+    b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
+    addSystemMessage(id,`🎉 ${state.user.name} entrou no bolão!`);
+    saveBoloes(b);
+    state.currentBolaoId = id;
+    go('s-detail');
+    renderDetail();
+    showToast('✅ Você entrou no Bolão do App!');
+  });
+}
+
+// ===== RANKING GLOBAL =====
+function _calcRanking(boloes) {
+  const scores = {};
+  boloes.forEach(b=>{
+    if(!b.result) return;
+    (b.participants||[]).forEach(p=>{
+      if(!scores[p.email]) scores[p.email]={email:p.email,name:p.name,photo:p.photo,pts:0,exact:0,boloes:0,wins:0};
+      const pts=calcPoints(p,b.result,b);
+      scores[p.email].pts+=pts;
+      scores[p.email].boloes++;
+      if(p.homeScore===b.result.home&&p.awayScore===b.result.away) scores[p.email].exact++;
+    });
+    // mark wins
+    const ranked=(b.participants||[]).map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
+    if(ranked[0]?.pts>0 && scores[ranked[0].email]) scores[ranked[0].email].wins++;
+  });
+  return Object.values(scores).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
+}
+
+async function fetchGlobalRanking() {
+  let boloes = state.boloes;
+  if(_sb) {
+    try {
+      const {data}=await _sb.from('boloes').select('participants,result,points_exact,points_result').not('result','is',null);
+      if(data) boloes=data.map(r=>({participants:r.participants||[],result:r.result,pointsExact:r.points_exact??3,pointsResult:r.points_result??1}));
+    } catch(_){}
+  }
+  return _calcRanking(boloes);
+}
+
+function _rankTitle(i) {
+  if(i===0) return ['rank-badge-gold','🏅 Bola de Ouro'];
+  if(i===1) return ['rank-badge-silver','🥈 Bola de Prata'];
+  if(i===2) return ['rank-badge-bronze','🥉 Bola de Bronze'];
+  return [null,`${i+1}° Colocado`];
+}
+
+async function openRanking() {
+  go('s-ranking');
+  updateGlobalNav('s-ranking');
+  const el=document.getElementById('ranking-screen-content');
+  if(el) el.innerHTML='<div style="text-align:center;color:var(--text3);padding:48px 0">⏳ Calculando ranking...</div>';
+  const data=await fetchGlobalRanking();
+  if(!el) return;
+  if(data.length===0){
+    el.innerHTML='<div style="text-align:center;color:var(--text3);padding:48px 0">Ainda sem pontuações. Participe dos bolões! 🏆</div>';
+    return;
+  }
+  const top10=data.slice(0,10);
+  const myPos=data.findIndex(x=>x.email===state.user?.email);
+  const myEntry=myPos>=0?`<div class="rank-card" style="border-color:var(--primary);margin-bottom:16px">
+    ${_avHtml(data[myPos].email,data[myPos].name,data[myPos].photo,44)}
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:var(--text)">Você · ${data[myPos].name.split(' ')[0]}</div>
+      <div style="font-size:11px;color:var(--text3)">${data[myPos].boloes} bolão${data[myPos].boloes!==1?'s':''} · ${data[myPos].exact} exatos</div>
+    </div>
+    <div>
+      <div style="font-size:18px;font-weight:900;color:var(--secondary)">${data[myPos].pts}pts</div>
+      <div style="font-size:11px;color:var(--text3);text-align:right">${_rankTitle(myPos)[1]}</div>
+    </div>
+  </div>`:'';
+  const rows=top10.map((p,i)=>{
+    const [cls,title]=_rankTitle(i);
+    return `<div class="rank-card">
+      ${_avHtml(p.email,p.name,p.photo,44)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(p.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">${p.boloes} bolão${p.boloes!==1?'s':''} · ${p.exact} placar${p.exact!==1?'es':''} exato${p.exact!==1?'s':''}</div>
+        ${cls?`<span class="${cls}" style="margin-top:4px;display:inline-block">${title}</span>`:`<span style="font-size:11px;color:var(--text3)">${title}</span>`}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:18px;font-weight:900;color:${i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--text)'}">${p.pts}</div>
+        <div style="font-size:10px;color:var(--text3)">pontos</div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`${myEntry}<div class="section-title">Top 10 Jogadores</div>${rows}`;
+}
+
+// ===== PÓDIO HOME =====
+async function renderPodium() {
+  const el=document.getElementById('home-podium');
+  if(!el) return;
+  const data=await fetchGlobalRanking();
+  if(data.length<1){el.innerHTML='';return;}
+  const [p1,p2,p3]=[data[0],data[1],data[2]];
+  function slot(p,rank,cls) {
+    if(!p) return `<div class="podium-slot podium-slot-${rank}"></div>`;
+    const size=rank===1?72:rank===2?60:54;
+    const av=p.photo
+      ?`<img src="${p.photo}" class="podium-av-${rank}" alt="${esc(p.name)}">`
+      :`<div class="podium-av-${rank}" style="background:${_avColor(p.email)};display:flex;align-items:center;justify-content:center;font-size:${rank===1?26:22}px;font-weight:900;color:#fff">${p.name.charAt(0).toUpperCase()}</div>`;
+    const trophy=rank===1?'<div style="font-size:20px;text-align:center;margin-bottom:2px">🏆</div>':'';
+    return `<div class="podium-slot podium-slot-${rank}" onclick="openRanking()">
+      ${trophy}
+      ${av}
+      <div class="podium-title-${rank}">${rank===1?'Bola de Ouro':rank===2?'Bola de Prata':'Bola de Bronze'}</div>
+      <div class="podium-name">${esc(p.name.split(' ')[0])}</div>
+      <div class="podium-pts">${p.pts}pts</div>
+    </div>`;
+  }
+  el.innerHTML=`<div class="podium-section">
+    <div class="podium-header">
+      <div style="font-size:13px;font-weight:800;color:var(--text)">🏅 Ranking Global</div>
+      <button class="btn-link" onclick="openRanking()" style="font-size:12px">Ver todos →</button>
+    </div>
+    <div class="podium-wrap">
+      ${slot(p2,2)}
+      ${slot(p1,1)}
+      ${slot(p3,3)}
+    </div>
+  </div>`;
 }
 
 // ===== SYSTEM MESSAGES =====
