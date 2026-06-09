@@ -2747,9 +2747,8 @@ async function openPix(id) {
       ${copiaCola}
       <div id="pix-timer" style="text-align:center;font-size:26px;font-weight:900;color:var(--secondary);letter-spacing:2px;margin:8px 0">10:00</div>
       <div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:12px">tempo para pagar · confirmação automática</div>
-      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. O pagamento é confirmado automaticamente.</div>
-      <button class="btn btn-pix" style="width:100%;margin-top:8px" onclick="confirmPix()">✅ Já paguei</button>
-      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
+      <div class="pix-info">Escaneie o QR Code ou copie o código no seu banco. O pagamento é confirmado automaticamente — não é necessário nenhuma ação.</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:12px" onclick="back()">Cancelar</button>`;
 
     let secsLeft = 600;
     state.pixTimerInterval = setInterval(() => {
