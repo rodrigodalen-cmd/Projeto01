@@ -4100,8 +4100,37 @@ function obClose() {
   document.getElementById('ob-overlay').style.display = 'none';
 }
 
+// ===== SERVICE WORKER =====
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    if (reg.waiting) _showUpdateBanner();
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw.addEventListener('statechange', () => {
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) _showUpdateBanner();
+      });
+    });
+    setInterval(() => reg.update(), 60000);
+  }).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+}
+function _showUpdateBanner() {
+  if (document.getElementById('sw-update-banner')) return;
+  const el = document.createElement('div');
+  el.id = 'sw-update-banner';
+  el.style.cssText = 'position:fixed;bottom:72px;left:12px;right:12px;z-index:9998;background:#152536;border:1.5px solid #00A651;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 24px rgba(0,0,0,.5)';
+  el.innerHTML = '<span style="flex:1;font-size:13px;color:#fff;font-weight:600">🔄 Nova versão disponível!</span><button onclick="applySwUpdate()" style="background:#006B3F;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">Atualizar</button>';
+  document.body.appendChild(el);
+}
+async function applySwUpdate() {
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (reg?.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async ()=>{
+  registerSW();
   initSupabase();
   loadPersistedData();
 
@@ -4122,14 +4151,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
         }
         await loginSuccess();
-        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
     }
     // Supabase configured but session missing/expired — show login
     updateGlobalNav('s-login');
     updateFloatingAvatar();
-    if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
     return;
   }
 
@@ -4142,7 +4169,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       if(found) {
         state.user = {...found};
         await loginSuccess();
-        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
         return;
       }
       clearSession();
@@ -4151,7 +4177,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   updateGlobalNav('s-login');
   updateFloatingAvatar();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 </script>
 
