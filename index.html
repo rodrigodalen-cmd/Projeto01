@@ -748,9 +748,9 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="chip-btn active" onclick="setHomeFilter('all',this)">Todos</button>
       <button class="chip-btn" onclick="setHomeFilter('mine',this)">Meus</button>
       <button class="chip-btn" onclick="setHomeFilter('open',this)">Abertos</button>
-      <button class="chip-btn" onclick="setHomeFilter('closed',this)">Encerrados</button>
     </div>
     <div id="my-boloes-list"></div>
+    <div id="home-history"></div>
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
@@ -1602,54 +1602,89 @@ function setHomeFilter(filter, btn) {
   state.homeFilter = filter;
   document.querySelectorAll('#home-filters .chip-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
+  else document.querySelector('#home-filters .chip-btn')?.classList.add('active');
   renderMyBoloes();
 }
 
 function renderMyBoloes() {
   const el = document.getElementById('my-boloes-list');
-  const allMine = state.boloes.filter(b=> b.creatorId===state.user?.email || b.participants.find(p=>p.email===state.user?.email));
+  const histEl = document.getElementById('home-history');
+  const email = state.user?.email;
+  // Season bolões handled separately — exclude from this list
+  const allMine = state.boloes.filter(b=>
+    !b.isSeason &&
+    (b.creatorId===email || b.participants.find(p=>p.email===email))
+  );
+  // Active: no result yet (open or awaiting)
+  const active = allMine.filter(b=>!b.result);
+  // History: has result (game finished)
+  const history = allMine.filter(b=>!!b.result)
+    .sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+
   const f = state.homeFilter||'all';
-  const mine = f==='mine' ? allMine.filter(b=>b.creatorId===state.user?.email)
-    : f==='open' ? allMine.filter(b=>b.status==='open')
-    : f==='closed' ? allMine.filter(b=>b.status==='finished')
-    : allMine;
-  if(mine.length===0) {
+  const filtered = f==='mine' ? active.filter(b=>b.creatorId===email)
+    : f==='open' ? active.filter(b=>b.status==='open')
+    : active;
+
+  if(filtered.length===0) {
     el.innerHTML = f==='all'
       ? `<div class="empty-box">
            <div class="empty-icon">🎯</div>
-           <div class="empty-title">Nenhum bolão ainda</div>
+           <div class="empty-title">Nenhum bolão ativo</div>
            <div class="empty-text">Crie um bolão ou entre com um código de convite</div>
            <button class="btn btn-ghost btn-sm" onclick="go('s-join')">Entrar com código</button>
          </div>`
       : `<div class="empty-box"><div class="empty-text">Nenhum bolão nesta categoria</div></div>`;
-    return;
-  }
-  el.innerHTML = mine.map(b=>{
-    const paidCount = b.participants.filter(p=>p.paid).length;
-    const isCreator = b.creatorId === state.user?.email;
-    const me = b.participants.find(p=>p.email===state.user?.email);
-    const hasPaid = me?.paid||false;
-    return `<div class="card" onclick="openDetail('${b.id}')" style="cursor:pointer">
-      <div class="bolao-header">
-        <div>
-          <span class="bolao-title">${esc(b.title)}</span>
-          ${isCreator?'<span class="badge badge-green" style="margin-left:6px;font-size:9px">Criador</span>':''}
+  } else {
+    el.innerHTML = filtered.map(b=>{
+      const paidCount = b.participants.filter(p=>p.paid).length;
+      const isCreator = b.creatorId===email;
+      const me = b.participants.find(p=>p.email===email);
+      const hasPaid = me?.paid||false;
+      return `<div class="card" onclick="openDetail('${b.id}')" style="cursor:pointer">
+        <div class="bolao-header">
+          <div>
+            <span class="bolao-title">${esc(b.title)}</span>
+            ${isCreator?'<span class="badge badge-green" style="margin-left:6px;font-size:9px">Criador</span>':''}
+          </div>
+          <span class="badge badge-green">Aberto</span>
         </div>
-        <span class="badge ${b.status==='open'?'badge-green':b.status==='closed'?'badge-yellow':'badge-red'}">${b.status==='open'?'Aberto':'Finalizado'}</span>
-      </div>
-      <div class="bolao-match">${b.game.home.flag} ${b.game.home.code} vs ${b.game.away.code} ${b.game.away.flag}</div>
-      <div class="stats-row">
-        <div class="stat"><div class="stat-val">R$${b.amount}</div><div class="stat-lbl">por aposta</div></div>
-        <div class="stat-div"></div>
-        <div class="stat"><div class="stat-val" style="color:var(--gold)">R$${fmtPrize(b)}</div><div class="stat-lbl">prêmio</div></div>
-        <div class="stat-div"></div>
-        <div class="stat"><div class="stat-val">${paidCount}/${b.maxPart}</div><div class="stat-lbl">pagantes</div></div>
-      </div>
-      ${me?`<div style="margin-top:8px;padding:6px 10px;border-radius:8px;background:${hasPaid?'rgba(39,174,96,.1)':'rgba(243,156,18,.1)'};color:${hasPaid?'var(--ok)':'var(--warn)'};font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px">
-        ${hasPaid?'✅ Pix confirmado':'⏳ Aguardando pagamento'}
-      </div>`:''}
-    </div>`;
-  }).join('');
+        <div class="bolao-match">${b.game.home.flag} ${b.game.home.code} vs ${b.game.away.code} ${b.game.away.flag}</div>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-val">R$${b.amount}</div><div class="stat-lbl">por aposta</div></div>
+          <div class="stat-div"></div>
+          <div class="stat"><div class="stat-val" style="color:var(--gold)">R$${fmtPrize(b)}</div><div class="stat-lbl">prêmio</div></div>
+          <div class="stat-div"></div>
+          <div class="stat"><div class="stat-val">${paidCount}/${b.maxPart}</div><div class="stat-lbl">pagantes</div></div>
+        </div>
+        ${me?`<div style="margin-top:8px;padding:6px 10px;border-radius:8px;background:${hasPaid?'rgba(39,174,96,.1)':'rgba(243,156,18,.1)'};color:${hasPaid?'var(--ok)':'var(--warn)'};font-size:11px;font-weight:700">
+          ${hasPaid?'✅ Pix confirmado':'⏳ Aguardando pagamento'}
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // History section — compact, no interaction
+  if(histEl) {
+    if(!history.length) { histEl.innerHTML=''; return; }
+    const rows = history.slice(0,10).map(b=>{
+      const ranked = b.participants
+        .map(p=>({...p,pts:calcPoints(p,b.result,b)}))
+        .sort((a,c)=>c.pts-a.pts);
+      const winner = ranked[0];
+      const me = b.participants.find(p=>p.email===email);
+      const myPts = me ? calcPoints(me,b.result,b) : null;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:12px;border:1px solid var(--border);margin-bottom:6px;opacity:.75" onclick="openDetail('${b.id}')" style="cursor:pointer">
+        <div style="font-size:20px">${b.game.home.flag}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${b.game.home.name} ${b.result.home}×${b.result.away} ${b.game.away.name}</div>
+          <div style="font-size:11px;color:var(--text3)">🏆 ${esc(winner?.name||'—')} · ${myPts!=null?`você: ${myPts}pts`:''}</div>
+        </div>
+        <div style="font-size:10px;color:var(--text3)">›</div>
+      </div>`;
+    }).join('');
+    histEl.innerHTML=`<div class="section-title" style="margin-top:16px;opacity:.7">Histórico</div>${rows}`;
+  }
 }
 
 function renderGames() {
