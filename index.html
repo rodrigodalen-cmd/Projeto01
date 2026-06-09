@@ -2914,14 +2914,15 @@ function updateProfileUI() {
   document.getElementById('prof-phone').textContent = u.phone||'-';
   document.getElementById('prof-pix').textContent = u.pix||'-';
   const mine = state.boloes.filter(b=>b.creatorId===u.email||b.participants.find(p=>p.email===u.email));
-  const criados = mine.filter(b=>b.creatorId===u.email).length;
-  const partic = mine.filter(b=>b.creatorId!==u.email).length;
+  const regular = mine.filter(b=>!b.isSeason);
+  const criados = regular.filter(b=>b.creatorId===u.email).length;
+  const partic = regular.filter(b=>b.creatorId!==u.email).length;
   const total = mine.reduce((s,b)=>{const m=b.participants.find(p=>p.email===u.email);return s+(m?.paid?b.amount:0)},0);
   document.getElementById('prof-criados').innerHTML=`<div class="stat-val">${criados}</div><div class="stat-lbl">Criados</div>`;
   document.getElementById('prof-partic').innerHTML=`<div class="stat-val">${partic}</div><div class="stat-lbl">Particip.</div>`;
   document.getElementById('prof-total').innerHTML=`<div class="stat-val">R$${total}</div><div class="stat-lbl">Apostado</div>`;
-  // Performance stats
-  const withResult = mine.filter(b=>b.result);
+  // Performance stats (regular bolões only — season uses separate ranking)
+  const withResult = regular.filter(b=>b.result);
   let totalPts=0, exactHits=0, bestRank=null;
   withResult.forEach(b=>{
     const me2=b.participants.find(p=>p.email===u.email);
@@ -4607,6 +4608,21 @@ function renderBetHistory() {
   }
   el.innerHTML = mine.map(b=>{
     const me = b.participants.find(p=>p.email===u.email);
+    // Season bolões: show differently since they have multiple games
+    if(b.isSeason) {
+      const totalPts = _calcSeasonPts(me, b);
+      const paidBets = Object.keys(me?.bets||{}).length;
+      return `<div class="history-row" onclick="openSeasonBolao('${b.id}')">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
+          <div style="font-size:11px;color:var(--text3)">⚽ Bolão da Copa do Mundo · ${paidBets} palpite${paidBets!==1?'s':''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:700;color:var(--secondary)">${totalPts}pts</div>
+          <div style="font-size:10px;color:${me?.paid?'var(--ok)':'var(--warn)'};margin-top:2px">${me?.paid?'Pago':'Pendente'}</div>
+        </div>
+      </div>`;
+    }
     const pts = b.result ? calcPoints(me, b.result, b) : null;
     const ptExact = b.pointsExact??3; const ptResult = b.pointsResult??1;
     const statusColor = pts===null?'var(--text3)':pts===ptExact?'var(--ok)':pts===ptResult?'var(--warn)':'var(--err)';
@@ -4614,7 +4630,7 @@ function renderBetHistory() {
     return `<div class="history-row" onclick="openDetail('${b.id}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
-        <div style="font-size:11px;color:var(--text3)">${b.game.home.flag} ${b.game.home.code} × ${b.game.away.code} ${b.game.away.flag} · ${b.game.date}</div>
+        <div style="font-size:11px;color:var(--text3)">${b.game?.home?.flag||''} ${b.game?.home?.code||''} × ${b.game?.away?.code||''} ${b.game?.away?.flag||''} · ${b.game?.date||''}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${me?.homeScore!=null?`Palpite: ${me.homeScore} × ${me.awayScore}`:'Sem palpite'}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
