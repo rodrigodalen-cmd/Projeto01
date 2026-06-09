@@ -2790,30 +2790,39 @@ async function openPix(id) {
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/dynamic-processor`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/efi-pix`, {
       method:'POST',
       headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
       body: JSON.stringify({
+        action: 'create',
         bolaoId: b.id,
         amount: b.amount,
-        payerEmail: state.user.email,
-        description: `Bolão: ${b.title}`,
+        description: `Bolão FC – ${b.title} – R$${b.amount}`,
       }),
     });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
+
+    // Store txid on participant so webhook can find it later
+    state.pixTxid = data.txid || null;
+    if(data.txid && _sb) {
+      const me2 = (b.participants||[]).find(p=>p.email===state.user?.email);
+      if(me2) {
+        me2.pixTxid = data.txid;
+        _sb.from('boloes').update({participants:b.participants}).eq('id',b.id).catch(()=>{});
+      }
+    }
+
     const qrHtml = data.qrCodeBase64
       ? `<img src="data:image/png;base64,${data.qrCodeBase64}" style="width:200px;height:200px;border-radius:12px;margin:8px auto;display:block;background:#fff;padding:8px">`
-      : data.ticketUrl
-        ? `<a href="${data.ticketUrl}" target="_blank" style="display:block;text-align:center;margin:16px 0"><button class="btn btn-pix" style="width:auto;padding:14px 28px">📲 Abrir página de pagamento</button></a>`
-        : `<div class="qr-mock"><span style="font-size:80px;line-height:1">📱</span></div>`;
-    const copiaCola = data.qrCode
+      : `<div class="qr-mock"><span style="font-size:80px;line-height:1">📱</span></div>`;
+    const copiaCola = data.copiaECola
       ? `<div style="margin:12px 0;text-align:center">
           <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pix Copia e Cola</div>
-          <div style="background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;max-height:72px;overflow:hidden">${data.qrCode}</div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pix="${data.qrCode}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('✅ Código copiado!'))">📋 Copiar código PIX</button>
+          <div style="background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;max-height:72px;overflow:hidden">${data.copiaECola}</div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pix="${data.copiaECola}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('✅ Código copiado!'))">📋 Copiar código PIX</button>
         </div>`
-      : `<div style="background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.3);border-radius:10px;padding:12px;margin:12px 0;font-size:12px;color:var(--warn);text-align:center">⚠️ PIX não configurado para API${data.status?` · status: ${data.status}${data.statusDetail?'/'+data.statusDetail:''}`:''}</div>`;
+      : '';
     document.getElementById('pix-content').innerHTML=`
       <div class="pix-icon">🏦</div>
       <div class="pix-title">Pagamento via Pix</div>
@@ -2849,13 +2858,15 @@ async function openPix(id) {
 
     state.pixPollInterval = setInterval(async () => {
       try {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/boloes?id=eq.${b.id}&select=participants`, {
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        const txid = state.pixTxid;
+        if(!txid) return;
+        const r = await fetch(`${SUPABASE_URL}/functions/v1/efi-pix`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+          body: JSON.stringify({ action:'status', txid }),
         });
-        const rows = await r.json();
-        if(!rows?.length) return;
-        const paidMe = (rows[0].participants || []).find(p => p.email === state.user.email);
-        if(paidMe?.paid) {
+        const statusData = await r.json();
+        if(statusData.paid) {
           clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
           clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
           _autoConfirmPix(b.id);
