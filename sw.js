@@ -1,4 +1,4 @@
-const CACHE = 'bolao-fc-v3';
+const CACHE = 'bolao-fc-v4';
 const STATIC = [
   './', './index.html', './manifest.json', './icon.svg', './icon-maskable.svg',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
@@ -6,8 +6,9 @@ const STATIC = [
 ];
 
 self.addEventListener('install', e => {
+  // Ativa imediatamente sem esperar — força troca da versão antiga
+  self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC).catch(() => {})));
-  // Não ativa automaticamente — espera sinal da página
 });
 
 self.addEventListener('message', e => {
@@ -27,7 +28,7 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
-  // Não cacheia chamadas de API dinâmicas
+  // Nunca cacheia APIs dinâmicas
   if (url.hostname.includes('espn.com') ||
       url.hostname.includes('supabase.co') ||
       url.pathname.includes('/functions/') ||
@@ -36,10 +37,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // HTML (navegação): network-first — sempre busca versão mais recente
+  // HTML (navegação): sempre busca da rede — cache só como fallback offline
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, {cache: 'no-cache'})
         .then(res => {
           if (res.ok) {
             const clone = res.clone();
