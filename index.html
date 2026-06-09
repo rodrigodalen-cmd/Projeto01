@@ -1555,13 +1555,30 @@ async function doLogin() {
       let email = identifier.toLowerCase();
       if(!identifier.includes('@')) {
         const cleanCPF = identifier.replace(/\D/g,'');
-        const { data: emailData, error: rpcErr } = await _sbCall(_sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF}));
-        if(rpcErr || !emailData) { showToast('❌ Dados incorretos'); return; }
+        // Retry silencioso até 3x (Supabase cold start pode demorar na 1ª chamada)
+        let emailData = null, rpcErr = null;
+        for(let i = 0; i < 3; i++) {
+          if(i > 0) await new Promise(r => setTimeout(r, 1500));
+          const res = await _sbCall(_sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF}), 18000);
+          emailData = res.data; rpcErr = res.error;
+          if(!rpcErr && emailData) break;
+          if(rpcErr && rpcErr.message !== 'timeout') break;
+        }
+        if(rpcErr || !emailData) { showToast('❌ CPF ou senha incorretos'); return; }
         email = emailData;
       }
-      const { data, error } = await _sbCall(_sb.auth.signInWithPassword({email, password: pass}));
-      if(error) { showToast('❌ Dados incorretos'); return; }
-      const { data: profile } = await _sbCall(_sb.from('profiles').select('*').eq('id', data.user.id).single());
+      // Retry signIn até 3x
+      let authData = null, authErr = null;
+      for(let i = 0; i < 3; i++) {
+        if(i > 0) await new Promise(r => setTimeout(r, 1500));
+        const res = await _sbCall(_sb.auth.signInWithPassword({email, password: pass}), 18000);
+        authData = res.data; authErr = res.error;
+        if(!authErr) break;
+        if(authErr.message !== 'timeout') break;
+      }
+      if(authErr) { showToast('❌ E-mail ou senha incorretos'); return; }
+      const data = authData;
+      const { data: profile } = await _sbCall(_sb.from('profiles').select('*').eq('id', data.user.id).single(), 18000);
       if(!profile) { showToast('❌ Perfil não encontrado'); return; }
       state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
       if(!state.user.photo) {
@@ -1584,10 +1601,7 @@ async function doLogin() {
     if(remember) saveSession(state.user); else clearSession();
     await loginSuccess();
   } catch(e) {
-    const msg = e?.message === 'timeout'
-      ? '⏱️ Sem resposta do servidor — verifique sua conexão'
-      : '❌ Erro ao entrar. Tente novamente';
-    showToast(msg);
+    showToast('⏱️ Sem conexão — verifique o sinal e tente novamente');
   } finally {
     if(btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
   }
