@@ -2957,22 +2957,21 @@ async function fetchTabelaScores() {
         b.result = {home: sc.h, away: sc.a};
         b.status = 'finished';
         const g = GAMES.find(x=>x.id===b.game.id);
-        // Find winner
+        // Find winner — sempre tem um (mais pontos; empate = quem entrou primeiro)
         const ranked = (b.participants||[])
-          .map(p=>({...p, pts:calcPoints(p,b.result,b)}))
-          .sort((a,c)=>c.pts-a.pts);
+          .map((p,i)=>({...p, pts:calcPoints(p,b.result,b), entryIdx:i}))
+          .sort((a,c)=>c.pts-a.pts||a.entryIdx-c.entryIdx);
         const winner = ranked[0];
         const prize = fmtPrize(b);
-        if(g) {
+        if(g && winner) {
           const scoreStr = `${g.home.flag} ${sc.h}×${sc.a} ${g.away.flag}`;
           addSystemMessage(b.id, `⚽ Resultado final: ${scoreStr}`);
-          if(winner?.pts > 0) {
-            addSystemMessage(b.id, `🏆 ${esc(winner.name)} venceu com ${winner.pts} ponto${winner.pts!==1?'s':''}! Prêmio: R$${prize}`);
-            if(winner.email === state.user?.email) {
-              _localNotify('🏆 Você venceu!', `Bolão "${b.title}" — prêmio R$${prize}`);
-            }
-          } else {
-            addSystemMessage(b.id, `Nenhum palpite correto. Prêmio não distribuído.`);
+          const ptsLabel = winner.pts > 0
+            ? `${winner.pts} ponto${winner.pts!==1?'s':''}`
+            : 'desempate por ordem de entrada';
+          addSystemMessage(b.id, `🏆 ${esc(winner.name)} venceu (${ptsLabel})! Prêmio: R$${prize}`);
+          if(winner.email === state.user?.email) {
+            _localNotify('🏆 Você venceu!', `Bolão "${b.title}" — prêmio R$${prize}`);
           }
         }
         _toSync.push(b);
