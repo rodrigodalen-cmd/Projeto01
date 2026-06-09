@@ -500,7 +500,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <input type="checkbox" id="li-remember" style="width:16px;height:16px;accent-color:var(--primary)" checked>
       <span style="color:var(--text2);font-size:13px">Permanecer logado</span>
     </label>
-    <button class="btn btn-primary" style="margin-bottom:20px" onclick="doLogin()">Entrar</button>
+    <button class="btn btn-primary" id="login-btn" style="margin-bottom:20px" onclick="doLogin()">Entrar</button>
     <div class="divider"><div class="div-line"></div><span class="div-text">ou</span><div class="div-line"></div></div>
     <button class="btn btn-outline" onclick="goRegister()">Criar conta gratuita</button>
     <p style="text-align:center;margin-top:12px"><button class="btn-link" onclick="go('s-forgot')">Esqueci minha senha</button></p>
@@ -1519,40 +1519,48 @@ async function doLogin() {
   const identifier = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
   const remember = document.getElementById('li-remember')?.checked;
+  const btn = document.getElementById('login-btn');
 
-  if(_sb) {
-    let email = identifier.toLowerCase();
-    if(!identifier.includes('@')) {
-      // Login via CPF: get email from profiles
-      const cleanCPF = identifier.replace(/\D/g,'');
-      const { data: emailData, error: rpcErr } = await _sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF});
-      if(rpcErr || !emailData) { showToast('❌ Dados incorretos'); return; }
-      email = emailData;
+  if(!identifier || !pass) { showToast('⚠️ Preencha e-mail/CPF e senha'); return; }
+
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Entrando...'; }
+
+  try {
+    if(_sb) {
+      let email = identifier.toLowerCase();
+      if(!identifier.includes('@')) {
+        const cleanCPF = identifier.replace(/\D/g,'');
+        const { data: emailData, error: rpcErr } = await _sb.rpc('get_email_by_cpf', {p_cpf: cleanCPF});
+        if(rpcErr || !emailData) { showToast('❌ Dados incorretos'); return; }
+        email = emailData;
+      }
+      const { data, error } = await _sb.auth.signInWithPassword({email, password: pass});
+      if(error) { showToast('❌ Dados incorretos'); return; }
+      const { data: profile } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
+      if(!profile) { showToast('❌ Perfil não encontrado'); return; }
+      state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+      if(!state.user.photo) {
+        try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
+      }
+      if(remember) saveSession(state.user); else clearSession();
+      await loginSuccess();
+      return;
     }
-    const { data, error } = await _sb.auth.signInWithPassword({email, password: pass});
-    if(error) { showToast('❌ Dados incorretos'); return; }
-    const { data: profile } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
-    if(!profile) { showToast('❌ Perfil não encontrado'); return; }
-    state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
-    if(!state.user.photo) {
-      try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
-    }
+
+    // Local auth fallback
+    const isCPF = !identifier.includes('@');
+    const cleanCPF = identifier.replace(/\D/g,'');
+    const u = USERS.find(u =>
+      (isCPF ? u.cpf?.replace(/\D/g,'') === cleanCPF : u.email === identifier.toLowerCase())
+      && u.pass === pass
+    );
+    if(!u) { showToast('❌ Dados incorretos'); return; }
+    state.user = {...u};
     if(remember) saveSession(state.user); else clearSession();
     await loginSuccess();
-    return;
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
   }
-
-  // Local auth fallback
-  const isCPF = !identifier.includes('@');
-  const cleanCPF = identifier.replace(/\D/g,'');
-  const u = USERS.find(u =>
-    (isCPF ? u.cpf?.replace(/\D/g,'') === cleanCPF : u.email === identifier.toLowerCase())
-    && u.pass === pass
-  );
-  if(!u) { showToast('❌ Dados incorretos'); return; }
-  state.user = {...u};
-  if(remember) saveSession(state.user); else clearSession();
-  await loginSuccess();
 }
 
 function fmtCPF(input) {
