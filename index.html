@@ -1025,6 +1025,20 @@ input:checked+.slider:before{transform:translateX(18px)}
   </div>
 </div>
 
+<!-- === DETALHE BOLÃO DA COPA (SEASON) === -->
+<div class="screen" id="s-season-detail">
+  <div class="topbar">
+    <button class="back-btn" onclick="back()">←</button>
+    <span class="topbar-title" id="season-topbar-title">Bolão da Copa</span>
+  </div>
+  <div class="scroll" style="padding-bottom:48px">
+    <div id="season-prize-banner"></div>
+    <div id="season-current-game"></div>
+    <div id="season-ranking"></div>
+    <div id="season-history"></div>
+  </div>
+</div>
+
 <!-- === RANKING GERAL === -->
 <div class="screen" id="s-ranking-geral">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">🏅 Ranking com Amigos</span></div>
@@ -1119,6 +1133,7 @@ function initSupabase() {
 
 // Convert Supabase row → local bolão object
 function _sbRowToBolao(row) {
+  const isSeason = !!(row.id?.startsWith('season-'));
   return {
     id: row.id, title: row.title, game: row.game,
     creatorId: row.creator_id, creatorName: row.creator_name,
@@ -1126,10 +1141,12 @@ function _sbRowToBolao(row) {
     maxPart: row.max_part, hasPw: row.has_pw, pw: row.pw||'',
     status: row.status, participants: row.participants||[],
     code: row.code, createdAt: row.created_at,
-    result: row.result||null,
+    result: isSeason ? null : (row.result||null),
+    results: isSeason ? (row.result && typeof row.result==='object' && !row.result.home ? row.result : {}) : undefined,
     pointsExact: row.points_exact??3,
     pointsResult: row.points_result??1,
-    messages: row.messages||[]
+    messages: row.messages||[],
+    isSeason, isAppBolao: isSeason
   };
 }
 
@@ -1142,7 +1159,7 @@ function _bolaoToSbRow(b) {
     max_part: b.maxPart, has_pw: b.hasPw, pw: b.pw||'',
     status: b.status, participants: b.participants,
     code: b.code, created_at: b.createdAt,
-    result: b.result||null,
+    result: b.isSeason ? (b.results||{}) : (b.result||null),
     points_exact: b.pointsExact??3,
     points_result: b.pointsResult??1,
     messages: b.messages||[]
@@ -1271,6 +1288,46 @@ const GAMES = [
   {id:'47', home:{name:'Panamá',code:'PAN',flag:'🇵🇦'}, away:{name:'Croácia',code:'CRO',flag:'🇭🇷'}, date:'23 Jun',time:'20:00',stage:'Fase de Grupos',group:'Grupo L',venue:'BMO Field, Toronto'},
   {id:'67', home:{name:'Panamá',code:'PAN',flag:'🇵🇦'}, away:{name:'Inglaterra',code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}, date:'27 Jun',time:'18:00',stage:'Fase de Grupos',group:'Grupo L',venue:'MetLife Stadium, Nova York'},
   {id:'68', home:{name:'Croácia',code:'CRO',flag:'🇭🇷'}, away:{name:'Gana',code:'GHA',flag:'🇬🇭'}, date:'27 Jun',time:'18:00',stage:'Fase de Grupos',group:'Grupo L',venue:'Lincoln Financial Field, Philadelphia'},
+
+  // === OITAVAS DE FINAL (Round of 32) ===
+  {id:'101',home:{name:'A Classificar',code:'1ºA',flag:'⚽'},away:{name:'A Classificar',code:'2ºC',flag:'⚽'},date:'1 Jul',time:'16:00',stage:'Oitavas de Final',venue:'MetLife Stadium, Nova York'},
+  {id:'102',home:{name:'A Classificar',code:'1ºB',flag:'⚽'},away:{name:'A Classificar',code:'2ºD',flag:'⚽'},date:'1 Jul',time:'19:00',stage:'Oitavas de Final',venue:'SoFi Stadium, Los Angeles'},
+  {id:'103',home:{name:'A Classificar',code:'1ºC',flag:'⚽'},away:{name:'A Classificar',code:'2ºA',flag:'⚽'},date:'1 Jul',time:'22:00',stage:'Oitavas de Final',venue:'AT&T Stadium, Arlington'},
+  {id:'104',home:{name:'A Classificar',code:'1ºD',flag:'⚽'},away:{name:'A Classificar',code:'2ºB',flag:'⚽'},date:'2 Jul',time:'00:00',stage:'Oitavas de Final',venue:'Hard Rock Stadium, Miami'},
+  {id:'105',home:{name:'A Classificar',code:'1ºE',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'2 Jul',time:'16:00',stage:'Oitavas de Final',venue:'Lumen Field, Seattle'},
+  {id:'106',home:{name:'A Classificar',code:'1ºF',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'2 Jul',time:'19:00',stage:'Oitavas de Final',venue:'NRG Stadium, Houston'},
+  {id:'107',home:{name:'A Classificar',code:'1ºG',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'2 Jul',time:'22:00',stage:'Oitavas de Final',venue:'Mercedes-Benz Stadium, Atlanta'},
+  {id:'108',home:{name:'A Classificar',code:'1ºH',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'3 Jul',time:'00:00',stage:'Oitavas de Final',venue:'Arrowhead Stadium, Kansas City'},
+  {id:'109',home:{name:'A Classificar',code:'1ºI',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'3 Jul',time:'16:00',stage:'Oitavas de Final',venue:'Lincoln Financial Field, Philadelphia'},
+  {id:'110',home:{name:'A Classificar',code:'1ºJ',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'3 Jul',time:'19:00',stage:'Oitavas de Final',venue:'Gillette Stadium, Boston'},
+  {id:'111',home:{name:'A Classificar',code:'1ºK',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'3 Jul',time:'22:00',stage:'Oitavas de Final',venue:'BC Place, Vancouver'},
+  {id:'112',home:{name:'A Classificar',code:'1ºL',flag:'⚽'},away:{name:'A Classificar',code:'3º X',flag:'⚽'},date:'4 Jul',time:'00:00',stage:'Oitavas de Final',venue:'BMO Field, Toronto'},
+  {id:'113',home:{name:'A Classificar',code:'2ºE',flag:'⚽'},away:{name:'A Classificar',code:'2ºF',flag:'⚽'},date:'4 Jul',time:'16:00',stage:'Oitavas de Final',venue:'Estadio Azteca, Cidade do México'},
+  {id:'114',home:{name:'A Classificar',code:'2ºG',flag:'⚽'},away:{name:'A Classificar',code:'2ºH',flag:'⚽'},date:'4 Jul',time:'19:00',stage:'Oitavas de Final',venue:'Estadio BBVA, Monterrey'},
+  {id:'115',home:{name:'A Classificar',code:'2ºI',flag:'⚽'},away:{name:'A Classificar',code:'2ºJ',flag:'⚽'},date:'4 Jul',time:'22:00',stage:'Oitavas de Final',venue:'Estadio Akron, Zapopan'},
+  {id:'116',home:{name:'A Classificar',code:'2ºK',flag:'⚽'},away:{name:'A Classificar',code:'2ºL',flag:'⚽'},date:'5 Jul',time:'00:00',stage:'Oitavas de Final',venue:'NRG Stadium, Houston'},
+
+  // === QUARTAS DE FINAL (Round of 16) ===
+  {id:'117',home:{name:'A Classificar',code:'Jogo 101',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 102',flag:'⚽'},date:'6 Jul',time:'16:00',stage:'Quartas de Final',venue:'MetLife Stadium, Nova York'},
+  {id:'118',home:{name:'A Classificar',code:'Jogo 103',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 104',flag:'⚽'},date:'6 Jul',time:'22:00',stage:'Quartas de Final',venue:'SoFi Stadium, Los Angeles'},
+  {id:'119',home:{name:'A Classificar',code:'Jogo 105',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 106',flag:'⚽'},date:'7 Jul',time:'16:00',stage:'Quartas de Final',venue:'AT&T Stadium, Arlington'},
+  {id:'120',home:{name:'A Classificar',code:'Jogo 107',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 108',flag:'⚽'},date:'7 Jul',time:'22:00',stage:'Quartas de Final',venue:'Hard Rock Stadium, Miami'},
+  {id:'121',home:{name:'A Classificar',code:'Jogo 109',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 110',flag:'⚽'},date:'8 Jul',time:'16:00',stage:'Quartas de Final',venue:'Lumen Field, Seattle'},
+  {id:'122',home:{name:'A Classificar',code:'Jogo 111',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 112',flag:'⚽'},date:'8 Jul',time:'22:00',stage:'Quartas de Final',venue:'Arrowhead Stadium, Kansas City'},
+  {id:'123',home:{name:'A Classificar',code:'Jogo 113',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 114',flag:'⚽'},date:'9 Jul',time:'16:00',stage:'Quartas de Final',venue:'NRG Stadium, Houston'},
+  {id:'124',home:{name:'A Classificar',code:'Jogo 115',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 116',flag:'⚽'},date:'9 Jul',time:'22:00',stage:'Quartas de Final',venue:'Mercedes-Benz Stadium, Atlanta'},
+
+  // === SEMIFINAIS ===
+  {id:'125',home:{name:'A Classificar',code:'Jogo 117',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 118',flag:'⚽'},date:'11 Jul',time:'22:00',stage:'Semifinal',venue:'MetLife Stadium, Nova York'},
+  {id:'126',home:{name:'A Classificar',code:'Jogo 119',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 120',flag:'⚽'},date:'12 Jul',time:'22:00',stage:'Semifinal',venue:'AT&T Stadium, Arlington'},
+  {id:'127',home:{name:'A Classificar',code:'Jogo 121',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 122',flag:'⚽'},date:'15 Jul',time:'20:00',stage:'Semifinal',venue:'SoFi Stadium, Los Angeles'},
+  {id:'128',home:{name:'A Classificar',code:'Jogo 123',flag:'⚽'},away:{name:'A Classificar',code:'Jogo 124',flag:'⚽'},date:'16 Jul',time:'20:00',stage:'Semifinal',venue:'Hard Rock Stadium, Miami'},
+
+  // === 3° LUGAR ===
+  {id:'131',home:{name:'A Classificar',code:'Semi 1',flag:'⚽'},away:{name:'A Classificar',code:'Semi 2',flag:'⚽'},date:'18 Jul',time:'20:00',stage:'3° Lugar',venue:'AT&T Stadium, Arlington'},
+
+  // === FINAL ===
+  {id:'132',home:{name:'A Classificar',code:'Semi 3',flag:'⚽'},away:{name:'A Classificar',code:'Semi 4',flag:'⚽'},date:'19 Jul',time:'20:00',stage:'🏆 Final',venue:'MetLife Stadium, Nova York'},
 ];
 
 const USERS = [];
@@ -2843,23 +2900,41 @@ async function fetchTabelaScores() {
         min: comp.status?.displayClock||''
       };
     });
-    // Auto-apply finished results to bolões that don't have one yet
-    let _anyAutoResult = false;
+    // Auto-apply finished results to ALL bolões (regular + season)
+    const _toSync = [];
     state.boloes.forEach(b => {
-      if(b.result || !b.game?.id) return;
-      const sc = _ls[b.game.id];
-      if(sc?.status !== 'FT') return;
-      b.result = {home: sc.h, away: sc.a};
-      b.status = 'finished';
-      const g = GAMES.find(x=>x.id===b.game.id);
-      if(g) addSystemMessage(b.id, `🤖 Resultado automático via ESPN: ${g.home.flag} ${sc.h} × ${sc.a} ${g.away.flag}`);
-      _anyAutoResult = true;
+      if(b.isSeason) {
+        // Season bolão: apply result to results map per gameId
+        if(!b.results) b.results = {};
+        let changed = false;
+        Object.entries(_ls).forEach(([gameId, sc]) => {
+          if(sc.status === 'FT' && b.results[gameId] === undefined) {
+            b.results[gameId] = {home: sc.h, away: sc.a};
+            changed = true;
+          }
+        });
+        if(changed) _toSync.push(b);
+      } else {
+        // Regular bolão: apply single result
+        if(b.result || !b.game?.id) return;
+        const sc = _ls[b.game.id];
+        if(sc?.status !== 'FT') return;
+        b.result = {home: sc.h, away: sc.a};
+        b.status = 'finished';
+        const g = GAMES.find(x=>x.id===b.game.id);
+        if(g) addSystemMessage(b.id, `🤖 Resultado automático via ESPN: ${g.home.flag} ${sc.h} × ${sc.a} ${g.away.flag}`);
+        _toSync.push(b);
+      }
     });
-    if(_anyAutoResult) saveBoloes();
+    if(_toSync.length) {
+      try{localStorage.setItem('bolao_boloes',JSON.stringify(state.boloes));}catch(e){}
+      if(_sb) _toSync.forEach(b=>_syncBolaoToSupabase(b).catch(()=>{}));
+    }
     const _curScreen = state.screenStack[state.screenStack.length-1];
     if(_curScreen === 's-tabela') renderTabela();
     renderLiveScores();
     if(state.currentBolaoId && _curScreen === 's-detail') renderDetail();
+    if(_curScreen === 's-season-detail') renderSeasonDetail();
   } catch(e) {}
 }
 
@@ -2997,15 +3072,27 @@ function drawerGo(tab) {
 function renderPublicBoloes() {
   const el = document.getElementById('public-boloes-list');
   if(!el) return;
-  const appBoloes = state.boloes.filter(b=>b.isAppBolao && !isBetClosed(b.game));
+  const seasonBoloes = state.boloes.filter(b=>b.isSeason);
   const publicBoloes = state.boloes.filter(b=>!b.isAppBolao && b.isPublic && !isBetClosed(b.game));
-  const all = [...appBoloes, ...publicBoloes];
-  if(all.length===0) { el.innerHTML=''; return; }
-  el.innerHTML=`<div class="section-title" style="margin-top:20px">Bolões disponíveis</div>`+all.map(b=>{
+  const all = [...publicBoloes];
+  // Show season bolões shortcut at top
+  const seasonBlock = seasonBoloes.length
+    ? `<div class="card" style="cursor:pointer;margin-bottom:8px;border-color:rgba(244,208,63,.4)" onclick="openAppBoloes()">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:28px">⚽</div>
+          <div>
+            <div style="font-size:14px;font-weight:800;color:var(--text)">Bolão da Copa do Mundo</div>
+            <div style="font-size:11px;color:var(--text3)">3 modalidades · Pontuação acumulada até a Final</div>
+          </div>
+          <span style="margin-left:auto;font-size:18px;color:var(--text3)">›</span>
+        </div>
+      </div>` : '';
+  if(all.length===0&&!seasonBoloes.length) { el.innerHTML=''; return; }
+  el.innerHTML=`<div class="section-title" style="margin-top:20px">Bolões disponíveis</div>${seasonBlock}`+all.map(b=>{
     const joined=b.participants.find(p=>p.email===state.user?.email);
     const cnt=b.participants.length;
-    const tag=b.isAppBolao?`<span class="badge badge-green" style="font-size:9px">Bolão do App</span>`:'';
-    return `<div class="card" style="cursor:pointer" onclick="${b.isAppBolao?`enterAppBolao('${b.game?.id}',${b.amount})`:`openDetail('${b.id}')`}">
+    const tag='';
+    return `<div class="card" style="cursor:pointer" onclick="openDetail('${b.id}')">
       <div class="bolao-header">
         <div style="display:flex;align-items:center;gap:6px">
           <span class="bolao-title">${esc(b.title)}</span>${tag}
@@ -3190,124 +3277,351 @@ function openRankingGeral() {
 }
 
 // ===== APP BOLÕES =====
+// ===== BOLÃO DA COPA (SEASON) =====
 const APP_CREATOR_ID = 'app@bolaofc.com';
 const APP_AMOUNTS = [50, 250, 500];
+let _curSeasonBolaoId = null;
 
-function _appBolaoId(gameId, amount) { return `appbf-${gameId}-${amount}`; }
-function _appBolaoCode(gameId, amount) {
-  const s=`APPBF${String(gameId).padStart(2,'0')}${amount===50?'A':amount===250?'B':'C'}`;
-  return s.substring(0,8).toUpperCase();
-}
-
-function _genAppBolao(g, amount) {
+function _genSeasonBolao(amount) {
   return {
-    id: _appBolaoId(g.id, amount),
-    title: `${g.home.flag} ${g.home.name} × ${g.away.name} ${g.away.flag} · R$${amount}`,
-    code: _appBolaoCode(g.id, amount),
-    creatorId: APP_CREATOR_ID, creatorName: 'Bolão FC',
-    creatorPixKey: '', game: g, amount,
-    maxPart: 99999, hasPw: false, pw: '',
+    id: `season-${amount}`,
+    title: `Bolão da Copa · R$${amount}`,
+    isSeason: true, isAppBolao: true,
+    amount, creatorId: APP_CREATOR_ID, creatorName: 'Bolão FC',
+    creatorPixKey: '', game: null,
+    maxPart: 999999, hasPw: false, pw: '',
     pointsExact: 3, pointsResult: 1,
-    participants: [], messages: [], result: null, status: 'open',
-    isAppBolao: true,
+    participants: [], results: {}, messages: [], status: 'active',
+    code: `COPA${amount}00`.substring(0,8),
   };
 }
 
 async function initAppBoloes() {
-  // Pull existing app bolões from Supabase
   if(_sb) {
     try {
-      const {data} = await _sb.from('boloes').select('*').eq('creator_id', APP_CREATOR_ID);
+      const {data} = await _sb.from('boloes').select('*').in('id',['season-50','season-250','season-500']);
       if(data) data.forEach(row=>{
         const b = _sbRowToBolao(row);
-        b.isAppBolao = true;
-        if(!state.boloes.find(x=>x.id===b.id)) state.boloes.push(b);
-        else Object.assign(state.boloes.find(x=>x.id===b.id), b);
+        const idx = state.boloes.findIndex(x=>x.id===b.id);
+        if(idx>=0) state.boloes[idx]=b; else state.boloes.push(b);
       });
-    } catch(_) {}
+    } catch(_){}
   }
-  // Auto-create for upcoming games
-  const upcoming = GAMES.filter(g=>!isBetClosed(g));
-  const toCreate = [];
-  upcoming.forEach(g=>{
-    APP_AMOUNTS.forEach(amount=>{
-      const id = _appBolaoId(g.id, amount);
-      if(!state.boloes.find(x=>x.id===id)) {
-        const b = _genAppBolao(g, amount);
-        state.boloes.push(b);
-        toCreate.push(b);
-      }
-    });
+  APP_AMOUNTS.forEach(amount=>{
+    const id=`season-${amount}`;
+    if(!state.boloes.find(x=>x.id===id)){
+      const b=_genSeasonBolao(amount);
+      state.boloes.push(b);
+      if(_sb) _sb.from('boloes').upsert(_bolaoToSbRow(b),{onConflict:'id'}).catch(()=>{});
+    }
   });
-  if(_sb && toCreate.length) {
-    toCreate.forEach(b=>_sb.from('boloes').upsert(_bolaoToSbRow(b),{onConflict:'id'}).then(()=>{}));
-  }
 }
 
-function openAppBoloes() {
+async function openAppBoloes() {
   go('s-app-boloes');
+  updateGlobalNav('s-app-boloes');
+  const el=document.getElementById('app-boloes-list');
+  if(el) el.innerHTML='<div style="text-align:center;color:var(--text3);padding:32px 0">⏳ Carregando...</div>';
+  await initAppBoloes();
   renderAppBoloes();
 }
 
+// Finds the game in the 72h betting window (or most recent started game)
+function _getSeasonCurrentGame() {
+  const now = new Date();
+  const win = 72*3600000;
+  const inWindow = GAMES
+    .filter(g=>{ const dt=gameDateTime(g); return dt>now && (dt-now)<=win; })
+    .sort((a,b)=>gameDateTime(a)-gameDateTime(b));
+  if(inWindow.length) return {game:inWindow[0], phase:'open'};
+  const started = GAMES
+    .filter(g=>gameDateTime(g)<=now)
+    .sort((a,b)=>gameDateTime(b)-gameDateTime(a));
+  if(started.length) return {game:started[0], phase:'waiting'};
+  return null;
+}
+
+function _getNextSeasonGame() {
+  const now = new Date();
+  return GAMES
+    .filter(g=>gameDateTime(g)>new Date(now.getTime()+72*3600000))
+    .sort((a,b)=>gameDateTime(a)-gameDateTime(b))[0]||null;
+}
+
+function _calcSeasonPts(p, bolao) {
+  let total=0;
+  Object.entries(bolao.results||{}).forEach(([gid, res])=>{
+    const bet=p.bets?.[gid];
+    if(!bet||bet.home==null||bet.away==null) return;
+    if(bet.home===res.home && bet.away===res.away) { total+=bolao.pointsExact??3; return; }
+    const bw=bet.home>bet.away?'h':bet.home<bet.away?'a':'d';
+    const rw=res.home>res.away?'h':res.home<res.away?'a':'d';
+    if(bw===rw) total+=bolao.pointsResult??1;
+  });
+  return total;
+}
+
+function _seasonRanking(bolao) {
+  return (bolao.participants||[])
+    .filter(p=>p.paid)
+    .map(p=>({...p, totalPts:_calcSeasonPts(p,bolao)}))
+    .sort((a,b)=>b.totalPts-a.totalPts||b.email.localeCompare(a.email));
+}
+
 function renderAppBoloes() {
-  const el = document.getElementById('app-boloes-list');
+  const el=document.getElementById('app-boloes-list');
   if(!el) return;
-  const upcoming = GAMES.filter(g=>!isBetClosed(g)).slice(0,20);
-  if(upcoming.length===0) {
-    el.innerHTML='<div style="text-align:center;color:var(--text3);padding:32px 0">Nenhum jogo disponível no momento</div>';
-    return;
-  }
-  el.innerHTML = upcoming.map(g=>{
-    const boloes = APP_AMOUNTS.map(amount=>{
-      const id = _appBolaoId(g.id, amount);
-      const b = state.boloes.find(x=>x.id===id);
-      const joined = b?.participants.find(p=>p.email===state.user?.email);
-      const cnt = b?.participants.length||0;
-      return `<button class="app-tier-btn tier-${amount}" onclick="enterAppBolao('${g.id}',${amount})">
-        R$${amount}<br><span style="font-size:10px;font-weight:600">${joined?'✅ ':''} ${cnt} jog.</span>
-      </button>`;
-    }).join('');
-    return `<div class="app-bolao-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:11px;color:var(--text3);font-weight:600">${g.stage} · ${g.date} ${g.time}</div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="text-align:center;flex:1">
-          <div style="font-size:22px">${g.home.flag}</div>
-          <div style="font-size:12px;font-weight:700;color:var(--text)">${g.home.name}</div>
+  const current=_getSeasonCurrentGame();
+  const nextG=_getNextSeasonGame();
+  const gameLabel=current
+    ? (parseInt(current.game.id)>=100
+        ? `${current.game.stage}`
+        : `${current.game.home.flag} ${current.game.home.name} vs ${current.game.away.name} ${current.game.away.flag}`)
+    : '🏆 Copa Encerrada';
+  const betStatus=current?.phase==='open'
+    ? `🕐 Apostas abertas · encerra em ${timeUntilGame(current.game)||'breve'}`
+    : current?.phase==='waiting'
+    ? '⏳ Aguardando resultado do jogo'
+    : nextG
+    ? `Próximas apostas abrem em ${timeUntilGame(nextG)||'breve'}`
+    : 'Copa finalizada';
+
+  el.innerHTML=APP_AMOUNTS.map(amount=>{
+    const bolao=state.boloes.find(x=>x.id===`season-${amount}`);
+    const players=(bolao?.participants||[]).filter(p=>p.paid).length;
+    const prize=players*amount;
+    const me=(bolao?.participants||[]).find(p=>p.email===state.user?.email);
+    const joined=!!(me?.paid);
+    const myPts=joined?_calcSeasonPts(me,bolao):null;
+    const myRank=joined?_seasonRanking(bolao).findIndex(p=>p.email===state.user?.email)+1:null;
+    return `<div class="app-bolao-card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-size:17px;font-weight:900;color:var(--text)">Bolão R$${amount}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${players} jogador${players!==1?'es':''} · Prêmio <span style="color:var(--secondary);font-weight:800">R$${prize.toLocaleString('pt-BR')}</span></div>
         </div>
-        <div style="font-size:12px;font-weight:900;color:var(--text3)">VS</div>
-        <div style="text-align:center;flex:1">
-          <div style="font-size:22px">${g.away.flag}</div>
-          <div style="font-size:12px;font-weight:700;color:var(--text)">${g.away.name}</div>
-        </div>
+        ${joined?'<span class="badge badge-green" style="font-size:10px">✅ Participando</span>':''}
       </div>
-      <div style="display:flex;gap:8px">${boloes}</div>
+      <div style="padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:10px;border:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${betStatus}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${gameLabel}</div>
+      </div>
+      ${joined?`<div style="display:flex;gap:10px;margin-bottom:10px">
+        <div style="flex:1;padding:8px;background:rgba(39,174,96,.08);border-radius:10px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:var(--ok)">${myPts}</div>
+          <div style="font-size:10px;color:var(--text3)">seus pontos</div>
+        </div>
+        <div style="flex:1;padding:8px;background:rgba(244,208,63,.08);border-radius:10px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:var(--secondary)">${myRank?myRank+'°':'-'}</div>
+          <div style="font-size:10px;color:var(--text3)">sua posição</div>
+        </div>
+      </div>`:''}
+      <button class="btn ${joined?'btn-ghost':'btn-primary'}" style="width:100%" onclick="${joined?`openSeasonBolao('season-${amount}')`:`joinSeasonBolao('season-${amount}')`}">
+        ${joined?'📊 Abrir meu bolão':`⚽ Entrar por R$${amount}`}
+      </button>
     </div>`;
   }).join('');
 }
 
-function enterAppBolao(gameId, amount) {
-  const id = _appBolaoId(gameId, amount);
-  const b = state.boloes.find(x=>x.id===id);
-  if(!b) return;
-  if(isBetClosed(b.game)) { showToast('⏰ Apostas encerradas'); return; }
-  const already = b.participants.find(p=>p.email===state.user?.email);
-  if(already) {
-    state.currentBolaoId = id;
-    go('s-detail');
-    renderDetail();
+function joinSeasonBolao(bolaoId) {
+  const bolao=state.boloes.find(x=>x.id===bolaoId);
+  if(!bolao) return;
+  const already=bolao.participants.find(p=>p.email===state.user?.email);
+  if(already) { openSeasonBolao(bolaoId); return; }
+  showTermsModal(()=>{
+    bolao.participants.push({email:state.user.email,name:state.user.name,photo:state.user.photo||null,paid:false,bets:{}});
+    addSystemMessage(bolaoId,`🎉 ${state.user.name} entrou no bolão!`);
+    saveBoloes(bolao);
+    openSeasonBolao(bolaoId);
+    showToast('✅ Você entrou! Faça o Pix para confirmar sua participação.');
+  });
+}
+
+function openSeasonBolao(bolaoId) {
+  _curSeasonBolaoId=bolaoId;
+  go('s-season-detail');
+  renderSeasonDetail();
+}
+
+function renderSeasonDetail() {
+  const bolao=state.boloes.find(x=>x.id===_curSeasonBolaoId);
+  if(!bolao) return;
+  const titleEl=document.getElementById('season-topbar-title');
+  if(titleEl) titleEl.textContent=bolao.title;
+  const players=(bolao.participants||[]).filter(p=>p.paid).length;
+  const prize=players*bolao.amount;
+  const prizeBanner=document.getElementById('season-prize-banner');
+  if(prizeBanner) prizeBanner.innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid rgba(244,208,63,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.5px">PRÊMIO TOTAL</div>
+          <div style="font-size:30px;font-weight:900;color:var(--secondary)">R$${prize.toLocaleString('pt-BR')}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text3)">jogadores</div>
+          <div style="font-size:26px;font-weight:900;color:var(--text)">${players}</div>
+        </div>
+      </div>
+    </div>`;
+  _renderSeasonCurrentGame(bolao);
+  _renderSeasonRanking(bolao);
+  _renderSeasonHistory(bolao);
+}
+
+function _renderSeasonCurrentGame(bolao) {
+  const el=document.getElementById('season-current-game');
+  if(!el) return;
+  const me=(bolao.participants||[]).find(p=>p.email===state.user?.email);
+  const current=_getSeasonCurrentGame();
+  const nextG=_getNextSeasonGame();
+  if(!current) {
+    el.innerHTML=`<div class="card" style="text-align:center;padding:28px;margin-bottom:16px">
+      <div style="font-size:40px">🏆</div>
+      <div style="font-size:17px;font-weight:800;margin:10px 0">Copa do Mundo Encerrada!</div>
+      <div style="font-size:13px;color:var(--text3)">Veja o ranking final abaixo</div>
+    </div>`;
     return;
   }
-  showTermsModal(()=>{
-    b.participants.push({email:state.user.email,name:state.user.name,paid:false,homeScore:null,awayScore:null});
-    addSystemMessage(id,`🎉 ${state.user.name} entrou no bolão!`);
-    saveBoloes(b);
-    state.currentBolaoId = id;
-    go('s-detail');
-    renderDetail();
-    showToast('✅ Você entrou no Bolão do App!');
-  });
+  const {game,phase}=current;
+  const betOpen=phase==='open';
+  const myBet=me?.bets?.[game.id];
+  const lsc=_ls[game.id];
+  const countdown=timeUntilGame(game);
+  let betSection='';
+  if(betOpen && me) {
+    const bh=myBet?.home??'';
+    const ba=myBet?.away??'';
+    betSection=`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--text3);font-weight:700;text-align:center;margin-bottom:10px">
+        ${myBet?'✅ Seu palpite (toque para editar)':'🎯 Dê seu palpite para este jogo!'}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px">
+        <input type="number" id="sb-home" min="0" max="20" value="${bh}"
+          style="width:60px;height:60px;text-align:center;font-size:26px;font-weight:900;background:var(--surface2);border:2px solid var(--border);border-radius:12px;color:var(--text)">
+        <span style="font-size:22px;font-weight:900;color:var(--text3)">×</span>
+        <input type="number" id="sb-away" min="0" max="20" value="${ba}"
+          style="width:60px;height:60px;text-align:center;font-size:26px;font-weight:900;background:var(--surface2);border:2px solid var(--border);border-radius:12px;color:var(--text)">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="submitSeasonBet('${bolao.id}','${game.id}')">
+        ${myBet?'✏️ Atualizar palpite':'✅ Confirmar palpite'}
+      </button>
+    </div>`;
+  } else if(me && phase==='waiting') {
+    betSection=`<div style="margin-top:10px;padding:10px;background:rgba(243,156,18,.1);border-radius:10px;text-align:center;font-size:12px;color:var(--warn);font-weight:700">
+      ⏳ Jogo em andamento — apostas encerradas
+      ${myBet?`<br><span style="color:var(--text2);font-weight:600">Seu palpite: ${myBet.home}×${myBet.away}</span>`:'<br><span style="color:var(--err);font-weight:600">Você não deu palpite neste jogo</span>'}
+    </div>`;
+  } else if(!me) {
+    betSection=`<div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;text-align:center;font-size:13px;color:var(--text2)">
+      Entre no bolão para dar seu palpite
+    </div>`;
+  }
+  const liveBlock=(lsc?.status==='LIVE'||lsc?.status==='FT')
+    ?`<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0">
+        <span style="font-size:32px;font-weight:900;color:${lsc.status==='LIVE'?'var(--err)':'var(--ok)'}">${lsc.h}</span>
+        <span style="font-size:13px;color:${lsc.status==='LIVE'?'var(--err)':'var(--ok)'};font-weight:800">${lsc.status==='LIVE'?`🔴 ${lsc.min}`:'✅ FIM'}</span>
+        <span style="font-size:32px;font-weight:900;color:${lsc.status==='LIVE'?'var(--err)':'var(--ok)'}">${lsc.a}</span>
+      </div>`
+    :'<div style="font-size:18px;font-weight:900;color:var(--text3)">VS</div>';
+  el.innerHTML=`<div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:11px;color:var(--text3);font-weight:700">${game.stage}${game.group?' · '+game.group:''}</div>
+      ${betOpen?`<span class="badge badge-green" style="font-size:10px">🕐 ${countdown||'em breve'}</span>`:`<span class="badge badge-yellow" style="font-size:10px">⏳ Em andamento</span>`}
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:10px">${game.date} · ${game.time} · ${game.venue||''}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="text-align:center;flex:1">
+        <div style="font-size:30px">${game.home.flag}</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">${game.home.name}</div>
+      </div>
+      <div>${liveBlock}</div>
+      <div style="text-align:center;flex:1">
+        <div style="font-size:30px">${game.away.flag}</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">${game.away.name}</div>
+      </div>
+    </div>
+    ${betSection}
+  </div>
+  ${nextG&&!betOpen?`<div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:12px">
+    🕐 Próximas apostas abrem em ${timeUntilGame(nextG)||'breve'}: ${nextG.home.flag} ${nextG.home.name} vs ${nextG.away.name} ${nextG.away.flag}
+  </div>`:''}`;
+}
+
+function _renderSeasonRanking(bolao) {
+  const el=document.getElementById('season-ranking');
+  if(!el) return;
+  const ranked=_seasonRanking(bolao);
+  if(!ranked.length){el.innerHTML='';return;}
+  const myPos=ranked.findIndex(p=>p.email===state.user?.email);
+  const rows=ranked.slice(0,15).map((p,i)=>{
+    const [cls,title]=_rankTitle(i);
+    const isMe=p.email===state.user?.email;
+    return `<div class="rank-card" style="${isMe?'border-color:var(--primary);background:rgba(0,107,63,.05)':''}">
+      ${_avHtml(p.email,p.name,p.photo,40)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(p.name)}${isMe?' (você)':''}</div>
+        ${cls?`<span class="${cls}" style="font-size:9px;margin-top:2px;display:inline-block">${title}</span>`:`<span style="font-size:11px;color:var(--text3)">${title}</span>`}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:900;color:${i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--text)'}">${p.totalPts}</div>
+        <div style="font-size:9px;color:var(--text3)">pts</div>
+      </div>
+    </div>`;
+  }).join('');
+  const myCard=myPos>=15&&myPos>=0?`<div class="rank-card" style="border-color:var(--primary);margin-top:4px">
+    ${_avHtml(ranked[myPos].email,ranked[myPos].name,ranked[myPos].photo,36)}
+    <div style="flex:1"><div style="font-size:12px;font-weight:700">Você · ${myPos+1}° lugar</div></div>
+    <div style="font-size:18px;font-weight:900;color:var(--secondary)">${ranked[myPos].totalPts}pts</div>
+  </div>`:'';
+  el.innerHTML=`<div class="section-title">🏆 Ranking ao vivo</div>${rows}${myCard}`;
+}
+
+function _renderSeasonHistory(bolao) {
+  const el=document.getElementById('season-history');
+  if(!el) return;
+  const results=bolao.results||{};
+  const gids=Object.keys(results).sort((a,b)=>parseInt(b)-parseInt(a));
+  if(!gids.length){el.innerHTML='';return;}
+  const me=(bolao.participants||[]).find(p=>p.email===state.user?.email);
+  const rows=gids.slice(0,20).map(gid=>{
+    const res=results[gid];
+    const game=GAMES.find(x=>x.id===gid);
+    if(!game) return '';
+    const myBet=me?.bets?.[gid];
+    let pts=0;
+    if(myBet&&myBet.home!=null){
+      if(myBet.home===res.home&&myBet.away===res.away) pts=bolao.pointsExact??3;
+      else{const bw=myBet.home>myBet.away?'h':myBet.home<myBet.away?'a':'d';const rw=res.home>res.away?'h':res.home<res.away?'a':'d';if(bw===rw) pts=bolao.pointsResult??1;}
+    }
+    const icon=myBet==null?'⚪':pts===3?'🎯':pts===1?'✅':'❌';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface);border-radius:12px;border:1px solid var(--border);margin-bottom:6px">
+      <div style="font-size:20px">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${game.home.flag} ${game.home.name} ${res.home}×${res.away} ${game.away.name} ${game.away.flag}</div>
+        <div style="font-size:11px;color:var(--text3)">${myBet&&myBet.home!=null?`Palpite: ${myBet.home}×${myBet.away}`:'Sem palpite'}</div>
+      </div>
+      <div style="font-size:16px;font-weight:900;color:${pts>0?'var(--ok)':'var(--text3)'}">+${pts}pts</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="section-title" style="margin-top:8px">📋 Histórico de jogos</div>${rows}`;
+}
+
+async function submitSeasonBet(bolaoId, gameId) {
+  const h=parseInt(document.getElementById('sb-home')?.value??'');
+  const a=parseInt(document.getElementById('sb-away')?.value??'');
+  if(isNaN(h)||isNaN(a)||h<0||a<0||h>20||a>20){showToast('❌ Palpite inválido (0–20)');return;}
+  const game=GAMES.find(x=>x.id===gameId);
+  if(game&&isBetClosed(game)){showToast('⏰ Apostas encerradas para este jogo');return;}
+  const bolao=state.boloes.find(x=>x.id===bolaoId);
+  if(!bolao) return;
+  const me=bolao.participants.find(p=>p.email===state.user?.email);
+  if(!me){showToast('❌ Você não está neste bolão');return;}
+  if(!me.bets) me.bets={};
+  me.bets[gameId]={home:h,away:a};
+  saveBoloes(bolao);
+  showToast('✅ Palpite confirmado!');
+  renderSeasonDetail();
 }
 
 // ===== RANKING GLOBAL =====
