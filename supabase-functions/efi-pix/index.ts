@@ -17,10 +17,16 @@ function getToken(): string {
 async function createCharge(amount: number, bolaoId: string, description: string, email: string) {
   const idempotencyKey = `bolao-${bolaoId.replace(/[^a-zA-Z0-9]/g, '')}-${Date.now()}`
 
+  const expiration = new Date(Date.now() + 30 * 60 * 1000).toISOString().replace('Z', '-03:00')
   const body = {
     transaction_amount: Number(amount),
     payment_method_id: 'pix',
-    payer: { email: email || 'pagador@bolaofc.app' },
+    installments: 1,
+    date_of_expiration: expiration,
+    payer: {
+      email: email && email.includes('@') ? email : 'pagador@bolaofc.app',
+      identification: { type: 'CPF', number: '00000000000' },
+    },
     description: description.substring(0, 60),
     external_reference: bolaoId,
   }
@@ -38,12 +44,14 @@ async function createCharge(amount: number, bolaoId: string, description: string
   })
 
   const text = await res.text()
-  console.log('[MP] payment status:', res.status, 'body:', text)
-
-  if (!res.ok) throw new Error(`Erro ao criar cobrança (${res.status}): ${text}`)
-
   const data = JSON.parse(text)
-  const txData = data.point_of_interaction?.transaction_data
+  const poi = data.point_of_interaction
+  console.log('[MP] status:', res.status, '| poi_type:', poi?.type, '| has_txdata:', !!poi?.transaction_data)
+  console.log('[MP] full body:', text.slice(0, 800))
+
+  if (!res.ok) throw new Error(`Erro ao criar cobrança (${res.status}): ${text.slice(0, 300)}`)
+
+  const txData = poi?.transaction_data
 
   let qrCodeBase64 = txData?.qr_code_base64 ?? null
   if (qrCodeBase64?.startsWith('data:')) {
