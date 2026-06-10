@@ -24,22 +24,34 @@ function getBase() {
 //   openssl pkcs12 -in cert.p12 -nocerts -out key.pem  -nodes -legacy
 //   base64 -w0 cert.pem  → EFI_CERT_PROD  (or EFI_CERT_HML)
 //   base64 -w0 key.pem   → EFI_CERT_KEY_PROD (or EFI_CERT_KEY_HML)
-function buildHttpClient(): Deno.HttpClient {
-  const prod  = isProd()
-  const certB64 = Deno.env.get(prod ? 'EFI_CERT_PROD'     : 'EFI_CERT_HML')
-  const keyB64  = Deno.env.get(prod ? 'EFI_CERT_KEY_PROD' : 'EFI_CERT_KEY_HML')
-
-  if (!certB64 || !keyB64) {
-    throw new Error(
-      'Certificado Efí não configurado. ' +
-      'Adicione EFI_CERT_PROD e EFI_CERT_KEY_PROD no Supabase Secrets.'
-    )
+// Aceita o certificado tanto como PEM cru (-----BEGIN...-----) quanto como
+// PEM codificado em base64. Remove quebras de linha/espaços que costumam
+// entrar ao colar o valor no campo de Secret do Supabase.
+function decodePem(raw: string | undefined, label: string): string {
+  const trimmed = (raw ?? '').trim()
+  if (!trimmed) throw new Error(`${label} não configurado no Supabase Secrets`)
+  // Já é um PEM em texto puro? usa direto.
+  if (trimmed.includes('-----BEGIN')) return trimmed
+  // Senão, assume base64 do PEM: limpa whitespace e decodifica.
+  try {
+    return atob(trimmed.replace(/\s+/g, ''))
+  } catch {
+    throw new Error(`${label}: conteúdo não é PEM nem base64 válido (${trimmed.length} chars)`)
   }
+}
 
-  return Deno.createHttpClient({
-    certChain: atob(certB64),
-    privateKey: atob(keyB64),
-  })
+function buildHttpClient(): Deno.HttpClient {
+  const prod = isProd()
+  const certChain = decodePem(
+    Deno.env.get(prod ? 'EFI_CERT_PROD' : 'EFI_CERT_HML'),
+    prod ? 'EFI_CERT_PROD' : 'EFI_CERT_HML',
+  )
+  const privateKey = decodePem(
+    Deno.env.get(prod ? 'EFI_CERT_KEY_PROD' : 'EFI_CERT_KEY_HML'),
+    prod ? 'EFI_CERT_KEY_PROD' : 'EFI_CERT_KEY_HML',
+  )
+
+  return Deno.createHttpClient({ certChain, privateKey })
 }
 
 // Get OAuth2 access token from Efí
