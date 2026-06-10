@@ -6,67 +6,67 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const OPENPIX_BASE = 'https://api.openpix.com.br'
+const MP_BASE = 'https://api.mercadopago.com'
 
-function getApiKey(): string {
-  const key = Deno.env.get('OPENPIX_API_KEY')
-  if (!key) throw new Error('OPENPIX_API_KEY não configurada no Supabase Secrets')
-  return key
+function getToken(): string {
+  const token = Deno.env.get('MP_ACCESS_TOKEN')
+  if (!token) throw new Error('MP_ACCESS_TOKEN não configurada no Supabase Secrets')
+  return token
 }
 
-async function createCharge(amount: number, bolaoId: string, description: string) {
-  const correlationID = `bolao${bolaoId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}${Date.now().toString().slice(-8)}`
+async function createCharge(amount: number, bolaoId: string, description: string, email: string) {
+  const idempotencyKey = `bolao-${bolaoId.replace(/[^a-zA-Z0-9]/g, '')}-${Date.now()}`
 
   const body = {
-    correlationID,
-    value: Math.round(amount * 100),
-    comment: description.substring(0, 140),
-    expiresIn: 3600,
-    type: 'DYNAMIC',
+    transaction_amount: Number(amount),
+    payment_method_id: 'pix',
+    payer: { email: email || 'pagador@bolaofc.app' },
+    description: description.substring(0, 60),
+    external_reference: bolaoId,
   }
 
-  console.log('[PIX] createCharge:', JSON.stringify(body))
+  console.log('[MP] createCharge:', JSON.stringify(body))
 
-  const res = await fetch(`${OPENPIX_BASE}/api/v1/charge`, {
+  const res = await fetch(`${MP_BASE}/v1/payments`, {
     method: 'POST',
     headers: {
-      'Authorization': getApiKey(),
+      'Authorization': `Bearer ${getToken()}`,
       'Content-Type': 'application/json',
+      'X-Idempotency-Key': idempotencyKey,
     },
     body: JSON.stringify(body),
   })
 
   const text = await res.text()
-  console.log('[PIX] charge status:', res.status, 'body:', text)
+  console.log('[MP] payment status:', res.status, 'body:', text)
 
   if (!res.ok) throw new Error(`Erro ao criar cobrança (${res.status}): ${text}`)
 
   const data = JSON.parse(text)
-  const charge = data.charge ?? data
+  const txData = data.point_of_interaction?.transaction_data
 
-  let qrCodeBase64 = charge.qrCodeImage ?? null
+  let qrCodeBase64 = txData?.qr_code_base64 ?? null
   if (qrCodeBase64?.startsWith('data:')) {
     qrCodeBase64 = qrCodeBase64.split(',')[1] ?? null
   }
 
   return {
-    txid: correlationID,
-    status: charge.status,
-    copiaECola: charge.brCode ?? null,
+    txid: String(data.id),
+    status: data.status,
+    copiaECola: txData?.qr_code ?? null,
     qrCodeBase64,
   }
 }
 
 async function checkStatus(txid: string) {
-  const res = await fetch(`${OPENPIX_BASE}/api/v1/charge/${txid}`, {
-    headers: { 'Authorization': getApiKey() },
+  const res = await fetch(`${MP_BASE}/v1/payments/${txid}`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` },
   })
 
   if (!res.ok) throw new Error(`Erro ao consultar cobrança (${res.status})`)
 
   const data = await res.json()
-  const charge = data.charge ?? data
-  return { txid, status: charge.status, paid: charge.status === 'COMPLETED' }
+  return { txid, status: data.status, paid: data.status === 'approved' }
 }
 
 async function handleWebhook(body: Record<string, unknown>) {
@@ -75,18 +75,25 @@ async function handleWebhook(body: Record<string, unknown>) {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  const charge = (body.charge ?? body) as Record<string, unknown>
-  if (charge.status !== 'COMPLETED') return
+  const paymentId = ((body.data as Record<string, unknown>)?.id ?? body.id) as string
+  if (!paymentId) return
 
-  const correlationID = charge.correlationID as string
-  if (!correlationID) return
+  const res = await fetch(`${MP_BASE}/v1/payments/${paymentId}`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` },
+  })
+  if (!res.ok) return
+
+  const payment = await res.json()
+  if (payment.status !== 'approved') return
+
+  const txid = String(paymentId)
 
   const { data: boloes } = await supabase.from('boloes').select('*')
   if (!boloes) return
 
   for (const bolao of boloes) {
     const participants: Array<Record<string, unknown>> = bolao.participants || []
-    const idx = participants.findIndex(p => p.pixTxid === correlationID)
+    const idx = participants.findIndex(p => p.pixTxid === txid)
     if (idx < 0) continue
 
     participants[idx].paid = true
@@ -96,7 +103,7 @@ async function handleWebhook(body: Record<string, unknown>) {
     messages.push({
       email: '__system__',
       name: 'Sistema',
-      text: `💸 ${participants[idx].name} pagou via PIX · R$${(Number(charge.value ?? 0) / 100).toFixed(2)}`,
+      text: `💸 ${participants[idx].name} pagou via PIX · R$${Number(payment.transaction_amount || 0).toFixed(2)}`,
       time: new Date().toISOString(),
       system: true,
     })
@@ -106,7 +113,7 @@ async function handleWebhook(body: Record<string, unknown>) {
       .update({ participants, messages })
       .eq('id', bolao.id)
 
-    console.log(`[PIX] confirmado: ${correlationID} | bolão: ${bolao.id}`)
+    console.log(`[MP] PIX confirmado: ${txid} | bolão: ${bolao.id}`)
     break
   }
 }
@@ -119,14 +126,14 @@ serve(async (req) => {
   try {
     if (req.method === 'POST' && url.searchParams.get('webhook') === 'pix') {
       const body = await req.json()
-      console.log('[PIX] webhook:', JSON.stringify(body))
+      console.log('[MP] webhook:', JSON.stringify(body))
       await handleWebhook(body)
       return new Response(JSON.stringify({ ok: true }), {
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    const { action, bolaoId, amount, description, txid } = await req.json()
+    const { action, bolaoId, amount, description, txid, email } = await req.json()
 
     if (action === 'create') {
       if (!bolaoId || !amount) throw new Error('bolaoId e amount são obrigatórios')
@@ -134,6 +141,7 @@ serve(async (req) => {
         Number(amount),
         String(bolaoId),
         description || `Bolão FC – R$${amount}`,
+        String(email || ''),
       )
       return new Response(JSON.stringify(result), {
         headers: { ...cors, 'Content-Type': 'application/json' },
@@ -151,7 +159,7 @@ serve(async (req) => {
     throw new Error(`Ação desconhecida: ${action}`)
 
   } catch (e) {
-    console.error('[PIX] erro:', e.message)
+    console.error('[MP] erro:', e.message)
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500,
       headers: { ...cors, 'Content-Type': 'application/json' },
