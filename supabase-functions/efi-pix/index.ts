@@ -6,220 +6,108 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const EFI_BASE_PROD = 'https://pix.api.efipay.com.br'
-const EFI_BASE_HML  = 'https://pix-h.api.efipay.com.br'
+const OPENPIX_BASE = 'https://api.openpix.com.br'
 
-function isProd() {
-  return Deno.env.get('EFI_PROD') === 'true'
+function getApiKey(): string {
+  const key = Deno.env.get('OPENPIX_API_KEY')
+  if (!key) throw new Error('OPENPIX_API_KEY não configurada no Supabase Secrets')
+  return key
 }
 
-function getBase() {
-  return isProd() ? EFI_BASE_PROD : EFI_BASE_HML
-}
-
-// Build Deno HTTP client with mTLS certificate (required by Banco Central / Efí)
-// Certificates must be stored as Base64-encoded PEM strings in Supabase Secrets.
-// To convert your .p12 on a computer:
-//   openssl pkcs12 -in cert.p12 -nokeys -out cert.pem -nodes -legacy
-//   openssl pkcs12 -in cert.p12 -nocerts -out key.pem  -nodes -legacy
-//   base64 -w0 cert.pem  → EFI_CERT_PROD  (or EFI_CERT_HML)
-//   base64 -w0 key.pem   → EFI_CERT_KEY_PROD (or EFI_CERT_KEY_HML)
-// Aceita o certificado tanto como PEM cru (-----BEGIN...-----) quanto como
-// PEM codificado em base64. Remove quebras de linha/espaços que costumam
-// entrar ao colar o valor no campo de Secret do Supabase.
-function decodePem(raw: string | undefined, label: string): string {
-  const trimmed = (raw ?? '').trim()
-  if (!trimmed) throw new Error(`${label} não configurado no Supabase Secrets`)
-  // Já é um PEM em texto puro? usa direto.
-  if (trimmed.includes('-----BEGIN')) return trimmed
-  // Senão, assume base64 do PEM: limpa whitespace e decodifica.
-  try {
-    return atob(trimmed.replace(/\s+/g, ''))
-  } catch {
-    throw new Error(`${label}: conteúdo não é PEM nem base64 válido (${trimmed.length} chars)`)
-  }
-}
-
-function buildHttpClient(): Deno.HttpClient {
-  const prod = isProd()
-  const certChain = decodePem(
-    Deno.env.get(prod ? 'EFI_CERT_PROD' : 'EFI_CERT_HML'),
-    prod ? 'EFI_CERT_PROD' : 'EFI_CERT_HML',
-  )
-  const privateKey = decodePem(
-    Deno.env.get(prod ? 'EFI_CERT_KEY_PROD' : 'EFI_CERT_KEY_HML'),
-    prod ? 'EFI_CERT_KEY_PROD' : 'EFI_CERT_KEY_HML',
-  )
-
-  return Deno.createHttpClient({ certChain, privateKey })
-}
-
-// Get OAuth2 access token from Efí
-async function getToken(): Promise<string> {
-  const prod         = isProd()
-  const clientId     = Deno.env.get(prod ? 'EFI_CLIENT_ID_PROD'     : 'EFI_CLIENT_ID_HML')
-  const clientSecret = Deno.env.get(prod ? 'EFI_CLIENT_SECRET_PROD' : 'EFI_CLIENT_SECRET_HML')
-
-  if (!clientId || !clientSecret) throw new Error('Credenciais Efí não configuradas')
-
-  const client = buildHttpClient()
-  const creds  = btoa(`${clientId}:${clientSecret}`)
-
-  const res = await fetch(`${getBase()}/oauth/token`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${creds}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ grant_type: 'client_credentials' }),
-    client,
-  })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Efí auth falhou (${res.status}): ${err}`)
-  }
-
-  const data = await res.json()
-  return data.access_token as string
-}
-
-// Create PIX immediate charge (cob)
 async function createCharge(amount: number, bolaoId: string, description: string) {
-  const token  = await getToken()
-  const client = buildHttpClient()
-  const pixKey = Deno.env.get('EFI_PIX_KEY')
-  if (!pixKey) throw new Error('EFI_PIX_KEY não configurada no Supabase Secrets')
-
-  const txid = `bolao${bolaoId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}${Date.now().toString().slice(-8)}`
+  const correlationID = `bolao${bolaoId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}${Date.now().toString().slice(-8)}`
 
   const body = {
-    calendario: { expiracao: 3600 },
-    valor: { original: Number(amount).toFixed(2) },
-    chave: pixKey,
-    solicitacaoPagador: description.substring(0, 140),
-    infoAdicionais: [{ nome: 'BolaoId', valor: String(bolaoId) }],
+    correlationID,
+    value: Math.round(amount * 100),
+    comment: description.substring(0, 140),
+    expiresIn: 3600,
+    type: 'DYNAMIC',
   }
 
-  console.log('[EFI] createCharge body:', JSON.stringify(body))
+  console.log('[PIX] createCharge:', JSON.stringify(body))
 
-  const res = await fetch(`${getBase()}/v2/cob/${txid}`, {
-    method: 'PUT',
+  const res = await fetch(`${OPENPIX_BASE}/api/v1/charge`, {
+    method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': getApiKey(),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
-    client,
   })
 
-  const cobText = await res.text()
-  console.log('[EFI] cob status:', res.status, 'body:', cobText)
+  const text = await res.text()
+  console.log('[PIX] charge status:', res.status, 'body:', text)
 
-  if (!res.ok) throw new Error(`Erro ao criar cobrança (${res.status}): ${cobText}`)
+  if (!res.ok) throw new Error(`Erro ao criar cobrança (${res.status}): ${text}`)
 
-  const cob = JSON.parse(cobText)
+  const data = JSON.parse(text)
+  const charge = data.charge ?? data
 
-  if (!cob.loc?.id) {
-    const dbg = `sem_loc | cob_status=${res.status} | loc=${JSON.stringify(cob.loc)} | campos=${Object.keys(cob).join(',')}`
-    console.log('[EFI]', dbg)
-    return { txid: cob.txid ?? txid, status: cob.status, copiaECola: null, qrCodeBase64: null, _debug: dbg }
-  }
-
-  let qrStatus = 0
-  let qrText = ''
-  let qr: { qrcode?: string | null; imagemQrcode?: string | null } = { qrcode: null, imagemQrcode: null }
-
-  try {
-    const qrRes = await fetch(`${getBase()}/v2/loc/${cob.loc.id}/qrcode`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      client,
-    })
-    qrStatus = qrRes.status
-    qrText = await qrRes.text()
-    console.log('[EFI] qrcode status:', qrRes.status, 'body:', qrText)
-    if (qrRes.ok) qr = JSON.parse(qrText)
-  } catch (qrErr) {
-    qrText = String(qrErr)
-    console.error('[EFI] qrcode fetch error:', qrText)
-  }
-
-  // imagemQrcode pode vir como data URI ou só base64
-  let qrCodeBase64 = qr.imagemQrcode ?? null
+  let qrCodeBase64 = charge.qrCodeImage ?? null
   if (qrCodeBase64?.startsWith('data:')) {
     qrCodeBase64 = qrCodeBase64.split(',')[1] ?? null
   }
 
-  const _debug = qrCodeBase64
-    ? undefined
-    : `loc_id=${cob.loc.id} | qr_status=${qrStatus} | qr_body=${qrText.substring(0, 200)}`
-
   return {
-    txid: cob.txid ?? txid,
-    status: cob.status,
-    copiaECola: qr.qrcode ?? null,
+    txid: correlationID,
+    status: charge.status,
+    copiaECola: charge.brCode ?? null,
     qrCodeBase64,
-    _debug,
   }
 }
 
-// Check charge payment status
 async function checkStatus(txid: string) {
-  const token  = await getToken()
-  const client = buildHttpClient()
-
-  const res = await fetch(`${getBase()}/v2/cob/${txid}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-    client,
+  const res = await fetch(`${OPENPIX_BASE}/api/v1/charge/${txid}`, {
+    headers: { 'Authorization': getApiKey() },
   })
 
   if (!res.ok) throw new Error(`Erro ao consultar cobrança (${res.status})`)
 
-  const cob = await res.json()
-  // CONCLUIDA = paid, ATIVA = pending
-  return { txid: cob.txid, status: cob.status, paid: cob.status === 'CONCLUIDA' }
+  const data = await res.json()
+  const charge = data.charge ?? data
+  return { txid, status: charge.status, paid: charge.status === 'COMPLETED' }
 }
 
-// Mark participant as paid when Efí webhook fires
 async function handleWebhook(body: Record<string, unknown>) {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  const pixList = (body.pix as Array<{ txid: string; valor: string }>) || []
+  const charge = (body.charge ?? body) as Record<string, unknown>
+  if (charge.status !== 'COMPLETED') return
 
-  for (const pix of pixList) {
-    if (!pix.txid) continue
+  const correlationID = charge.correlationID as string
+  if (!correlationID) return
 
-    const { data: boloes } = await supabase.from('boloes').select('*')
-    if (!boloes) continue
+  const { data: boloes } = await supabase.from('boloes').select('*')
+  if (!boloes) return
 
-    for (const bolao of boloes) {
-      const participants: Array<Record<string, unknown>> = bolao.participants || []
-      const idx = participants.findIndex(p => p.pixTxid === pix.txid)
-      if (idx < 0) continue
+  for (const bolao of boloes) {
+    const participants: Array<Record<string, unknown>> = bolao.participants || []
+    const idx = participants.findIndex(p => p.pixTxid === correlationID)
+    if (idx < 0) continue
 
-      participants[idx].paid = true
-      participants[idx].pixPaidAt = new Date().toISOString()
+    participants[idx].paid = true
+    participants[idx].pixPaidAt = new Date().toISOString()
 
-      const messages: Array<Record<string, unknown>> = bolao.messages || []
-      messages.push({
-        email: '__system__',
-        name: 'Sistema',
-        text: `💸 ${participants[idx].name} pagou via PIX · R$${pix.valor}`,
-        time: new Date().toISOString(),
-        system: true,
-      })
+    const messages: Array<Record<string, unknown>> = bolao.messages || []
+    messages.push({
+      email: '__system__',
+      name: 'Sistema',
+      text: `💸 ${participants[idx].name} pagou via PIX · R$${(Number(charge.value ?? 0) / 100).toFixed(2)}`,
+      time: new Date().toISOString(),
+      system: true,
+    })
 
-      await supabase
-        .from('boloes')
-        .update({ participants, messages })
-        .eq('id', bolao.id)
+    await supabase
+      .from('boloes')
+      .update({ participants, messages })
+      .eq('id', bolao.id)
 
-      console.log(`[EFI] PIX confirmado: ${pix.txid} | bolão: ${bolao.id}`)
-      break
-    }
+    console.log(`[PIX] confirmado: ${correlationID} | bolão: ${bolao.id}`)
+    break
   }
 }
 
@@ -229,17 +117,15 @@ serve(async (req) => {
   const url = new URL(req.url)
 
   try {
-    // Webhook from Efí servers
     if (req.method === 'POST' && url.searchParams.get('webhook') === 'pix') {
       const body = await req.json()
-      console.log('[EFI] webhook:', JSON.stringify(body))
+      console.log('[PIX] webhook:', JSON.stringify(body))
       await handleWebhook(body)
       return new Response(JSON.stringify({ ok: true }), {
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    // App calls
     const { action, bolaoId, amount, description, txid } = await req.json()
 
     if (action === 'create') {
@@ -265,7 +151,7 @@ serve(async (req) => {
     throw new Error(`Ação desconhecida: ${action}`)
 
   } catch (e) {
-    console.error('[EFI] erro:', e.message)
+    console.error('[PIX] erro:', e.message)
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500,
       headers: { ...cors, 'Content-Type': 'application/json' },
