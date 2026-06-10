@@ -1292,6 +1292,7 @@ let state = {
   betScores: {home:0, away:0},
   betBolaoId: null,
   pixBolaoId: null,
+  pixTxid: null,
   editingBet: {},
   pixTimerInterval: null,
   pixPollInterval: null,
@@ -1798,6 +1799,10 @@ async function confirmLogout() {
   clearSession();
   state.user = null;
   state.boloes = [];
+  if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
+  if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
+  state.pixBolaoId = null; state.pixTxid = null;
+  state.currentBolaoId = null; state.betScores = {home:0, away:0};
   if(window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
   _notifTimeouts.forEach(t=>clearTimeout(t)); _notifTimeouts = [];
   state.screenStack = ['s-login'];
@@ -2872,7 +2877,7 @@ async function openPix(id) {
         if(statusData.paid) {
           clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
           clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
-          _autoConfirmPix(b.id);
+          _autoConfirmPix(state.pixBolaoId);
         }
       } catch(_) {}
     }, 5000);
@@ -2880,15 +2885,15 @@ async function openPix(id) {
     document.getElementById('pix-content').innerHTML=`
       <div class="pix-icon">⚠️</div>
       <div class="pix-title" style="color:var(--warn)">Erro ao gerar PIX</div>
-      <div class="pix-info" style="margin-top:8px">${e.message||'Verifique sua conexão e tente novamente.'}</div>
-      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="openPix('${b.id}')">Tentar novamente</button>
+      <div class="pix-info" style="margin-top:8px">${esc(e.message||'Verifique sua conexão e tente novamente.')}</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="openPix('${esc(b.id)}')">Tentar novamente</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   }
 }
 
 function confirmPix() {
   const b = state.boloes.find(x=>x.id===state.pixBolaoId);
-  if(!b) return;
+  if(!b || !state.user) return;
   const me = b.participants.find(p=>p.email===state.user.email);
   if(!me) { showToast('⚠️ Participe do bolão antes de confirmar'); return; }
   if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
