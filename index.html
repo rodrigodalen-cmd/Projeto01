@@ -1181,8 +1181,6 @@ input:checked+.slider:before{transform:translateX(18px)}
 // ===== SUPABASE CONFIG =====
 const SUPABASE_URL = 'https://fzrvjdmhymzneiuekvqc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_mEG37L4_qna9MSFlNjFDHQ_LCeOfW0D';
-// Slug real da Edge Function da Efí no Supabase (a URL não muda mesmo após renomear)
-const EFI_FN_URL = `${SUPABASE_URL}/functions/v1/bright-api`;
 
 let _sb = null;
 
@@ -2792,7 +2790,7 @@ async function openPix(id) {
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   try {
-    const res = await fetch(EFI_FN_URL, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/bright-api`, {
       method:'POST',
       headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
       body: JSON.stringify({
@@ -2800,7 +2798,6 @@ async function openPix(id) {
         bolaoId: b.id,
         amount: b.amount,
         description: `Bolão FC – ${b.title} – R$${b.amount}`,
-        email: state.user?.email || '',
       }),
     });
     const data = await res.json();
@@ -2863,7 +2860,7 @@ async function openPix(id) {
       try {
         const txid = state.pixTxid;
         if(!txid) return;
-        const r = await fetch(EFI_FN_URL, {
+        const r = await fetch(`${SUPABASE_URL}/functions/v1/bright-api`, {
           method:'POST',
           headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
           body: JSON.stringify({ action:'status', txid }),
