@@ -3775,36 +3775,66 @@ function setTG(g, el) {
   renderTabela();
 }
 
+function _processESPNEvents(events) {
+  (events||[]).forEach(ev => {
+    const comp = ev.competitions?.[0];
+    if(!comp) return;
+    const competitors = comp.competitors||[];
+    const hc = competitors.find(c=>c.homeAway==='home');
+    const ac = competitors.find(c=>c.homeAway==='away');
+    if(!hc||!ac) return;
+    const hCode = hc.team?.abbreviation?.toUpperCase();
+    const aCode = ac.team?.abbreviation?.toUpperCase();
+    const g = GAMES.find(x=>(x.home.code===hCode&&x.away.code===aCode)||(x.home.code===aCode&&x.away.code===hCode));
+    if(!g) return;
+    const rev = g.home.code===aCode;
+    const st = comp.status?.type;
+    _ls[g.id] = {
+      h: rev ? parseInt(ac.score||0) : parseInt(hc.score||0),
+      a: rev ? parseInt(hc.score||0) : parseInt(ac.score||0),
+      status: st?.completed?'FT':(st?.state==='in'?'LIVE':'pre'),
+      min: comp.status?.displayClock||''
+    };
+  });
+}
+
 async function fetchTabelaScores() {
   try {
+    // Scoreboard atual (jogos de hoje e ao vivo)
     const r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard');
-    if(!r.ok) return;
-    const data = await r.json();
-    (data.events||[]).forEach(ev => {
-      const comp = ev.competitions?.[0];
-      if(!comp) return;
-      const competitors = comp.competitors||[];
-      const hc = competitors.find(c=>c.homeAway==='home');
-      const ac = competitors.find(c=>c.homeAway==='away');
-      if(!hc||!ac) return;
-      const hCode = hc.team?.abbreviation?.toUpperCase();
-      const aCode = ac.team?.abbreviation?.toUpperCase();
-      const g = GAMES.find(x=>(x.home.code===hCode&&x.away.code===aCode)||(x.home.code===aCode&&x.away.code===hCode));
-      if(!g) return;
-      const rev = g.home.code===aCode;
-      const st = comp.status?.type;
-      _ls[g.id] = {
-        h: rev ? parseInt(ac.score||0) : parseInt(hc.score||0),
-        a: rev ? parseInt(hc.score||0) : parseInt(ac.score||0),
-        status: st?.completed?'FT':(st?.state==='in'?'LIVE':'pre'),
-        min: comp.status?.displayClock||''
-      };
+    if(r.ok) { const d = await r.json(); _processESPNEvents(d.events||[]); }
+  } catch(e) {}
+
+  // Busca histórica: para bolões com jogo já encerrado mas sem resultado ainda
+  // (cobre o caso de ninguém estar online quando o jogo terminou)
+  try {
+    const now = new Date();
+    const datesToFetch = new Set();
+    state.boloes.forEach(b => {
+      if(b.isSeason || b.result || !b.game?.id) return;
+      const gDef = GAMES.find(x=>x.id===b.game.id);
+      if(!gDef) return;
+      const gTime = gameDateTime(gDef);
+      // Jogo terminou há mais de 2h e ESPN atual não trouxe o placar
+      if(now - gTime > 2*60*60*1000 && _ls[b.game.id]?.status !== 'FT') {
+        const dateStr = `${gTime.getFullYear()}${String(gTime.getMonth()+1).padStart(2,'0')}${String(gTime.getDate()).padStart(2,'0')}`;
+        datesToFetch.add(dateStr);
+      }
     });
-    // Auto-apply finished results to ALL bolões (regular + season)
+    for(const dateStr of datesToFetch) {
+      try {
+        const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dateStr}`);
+        if(r.ok) { const d = await r.json(); _processESPNEvents(d.events||[]); }
+      } catch(e) {}
+    }
+  } catch(e) {}
+
+  // Aplica resultados a todos os bolões
+  try {
     const _toSync = [];
     state.boloes.forEach(b => {
       if(b.isSeason) {
-        // Season bolão: apply result to results map per gameId
+        // Season bolão: aplica resultado por gameId
         if(!b.results) b.results = {};
         let changed = false;
         const newGameIds = [];
@@ -3826,19 +3856,16 @@ async function fetchTabelaScores() {
           _toSync.push(b);
         }
       } else {
-        // Regular bolão: resultado automático via ESPN
+        // Bolão regular: resultado automático
         if(b.result || !b.game?.id) return;
         const sc = _ls[b.game.id];
         if(sc?.status !== 'FT') return;
         b.result = {home: sc.h, away: sc.a};
         b.status = 'finished';
         const g = GAMES.find(x=>x.id===b.game.id);
-        if(g) {
-          const scoreStr = `${g.home.flag} ${sc.h}×${sc.a} ${g.away.flag}`;
-          addSystemMessage(b.id, `⚽ Resultado final: ${scoreStr}`);
-        }
+        if(g) addSystemMessage(b.id, `⚽ Resultado final: ${g.home.flag} ${sc.h}×${sc.a} ${g.away.flag}`);
         _toSync.push(b);
-        _triggerWinnerPayouts(b); // dispara PIX automático para vencedor(es)
+        _triggerWinnerPayouts(b);
       }
     });
     if(_toSync.length) {
