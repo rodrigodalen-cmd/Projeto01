@@ -2290,10 +2290,8 @@ function renderDetail() {
         </div>
       </div>`;
 
-  // 3. INSERT RESULT BUTTON (creator, game closed, no result yet)
-  const insertBtn = (isCreator && betClosed && !b.result)
-    ? `<button class="btn btn-primary" style="margin-bottom:12px" onclick="showResultModal('${b.id}')">Inserir resultado final</button>`
-    : '';
+  // 3. Resultado é definido automaticamente via ESPN API (sem botão manual)
+  const insertBtn = '';
 
   // 4. INVITE CARD (only while open)
   const inviteCard = !betClosed && !b.result ? `
@@ -2315,6 +2313,13 @@ function renderDetail() {
   const creatorBtns = isCreator ? `<div style="display:flex;gap:8px;margin-bottom:12px">
     <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="editBolao('${b.id}')">Editar bolão</button>
     <button class="btn" style="flex:1;font-size:13px;background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3)" onclick="deleteBolao('${b.id}')">Excluir</button>
+  </div>` : '';
+
+  // 5b. QUIT BUTTON (for non-creator participants before result)
+  const quitBtn = (!isCreator && me && !b.result) ? `<div style="margin-bottom:12px">
+    <button class="btn btn-ghost" style="width:100%;font-size:13px;color:var(--err);border-color:rgba(231,76,60,.3)" onclick="quitBolao('${b.id}')">
+      Sair do bolão${me.paid ? ` · reembolso R$${b.amount}` : ''}
+    </button>
   </div>` : '';
 
   // 6. PIX CREATOR CARD (for participants who haven't paid yet)
@@ -2478,6 +2483,7 @@ function renderDetail() {
     ${inviteCard}
     ${pixCard}
     ${creatorBtns}
+    ${quitBtn}
     ${statusBar}
     ${actionBox}
     <div class="section-title" style="margin-top:4px">Participantes (${b.participants.length}/${b.maxPart})</div>
@@ -2811,13 +2817,14 @@ async function openPix(id) {
     const data = await res.json();
     if(data.error) throw new Error(data.error);
 
-    // Store txid on participant so webhook can find it later
+    // Store txid and pix key on participant so webhook/refund/payout can reference later
     state.pixTxid = data.txid || null;
-    if(data.txid && _sb) {
+    if(data.txid) {
       const me2 = (b.participants||[]).find(p=>p.email===state.user?.email);
       if(me2) {
         me2.pixTxid = data.txid;
-        _sb.from('boloes').update({participants:b.participants}).eq('id',b.id).then(null,()=>{});
+        me2.pixKey = state.user?.pix || '';
+        if(_sb) _sb.from('boloes').update({participants:b.participants}).eq('id',b.id).then(null,()=>{});
       }
     }
 
@@ -2909,6 +2916,7 @@ function _autoConfirmPix(bolaoId) {
   const me = b.participants.find(p=>p.email===state.user.email);
   if(me && !me.paid) {
     me.paid = true;
+    if(!me.pixKey && state.user?.pix) me.pixKey = state.user.pix;
     addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
     saveBoloes(b);
     _localNotify('💸 Pagamento confirmado!', `Bolão "${b.title}" · R$${b.amount}`);
@@ -3120,6 +3128,47 @@ function submitResult() {
   closeResultModal();
   renderDetail();
   showToast('Resultado registrado! Classificação atualizada.');
+  _triggerWinnerPayouts(b);
+}
+
+async function _triggerWinnerPayouts(b) {
+  try {
+    const prize = fmtPrize(b);
+    if(prize <= 0) return;
+    const allPts = b.participants.map(p => calcPoints(p, b.result, b));
+    const maxPts = allPts.length > 0 ? Math.max(...allPts) : 0;
+    if(maxPts <= 0) return;
+    const winners = b.participants.filter(p => calcPoints(p, b.result, b) === maxPts && p.paid && p.pixKey);
+    if(winners.length === 0) {
+      addSystemMessage(b.id, `🏆 Prêmio de R$${prize} disponível — nenhum ganhador com chave PIX cadastrada.`);
+      saveBoloes(b);
+      return;
+    }
+    const prizeEach = Math.floor(prize / winners.length);
+    addSystemMessage(b.id, `🚀 Enviando prêmio de R$${prizeEach} via PIX para ${winners.length > 1 ? 'cada vencedor' : winners[0].name}...`);
+    saveBoloes(b);
+    for(const winner of winners) {
+      try {
+        const r = await fetch(EFI_FN_URL, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+          body: JSON.stringify({action:'payout', pixKey:winner.pixKey, amount:prizeEach, description:`Premio Bolao FC – ${b.title}`}),
+        });
+        const result = await r.json();
+        if(result.error) throw new Error(result.error);
+        addSystemMessage(b.id, `💰 Prêmio de R$${prizeEach} enviado via PIX para ${winner.name}!`);
+        saveBoloes(b);
+        showToast(`💰 PIX de R$${prizeEach} enviado para ${winner.name}!`);
+        if(winner.email === state.user?.email) {
+          _localNotify('💰 Você ganhou!', `Bolão "${b.title}" — R$${prizeEach} enviado no PIX`);
+        }
+      } catch(err) {
+        console.error('[payout] erro:', err.message);
+        addSystemMessage(b.id, `⚠️ Falha ao enviar prêmio para ${winner.name} (${err.message?.slice(0,60)}). Tente manualmente.`);
+        saveBoloes(b);
+      }
+    }
+  } catch(_) {}
 }
 
 // ===== POINTS & RANKING =====
@@ -3233,10 +3282,58 @@ function cancelDeleteBolao() {
 async function confirmDeleteBolao() {
   const id = document.getElementById('delete-bolao-modal').dataset.id;
   document.getElementById('delete-bolao-modal').style.display = 'none';
+  const b = state.boloes.find(x=>x.id===id);
+  if(b && !b.result) {
+    const toRefund = (b.participants||[]).filter(p=>p.paid && p.pixTxid);
+    if(toRefund.length > 0) {
+      showToast('♻️ Processando reembolsos PIX...');
+      for(const p of toRefund) {
+        try {
+          await fetch(EFI_FN_URL, {
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+            body: JSON.stringify({action:'refund', txid:p.pixTxid}),
+          });
+        } catch(_) {}
+      }
+      showToast(`♻️ ${toRefund.length} reembolso(s) PIX enviado(s)`);
+    }
+  }
   state.boloes = state.boloes.filter(x=>x.id!==id);
   saveBoloes();
   if(_sb) await _sb.from('boloes').delete().eq('id', id);
   showToast('Bolão excluído');
+  back();
+  setTimeout(()=>renderHome(), 300);
+}
+
+async function quitBolao(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b || !state.user) return;
+  const me = b.participants.find(p=>p.email===state.user.email);
+  if(!me) return;
+  const confirmMsg = me.paid
+    ? `Sair do bolão "${b.title}"?\nSeu PIX de R$${b.amount} será devolvido automaticamente.`
+    : `Sair do bolão "${b.title}"?`;
+  if(!confirm(confirmMsg)) return;
+  if(me.paid && me.pixTxid) {
+    showToast('♻️ Processando reembolso PIX...');
+    try {
+      const r = await fetch(EFI_FN_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+        body: JSON.stringify({action:'refund', txid:me.pixTxid}),
+      });
+      const result = await r.json();
+      if(result.error) throw new Error(result.error);
+      showToast('♻️ PIX reembolsado com sucesso!');
+    } catch(err) {
+      showToast(`⚠️ Erro no reembolso: ${err.message?.slice(0,50)}. Contate o suporte.`);
+    }
+  }
+  b.participants = b.participants.filter(p=>p.email!==state.user.email);
+  addSystemMessage(id, `👋 ${state.user.name} saiu do bolão`);
+  saveBoloes(b);
   back();
   setTimeout(()=>renderHome(), 300);
 }
@@ -3323,31 +3420,19 @@ async function fetchTabelaScores() {
           _toSync.push(b);
         }
       } else {
-        // Regular bolão: apply single result
+        // Regular bolão: resultado automático via ESPN
         if(b.result || !b.game?.id) return;
         const sc = _ls[b.game.id];
         if(sc?.status !== 'FT') return;
         b.result = {home: sc.h, away: sc.a};
         b.status = 'finished';
         const g = GAMES.find(x=>x.id===b.game.id);
-        // Find winner — sempre tem um (mais pontos; empate = quem entrou primeiro)
-        const ranked = (b.participants||[])
-          .map((p,i)=>({...p, pts:calcPoints(p,b.result,b), entryIdx:i}))
-          .sort((a,c)=>c.pts-a.pts||a.entryIdx-c.entryIdx);
-        const winner = ranked[0];
-        const prize = fmtPrize(b);
-        if(g && winner) {
+        if(g) {
           const scoreStr = `${g.home.flag} ${sc.h}×${sc.a} ${g.away.flag}`;
           addSystemMessage(b.id, `⚽ Resultado final: ${scoreStr}`);
-          const ptsLabel = winner.pts > 0
-            ? `${winner.pts} ponto${winner.pts!==1?'s':''}`
-            : 'desempate por ordem de entrada';
-          addSystemMessage(b.id, `🏆 ${esc(winner.name)} venceu (${ptsLabel})! Prêmio: R$${prize}`);
-          if(winner.email === state.user?.email) {
-            _localNotify('🏆 Você venceu!', `Bolão "${b.title}" — prêmio R$${prize}`);
-          }
         }
         _toSync.push(b);
+        _triggerWinnerPayouts(b); // dispara PIX automático para vencedor(es)
       }
     });
     if(_toSync.length) {
