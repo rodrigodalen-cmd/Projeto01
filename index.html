@@ -594,7 +594,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         <div style="color:var(--text3);font-size:10px;margin-top:2px">Última atualização: Junho de 2026</div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-1">
         <div class="terms-title">1. IDENTIFICAÇÃO E NATUREZA DO SERVIÇO</div>
         <div class="terms-text">
           O Bolão Copa é uma plataforma digital destinada exclusivamente à organização de bolões informais entre grupos de amigos, familiares ou colegas previamente conhecidos ("usuários"). O serviço <strong>não constitui casa de apostas, jogo de azar comercial ou operação de loteria</strong>, sendo classificado como entretenimento privado entre conhecidos, nos termos do § 2° do Art. 50 da Lei de Contravenções Penais (Decreto-Lei n° 3.688/1941), que isenta de punição os jogos realizados em âmbito privado, sem finalidade lucrativa pública.<br><br>
@@ -602,7 +602,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-2">
         <div class="terms-title">2. REQUISITOS DE ELEGIBILIDADE — RESTRIÇÃO DE IDADE</div>
         <div class="terms-text">
           <strong>2.1</strong> O uso desta plataforma é <strong>estritamente proibido a menores de 18 (dezoito) anos</strong>, conforme:<br>
@@ -614,7 +614,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-3">
         <div class="terms-title">3. FUNCIONAMENTO DO BOLÃO E REGRAS</div>
         <div class="terms-text">
           <strong>3.1 Criação:</strong> Qualquer usuário cadastrado pode criar um bolão, definindo: jogo, valor da aposta (R$20 a R$1.000), limite de participantes (máximo 50) e senha opcional.<br><br>
@@ -628,7 +628,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-4">
         <div class="terms-title">4. PAGAMENTOS E POLÍTICA DE PIX</div>
         <div class="terms-text">
           <strong>4.1</strong> Todos os pagamentos são realizados exclusivamente via Pix, sistema de pagamento instantâneo regulamentado pelo Banco Central do Brasil (Resolução BCB n° 1/2020).<br><br>
@@ -641,7 +641,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-5">
         <div class="terms-title">5. POLÍTICA DE PRIVACIDADE E PROTEÇÃO DE DADOS (LGPD)</div>
         <div class="terms-text">
           Em conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018 — LGPD)</strong>:<br><br>
@@ -667,7 +667,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-6">
         <div class="terms-title">6. CONDUTA DO USUÁRIO E PROIBIÇÕES</div>
         <div class="terms-text">
           É expressamente proibido ao usuário:<br><br>
@@ -683,7 +683,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-7">
         <div class="terms-title">7. LIMITAÇÃO DE RESPONSABILIDADE</div>
         <div class="terms-text">
           <strong>7.1</strong> A plataforma Bolão Copa atua como intermediária tecnológica e não se responsabiliza por:<br>
@@ -696,7 +696,7 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-8">
         <div class="terms-title">8. JOGO RESPONSÁVEL</div>
         <div class="terms-text">
           Em conformidade com o Art. 30 da Lei 14.790/2023 e diretrizes do Ministério da Fazenda:<br><br>
@@ -709,21 +709,21 @@ input:checked+.slider:before{transform:translateX(18px)}
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-9">
         <div class="terms-title">9. PROPRIEDADE INTELECTUAL</div>
         <div class="terms-text">
           Todo o conteúdo da plataforma (código, design, textos, logotipo) é protegido pela Lei de Direitos Autorais (Lei 9.610/1998) e pela Lei de Software (Lei 9.609/1998). É proibida a reprodução, modificação ou distribuição sem autorização expressa.
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-10">
         <div class="terms-title">10. ALTERAÇÕES DOS TERMOS</div>
         <div class="terms-text">
           A plataforma reserva-se o direito de alterar estes Termos a qualquer momento, com aviso prévio de 10 dias úteis aos usuários cadastrados. O uso continuado da plataforma após as alterações constitui aceite tácito dos novos termos.
         </div>
       </div>
 
-      <div class="terms-section">
+      <div class="terms-section" id="t-sec-11">
         <div class="terms-title">11. LEGISLAÇÃO APLICÁVEL E FORO</div>
         <div class="terms-text">
           Estes Termos são regidos pela legislação brasileira, em especial:<br>
@@ -938,6 +938,16 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">Ativar notificações</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">Ranking com amigos</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">Ver tutorial novamente</button>
+    </div>
+    <div class="section-title" style="margin-top:20px">Políticas e Termos</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-1')">Termos de Uso</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-5')">Política de Privacidade e LGPD</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-4')">Política de Pagamentos e PIX</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-3')">Regras do Bolão</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-8')">Jogo Responsável</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-6')">Conduta e Proibições</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="goTermsSection('t-sec-11')">Legislação Aplicável</button>
     </div>
     <div id="admin-btn-wrap"></div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
@@ -4227,6 +4237,17 @@ function buildLiveRanking(b) {
     <div style="font-size:22px;font-weight:900;text-align:center;color:var(--err);letter-spacing:2px;margin-bottom:12px">${liveH} – ${liveA}<span style="font-size:11px;font-weight:600;color:var(--text3);margin-left:8px">${sc.min||''}′</span></div>
     ${rows}
   </div>`;
+}
+
+// ===== TERMOS / POLÍTICAS =====
+function goTermsSection(secId) {
+  go('s-terms');
+  if(secId) {
+    setTimeout(() => {
+      const el = document.getElementById(secId);
+      if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 320);
+  }
 }
 
 // ===== RANKING GERAL DE AMIGOS =====
