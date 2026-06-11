@@ -5203,6 +5203,33 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     });
   }
 });
+
+// ===== SWIPE-BACK GESTURE (borda esquerda → voltar) =====
+(function() {
+  const EDGE = 28;   // px da borda que inicia o gesto
+  const MIN_X = 72;  // deslocamento mínimo horizontal para ativar
+  const MAX_Y = 55;  // desvio vertical máximo permitido
+  // Telas raiz (sem voltar)
+  const ROOT = new Set(['s-home','s-login','s-register','s-tabela','s-join','s-meus-boloes','s-season']);
+  let tx = 0, ty = 0, active = false;
+
+  document.addEventListener('touchstart', e => {
+    tx = e.touches[0].clientX;
+    ty = e.touches[0].clientY;
+    active = tx <= EDGE;
+  }, {passive: true});
+
+  document.addEventListener('touchend', e => {
+    if(!active) return;
+    active = false;
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = Math.abs(e.changedTouches[0].clientY - ty);
+    if(dx < MIN_X || dy > MAX_Y) return;
+    const cur = state.screenStack[state.screenStack.length - 1];
+    if(ROOT.has(cur)) return;
+    back();
+  }, {passive: true});
+})();
 </script>
 
 <!-- LOGOUT MODAL -->
