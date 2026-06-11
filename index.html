@@ -928,10 +928,10 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div id="bet-history"></div>
     <div class="section-title" style="margin-top:20px">Preferências</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-      <button id="theme-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="toggleTheme()">☀️ Modo claro</button>
-      <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">🔔 Ativar notificações</button>
-      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">🏅 Ranking com amigos</button>
-      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">📖 Ver tutorial novamente</button>
+      <button id="theme-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="toggleTheme()">Modo claro</button>
+      <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">Ativar notificações</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">Ranking com amigos</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">Ver tutorial novamente</button>
     </div>
     <div id="admin-btn-wrap"></div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
@@ -4152,7 +4152,7 @@ function toggleTheme() {
   else document.documentElement.removeAttribute('data-theme');
   localStorage.setItem('bolao_theme', next);
   const btn = document.getElementById('theme-toggle-btn');
-  if(btn) btn.textContent = next==='light' ? '🌙 Modo escuro' : '☀️ Modo claro';
+  if(btn) btn.textContent = next==='light' ? 'Modo escuro' : 'Modo claro';
 }
 function applyTheme() {
   const t = localStorage.getItem('bolao_theme');
@@ -4169,7 +4169,7 @@ async function requestNotifications() {
   if(perm==='granted') showToast('🔔 Notificações ativadas!');
   else showToast('❌ Permissão de notificação negada');
   const btn = document.getElementById('notif-toggle-btn');
-  if(btn) btn.textContent = perm==='granted' ? '🔔 Notificações ativadas' : '🔕 Ativar notificações';
+  if(btn) btn.textContent = perm==='granted' ? 'Notificações ativadas' : 'Ativar notificações';
 }
 function _localNotify(title, body) {
   if(Notification.permission!=='granted') return;
