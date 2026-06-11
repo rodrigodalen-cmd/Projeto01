@@ -767,6 +767,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <!-- PÓDIO RANKING -->
     <div class="section-title" style="margin-bottom:10px">🏅 Ranking Global</div>
     <div id="home-podium" style="margin-bottom:16px"></div>
+    <div id="news-section" style="margin-bottom:4px"></div>
     <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
@@ -1840,6 +1841,62 @@ function renderHome() {
   renderGames();
   renderLiveScores();
   renderPodium();
+  fetchFootballNews();
+}
+
+// ===== FOOTBALL NEWS =====
+let _footballNews = [];
+let _newsFetching = false;
+
+async function fetchFootballNews() {
+  if(_newsFetching) return;
+  _newsFetching = true;
+  try {
+    const r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/news?limit=20');
+    if(!r.ok) throw new Error('status ' + r.status);
+    const data = await r.json();
+    _footballNews = (data.articles || []).map(a => ({
+      headline: a.headline || a.title || '',
+      published: a.published || '',
+      image: a.images?.[0]?.url || null,
+      url: a.links?.web?.href || null,
+    })).filter(a => a.headline && a.url);
+  } catch(e) {
+    console.warn('[news]', e.message);
+  }
+  _newsFetching = false;
+  _renderNews();
+}
+
+function _timeAgo(iso) {
+  if(!iso) return '';
+  const h = Math.floor((Date.now() - new Date(iso)) / 3600000);
+  if(h < 1) return 'agora';
+  if(h < 24) return `${h}h atrás`;
+  return `${Math.floor(h / 24)}d atrás`;
+}
+
+function _renderNews() {
+  const el = document.getElementById('news-section');
+  if(!el) return;
+  if(!_footballNews.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="section-title" style="margin-bottom:10px">📰 Notícias da Copa</div>
+    <div style="display:flex;overflow-x:auto;gap:10px;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+      ${_footballNews.slice(0, 15).map(n => `
+        <div onclick="if(event.currentTarget.dataset.url)window.open(event.currentTarget.dataset.url,'_blank')" data-url="${esc(n.url)}"
+          style="flex-shrink:0;width:190px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;active:opacity:.8">
+          ${n.image
+            ? `<img src="${esc(n.image)}" loading="lazy" style="width:100%;height:105px;object-fit:cover;display:block" onerror="this.parentElement.querySelector('.news-fallback').style.display='flex';this.remove()">`
+            : ''}
+          <div class="news-fallback" style="display:${n.image?'none':'flex'};width:100%;height:105px;background:var(--surface2);align-items:center;justify-content:center;font-size:36px">⚽</div>
+          <div style="padding:10px 10px 12px">
+            <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${esc(n.headline)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:600">${_timeAgo(n.published)}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="carousel-hint">← arraste para ver mais →</div>`;
 }
 
 function setMbFilter(filter, btn) {
