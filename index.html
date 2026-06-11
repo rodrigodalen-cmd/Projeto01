@@ -2411,11 +2411,13 @@ async function finishCreate() {
   // Aguarda confirmação do Supabase antes de navegar
   if(_sb) {
     try {
-      const {error} = await _sb.from('boloes').upsert(_bolaoToSbRow(bolao), {onConflict:'id'});
+      const row = _bolaoToSbRow(bolao);
+      const {error} = await _sb.from('boloes').upsert(row, {onConflict:'id'});
       if(error) throw error;
+      console.log('[create] Supabase sync OK:', bolao.id);
     } catch(e) {
-      console.error('[create] supabase sync:', e);
-      showToast('⚠️ Erro ao salvar na nuvem — verifique sua conexão');
+      console.error('[create] Supabase sync ERRO:', e?.message || e);
+      showToast(`⚠️ Bolão não sincronizou: ${(e?.message||'erro desconhecido').slice(0,60)}`);
     }
   }
   state.currentBolaoId = bolao.id;
