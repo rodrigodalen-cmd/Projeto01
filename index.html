@@ -1854,20 +1854,24 @@ function renderHome() {
 let _footballNews = [];
 let _newsFetching = false;
 
+function _rss2json(url) {
+  return fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`)
+    .then(r => r.json()).then(d => {
+      if(d.status !== 'ok' || !d.items?.length) throw new Error('rss empty');
+      return d.items.map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
+    });
+}
+
 const _NEWS_SOURCES = [
-  // ESPN Brasil (pt-BR) via rss2json
-  () => fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.espn.com.br/espn/rss/futebol/noticias')}&count=20`)
-    .then(r => r.json()).then(d => {
-      if(d.status !== 'ok') throw new Error('rss error');
-      return (d.items||[]).map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
-    }),
-  // Lance! (pt-BR) via rss2json
-  () => fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.lance.com.br/feed')}&count=20`)
-    .then(r => r.json()).then(d => {
-      if(d.status !== 'ok') throw new Error('rss error');
-      return (d.items||[]).map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
-    }),
-  // ESPN inglês como último fallback
+  // GloboEsporte (pt-BR) — editorial brasileiro, mais confiável
+  () => _rss2json('https://globoesporte.globo.com/rss.xml'),
+  // ESPN Brasil (pt-BR)
+  () => _rss2json('https://www.espn.com.br/espn/rss/futebol/noticias'),
+  // Lance! (pt-BR)
+  () => _rss2json('https://www.lance.com.br/feed'),
+  // UOL Esporte (pt-BR)
+  () => _rss2json('https://esporte.uol.com.br/futebol/rss.xml'),
+  // ESPN inglês — último fallback
   () => fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/news?limit=20')
     .then(r => r.json()).then(d =>
       (d.articles||[]).map(a=>({headline:a.headline||'',published:a.published||'',image:a.images?.[0]?.url||null,url:a.links?.web?.href||null}))
