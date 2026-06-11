@@ -1148,7 +1148,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === BOLÃO DO APP === -->
 <div class="screen" id="s-app-boloes">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">⚽ Bolão Copa</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Bolão Copa</span></div>
   <div class="scroll" style="padding-bottom:40px">
     <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(244,208,63,.25)">
       <div style="font-size:14px;font-weight:800;color:var(--secondary);margin-bottom:4px">🏟️ Bolões oficiais do Bolão FC</div>
@@ -1173,12 +1173,13 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div id="season-history"></div>
     <div id="season-participants"></div>
     <div id="season-chat"></div>
+    <div id="season-quit"></div>
   </div>
 </div>
 
 <!-- === RANKING GERAL === -->
 <div class="screen" id="s-ranking-geral">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">🏅 Ranking com Amigos</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Ranking com Amigos</span></div>
   <div class="scroll" style="padding-bottom:40px">
     <div id="ranking-geral-content" style="padding-top:8px">
       <div style="text-align:center;color:var(--text3);padding:48px 0">Carregando...</div>
@@ -1235,31 +1236,6 @@ input:checked+.slider:before{transform:translateX(18px)}
 </div>
 
 <!-- RESULT MODAL -->
-<div id="result-modal" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <div style="font-size:18px;font-weight:900;color:var(--text);text-align:center;margin-bottom:4px">Resultado Final</div>
-    <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:4px">Informe o placar oficial do jogo</div>
-    <input type="hidden" id="res-modal-bolao-id">
-    <div class="modal-scores-row">
-      <div class="modal-score-col">
-        <div style="font-size:32px" id="res-modal-home-flag">🇧🇷</div>
-        <div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;max-width:80px" id="res-modal-home-name">Brasil</div>
-        <input class="modal-input" type="number" id="res-home-input" min="0" max="30" placeholder="0">
-      </div>
-      <div style="font-size:28px;font-weight:900;color:var(--text3);padding-bottom:12px">×</div>
-      <div class="modal-score-col">
-        <div style="font-size:32px" id="res-modal-away-flag">🇲🇽</div>
-        <div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;max-width:80px" id="res-modal-away-name">México</div>
-        <input class="modal-input" type="number" id="res-away-input" min="0" max="30" placeholder="0">
-      </div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-ghost" style="flex:1" onclick="closeResultModal()">Cancelar</button>
-      <button class="btn btn-primary" style="flex:1" onclick="submitResult()">Confirmar</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ===== SUPABASE CONFIG =====
 const SUPABASE_URL = 'https://fzrvjdmhymzneiuekvqc.supabase.co';
@@ -1890,7 +1866,11 @@ async function confirmLogout() {
   if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   state.pixBolaoId = null; state.pixTxid = null;
   state.currentBolaoId = null; state.betScores = {home:0, away:0};
+  state.homeFilter = 'all'; state._betDetailId = null;
   if(window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
+  if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
+  if(_newsRotTimer) { clearInterval(_newsRotTimer); _newsRotTimer = null; }
+  if(_newsRefetchTimer) { clearInterval(_newsRefetchTimer); _newsRefetchTimer = null; }
   _notifTimeouts.forEach(t=>clearTimeout(t)); _notifTimeouts = [];
   state.screenStack = ['s-login'];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
@@ -3299,44 +3279,6 @@ function confirmPayment(bolaoId, email) {
   showToast(p.paid ? '✅ Pagamento confirmado!' : 'Pagamento revertido');
 }
 
-// ===== RESULT MODAL =====
-function showResultModal(bolaoId) {
-  const b = state.boloes.find(x=>x.id===bolaoId);
-  if(!b) return;
-  const ex = b.result||{};
-  document.getElementById('res-modal-home-flag').textContent = b.game.home.flag;
-  document.getElementById('res-modal-home-name').textContent = b.game.home.name;
-  document.getElementById('res-modal-away-flag').textContent = b.game.away.flag;
-  document.getElementById('res-modal-away-name').textContent = b.game.away.name;
-  document.getElementById('res-home-input').value = ex.home ?? '';
-  document.getElementById('res-away-input').value = ex.away ?? '';
-  document.getElementById('res-modal-bolao-id').value = bolaoId;
-  document.getElementById('result-modal').style.display = 'flex';
-}
-
-function closeResultModal() {
-  document.getElementById('result-modal').style.display = 'none';
-}
-
-function submitResult() {
-  const bolaoId = document.getElementById('res-modal-bolao-id').value;
-  const home = parseInt(document.getElementById('res-home-input').value);
-  const away = parseInt(document.getElementById('res-away-input').value);
-  if(isNaN(home)||isNaN(away)||home<0||away<0) { showToast('⚠️ Insira o placar dos dois times'); return; }
-  const b = state.boloes.find(x=>x.id===bolaoId);
-  if(!b) return;
-  b.result = {home, away};
-  b.status = 'finished';
-  const resultText = home>away?`Vitória de ${b.game.home.name}`:away>home?`Vitória de ${b.game.away.name}`:'Empate';
-  addSystemMessage(bolaoId, `Resultado definido: ${b.game.home.flag} ${home} × ${away} ${b.game.away.flag} · ${resultText}`);
-  saveBoloes(b);
-  _localNotify('🏆 Resultado do bolão!', `${b.title}: ${b.game.home.name} ${home} × ${away} ${b.game.away.name}`);
-  closeResultModal();
-  renderDetail();
-  showToast('Resultado registrado! Classificação atualizada.');
-  _triggerWinnerPayouts(b);
-}
-
 async function _triggerWinnerPayouts(b) {
   try {
     const prize = fmtPrize(b);
@@ -4444,6 +4386,9 @@ async function initAppBoloes() {
               if(!sbMe.paid && localMe.paid) sbMe.paid = true;
             } else if(localMe && !sbMe) {
               b.participants.push({...localMe});
+            } else if(!localMe && sbMe && !sbMe.paid && _getSeasonLeft()[b.id]) {
+              // Usuário saiu localmente mas o Supabase ainda o lista (RLS) — respeita a saída
+              b.participants = b.participants.filter(p=>p.email!==userEmail);
             }
           }
           state.boloes[idx] = b;
@@ -4580,12 +4525,39 @@ function _termsConfirm() {
   if(_termsCb) { _termsCb(); _termsCb = null; }
 }
 
+// Marca local de "saí deste bolão" — impede o merge do Supabase de readicionar
+// o usuário quando o upsert de saída falha por RLS
+function _seasonLeftKey(){ return 'season_left_'+(state.user?.email||''); }
+function _getSeasonLeft(){ try{ return JSON.parse(localStorage.getItem(_seasonLeftKey())||'{}'); }catch(_){ return {}; } }
+function _setSeasonLeft(id,val){
+  const m=_getSeasonLeft();
+  if(val) m[id]=1; else delete m[id];
+  try{ localStorage.setItem(_seasonLeftKey(),JSON.stringify(m)); }catch(_){}
+}
+
+function quitSeasonBolao() {
+  const b=state.boloes.find(x=>x.id===_curSeasonBolaoId);
+  if(!b || !state.user) return;
+  const me=b.participants.find(p=>p.email===state.user.email);
+  if(!me) return;
+  if(me.paid) { showToast('Pagamento confirmado — participação definitiva'); return; }
+  if(!confirm(`Sair do "${b.title}"?`)) return;
+  b.participants=b.participants.filter(p=>p.email!==state.user.email);
+  addSystemMessage(b.id, `👋 ${state.user.name} saiu do bolão`);
+  _setSeasonLeft(b.id, true);
+  saveBoloes(b);
+  showToast('Você saiu do bolão');
+  back();
+  setTimeout(renderAppBoloes, 300);
+}
+
 function joinSeasonBolao(bolaoId) {
   const bolao=state.boloes.find(x=>x.id===bolaoId);
   if(!bolao) return;
   const already=bolao.participants.find(p=>p.email===state.user?.email);
   if(already) { openSeasonBolao(bolaoId); return; }
   showTermsModal(()=>{
+    _setSeasonLeft(bolaoId, false);
     bolao.participants.push({email:state.user.email,name:state.user.name,photo:state.user.photo||null,paid:false,bets:{}});
     addSystemMessage(bolaoId,`🎉 ${state.user.name} entrou no bolão!`);
     saveBoloes(bolao);
@@ -4635,6 +4607,12 @@ function renderSeasonDetail() {
   _renderSeasonHistory(bolao);
   _renderSeasonParticipants(bolao);
   _renderSeasonChat(bolao);
+  // Sair: só para quem ainda não pagou — após o PIX a vaga é definitiva
+  const quitEl=document.getElementById('season-quit');
+  if(quitEl) quitEl.innerHTML=(me&&!hasPaid)?`<div style="margin-top:16px">
+    <button class="btn btn-ghost" style="width:100%;font-size:13px;color:var(--err);border-color:rgba(231,76,60,.3)" onclick="quitSeasonBolao()">Sair do bolão</button>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Após confirmar o pagamento, a participação é definitiva.</div>
+  </div>`:'';
 }
 
 function _renderSeasonCurrentGame(bolao) {
@@ -4742,7 +4720,7 @@ function _renderSeasonRanking(bolao) {
     <div style="flex:1"><div style="font-size:12px;font-weight:700">Você · ${myPos+1}° lugar</div></div>
     <div style="font-size:18px;font-weight:900;color:var(--secondary)">${ranked[myPos].totalPts}pts</div>
   </div>`:'';
-  el.innerHTML=`<div class="section-title">🏆 Ranking ao vivo</div>${rows}${myCard}`;
+  el.innerHTML=`<div class="section-title">Ranking ao vivo</div>${rows}${myCard}`;
 }
 
 function _renderSeasonHistory(bolao) {
@@ -4772,7 +4750,7 @@ function _renderSeasonHistory(bolao) {
       <div style="font-size:16px;font-weight:900;color:${pts>0?'var(--ok)':'var(--text3)'}">+${pts}pts</div>
     </div>`;
   }).join('');
-  el.innerHTML=`<div class="section-title" style="margin-top:8px">📋 Histórico de jogos</div>${rows}`;
+  el.innerHTML=`<div class="section-title" style="margin-top:8px">Histórico de jogos</div>${rows}`;
 }
 
 function _renderSeasonParticipants(bolao) {
@@ -4802,7 +4780,7 @@ function _renderSeasonParticipants(bolao) {
       </div>
     </div>`;
   }).join('');
-  el.innerHTML=`<div class="section-title" style="margin-top:8px">👥 Participantes (${all.length})</div>${rows}`;
+  el.innerHTML=`<div class="section-title" style="margin-top:8px">Participantes (${all.length})</div>${rows}`;
 }
 
 function _renderSeasonChat(bolao) {
@@ -4826,7 +4804,7 @@ function _renderSeasonChat(bolao) {
     </div>`;
   }).join('');
   el.innerHTML=`<div class="chat-section" style="margin-top:8px">
-    <div class="section-title">💬 Chat do Bolão</div>
+    <div class="section-title">Chat do Bolão</div>
     <div id="chat-msgs-${bolao.id}" style="max-height:300px;overflow-y:auto;margin-bottom:8px">
       ${rows||'<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Nenhuma mensagem ainda. Seja o primeiro!</div>'}
     </div>
