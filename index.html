@@ -479,6 +479,25 @@ input:checked+.slider:before{transform:translateX(18px)}
   .score-num{font-size:20px}
   .prize-val{font-size:26px}
 }
+/* === DESKTOP / NAVEGADOR: corrige elementos fixed para o container centralizado === */
+@media(min-width:431px){
+  body{background:#050d1a}
+  #app{
+    box-shadow:0 0 0 1px rgba(255,255,255,.06),0 24px 72px rgba(0,0,0,.6);
+    height:100dvh;
+  }
+  /* Menu button: alinha com a borda esquerda do #app centralizado */
+  .menu-btn{left:calc((100vw - 430px)/2 + 12px)}
+  /* Drawer: começa na borda esquerda do #app */
+  .left-drawer{left:calc((100vw - 430px)/2)}
+  /* Overlay do drawer: restringe à largura do app */
+  .drawer-overlay{left:calc((100vw - 430px)/2);right:calc((100vw - 430px)/2)}
+  /* Modais de folha sobem do fundo do app, não da janela inteira */
+  .edit-bolao-modal,.ios-modal,.ob-overlay{
+    left:calc((100vw - 430px)/2);
+    right:calc((100vw - 430px)/2);
+  }
+}
 </style>
 </head>
 <body>
