@@ -1922,35 +1922,43 @@ async function doDeleteAccount() {
       const email  = state.user?.email;
       showToast('Removendo dados...');
       if(_sb && email) {
+        // Anonimizar participação em todos os bolões (per-iteration catch para não abortar em erro parcial)
         try {
-          // Anonimizar participação em todos os bolões
           const { data: bData } = await _sb.from('boloes').select('id,participants');
           if(bData) {
             for(const row of bData) {
               const parts = row.participants || [];
               const idx = parts.findIndex(p => p.email === email);
               if(idx >= 0) {
-                const anon = `deleted_${Date.now()}`;
+                const anon = `deleted_${Date.now()}_${row.id.slice(-6)}`;
                 parts[idx] = {
                   ...parts[idx],
                   name: 'Usuário excluído', email: `${anon}@excluido.invalid`,
                   phone: '', cpf: '', pix: '', pixKey: ''
                 };
-                await _sb.from('boloes').update({ participants: parts }).eq('id', row.id);
+                try { await _sb.from('boloes').update({ participants: parts }).eq('id', row.id); }
+                catch(e2) { console.error('[delete-account] bolão', row.id, e2); }
               }
             }
           }
-          // Anonimizar perfil
-          if(userId) {
-            await _sb.from('profiles').update({ name: 'Conta excluída', phone: '', pix: '', dob: '' }).eq('id', userId);
-          }
-        } catch(e) { console.error('[delete-account]', e); }
+        } catch(e) { console.error('[delete-account] select:', e); }
+        // Anonimizar perfil
+        if(userId) {
+          try { await _sb.from('profiles').update({ name: 'Conta excluída', phone: '', pix: '', dob: '' }).eq('id', userId); }
+          catch(e) { console.error('[delete-account] profile:', e); }
+        }
         await _sb.auth.signOut().catch(()=>{});
       }
-      try { localStorage.clear(); } catch(e) {}
+      // Limpa todo estado local (igual ao confirmLogout)
+      try { localStorage.removeItem('bolao_session'); localStorage.removeItem('bolao_boloes'); } catch(e) {}
       state.user = null; state.boloes = [];
-      if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-      if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
+      if(state.pixTimerInterval)    { clearInterval(state.pixTimerInterval);    state.pixTimerInterval    = null; }
+      if(state.pixPollInterval)     { clearInterval(state.pixPollInterval);     state.pixPollInterval     = null; }
+      if(window._liveInterval)      { clearInterval(window._liveInterval);      window._liveInterval      = null; }
+      if(state.champPollInterval)   { clearInterval(state.champPollInterval);   state.champPollInterval   = null; }
+      if(_newsRotTimer)             { clearInterval(_newsRotTimer);             _newsRotTimer             = null; }
+      if(_newsRefetchTimer)         { clearInterval(_newsRefetchTimer);         _newsRefetchTimer         = null; }
+      _notifTimeouts.forEach(t=>clearTimeout(t)); _notifTimeouts = [];
       state.pixBolaoId = null; state.pixTxid = null;
       setTimeout(() => {
         showToast('✅ Dados removidos. Conta encerrada.');
@@ -2158,7 +2166,7 @@ function renderMyBoloes() {
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span class="bolao-title">${esc(b.title)}</span>
             ${isCreator?'<span class="badge badge-green" style="font-size:9px">Criador</span>':''}
-            ${b.isPrivate!==false?'<span style="font-size:9px;color:var(--text3)">🔒</span>':'<span style="font-size:9px;color:var(--warn)">🌐</span>'}
+            ${(b.isPrivate??true)?'<span style="font-size:9px;color:var(--text3)">🔒</span>':'<span style="font-size:9px;color:var(--warn)">🌐</span>'}
           </div>
           <span class="badge badge-green">Aberto</span>
         </div>
@@ -2470,6 +2478,8 @@ function nextCreateStep() {
 }
 
 async function finishCreate() {
+  if(finishCreate._running) return;
+  finishCreate._running = true;
   const s = createState;
   const code = genCode();
   const bolao = {
@@ -2506,11 +2516,13 @@ async function finishCreate() {
       showToast(`⚠️ Bolão não sincronizou: ${(e?.message||'erro desconhecido').slice(0,60)}`);
     }
   }
+  finishCreate._running = false;
   state.currentBolaoId = bolao.id;
   openDetail(bolao.id);
   const idx = state.screenStack.indexOf('s-create');
   if(idx>-1) state.screenStack.splice(idx,1);
 }
+finishCreate._running = false;
 
 function genCode() {
   const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -3073,6 +3085,14 @@ function scheduleGameNotifications() {
 async function openPix(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
+  // Guard: if participant already paid, show confirmation screen directly (no new charge)
+  if(state.user) {
+    const me = (b.participants||[]).find(p=>p.email===state.user.email);
+    if(me?.paid) {
+      showToast('✅ Seu pagamento já foi confirmado!');
+      return;
+    }
+  }
   if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
   if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   state.pixTxid = null;
@@ -3170,9 +3190,8 @@ async function openPix(id) {
         });
         const statusData = await r.json();
         if(statusData.paid) {
-          clearInterval(state.pixPollInterval);  state.pixPollInterval  = null;
-          clearInterval(state.pixTimerInterval); state.pixTimerInterval = null;
-          _autoConfirmPix(state.pixBolaoId);
+          // Não limpa os intervalos aqui: _autoConfirmPix decide se a verificação MP passou
+          await _autoConfirmPix(state.pixBolaoId);
         }
       } catch(_) {}
     }, 5000);
@@ -3187,16 +3206,12 @@ async function openPix(id) {
 }
 
 async function _autoConfirmPix(bolaoId) {
-  if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-  if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   const b = state.boloes.find(x=>x.id===bolaoId);
   if(!b || !state.user) return;
   const me = b.participants.find(p=>p.email===state.user.email);
   if(!me) return;
-  if(me.paid) {
-    // Already marked paid (e.g. by webhook) — just show success UI
-  } else {
-    // Always verify with Mercado Pago before marking paid — prevents fraud via devtools or race conditions
+  if(!me.paid) {
+    // Sempre verifica com Mercado Pago antes de marcar pago — previne fraude
     const txid = state.pixTxid || me.pixTxid;
     if(!txid) { console.warn('[PIX] _autoConfirmPix: sem txid — abortando'); return; }
     try {
@@ -3207,19 +3222,28 @@ async function _autoConfirmPix(bolaoId) {
       });
       const statusData = await r.json();
       if(!statusData.paid) {
+        // MP ainda não confirmou — poll continua rodando até confirmar ou tempo esgotar
         console.warn('[PIX] MP não confirmou pagamento para txid:', txid);
         return;
       }
     } catch(e) {
+      // Erro de rede — poll continua tentando
       console.error('[PIX] falha ao verificar com MP:', e);
       return;
     }
+    // Verificação OK: agora limpa intervalos e marca como pago
+    if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
+    if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
     me.paid = true;
     me.pixPaidAt = new Date().toISOString();
     if(!me.pixKey && state.user?.pix) me.pixKey = state.user.pix;
     addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
     saveBoloes(b);
     _localNotify('💸 Pagamento confirmado!', `Bolão "${b.title}" · R$${b.amount}`);
+  } else {
+    // Já pago (ex: webhook confirmou) — só limpa intervalos e mostra tela de sucesso
+    if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
+    if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   }
   const el = document.getElementById('pix-content');
   if(el) el.innerHTML=`
@@ -3436,8 +3460,8 @@ async function _triggerWinnerPayouts(b) {
         const result = await r.json();
         if(result.error) throw new Error(result.error);
         addSystemMessage(b.id, `💰 Prêmio de R$${prizeEach} enviado via PIX para ${winner.name}!`);
-        if(prizeEach >= 2824) {
-          addSystemMessage(b.id, `⚠️ Aviso fiscal: prêmio de R$${prizeEach} pode ter incidência de IRPF sobre o valor acima de R$ 2.824. Consulte um contador ou a Receita Federal.`);
+        if(prizeEach > 0) {
+          addSystemMessage(b.id, `⚠️ Aviso fiscal: prêmios e premiações estão sujeitos a IRPF conforme a legislação brasileira (Lei 4.506/64). Consulte um contador ou a Receita Federal (receita.fazenda.gov.br).`);
         }
         saveBoloes(b);
         showToast(`💰 PIX de R$${prizeEach} enviado para ${winner.name}!`);
@@ -3817,7 +3841,8 @@ function adminSetResult(id) {
   if(home === null) return;
   const away = prompt(`Placar do visitante (${b.game?.away?.name||'Fora'}):`, '0');
   if(away === null) return;
-  const h = parseInt(home), a = parseInt(away);
+  if(!/^\d+$/.test(home.trim()) || !/^\d+$/.test(away.trim())) { showToast('⚠️ Placar inválido — use apenas números'); return; }
+  const h = parseInt(home.trim(), 10), a = parseInt(away.trim(), 10);
   if(isNaN(h)||isNaN(a)) { showToast('⚠️ Placar inválido'); return; }
   appConfirm(
     `Definir resultado ${h}×${a}?`,
@@ -3826,8 +3851,9 @@ function adminSetResult(id) {
     async () => {
       b.result = {home: h, away: a};
       b.status = 'finished';
+      b.payoutClaimed = false;
       const sbB = state.boloes.find(x=>x.id===id);
-      if(sbB) { sbB.result = b.result; sbB.status = 'finished'; }
+      if(sbB) { sbB.result = b.result; sbB.status = 'finished'; sbB.payoutClaimed = false; }
       if(_sb) await _sb.from('boloes').update({result: b.result, status:'finished', payout_claimed: false}).eq('id', id);
       showToast('✅ Resultado definido — disparando pagamentos...');
       _renderAdminPanel();
@@ -3993,7 +4019,7 @@ async function fetchTabelaScores() {
   // Aplica resultados a todos os bolões
   try {
     const _toSync = [];
-    state.boloes.forEach(b => {
+    for(const b of state.boloes) {
       if(b.isSeason) {
         // Season bolão: aplica resultado por gameId
         if(!b.results) b.results = {};
@@ -4018,17 +4044,17 @@ async function fetchTabelaScores() {
         }
       } else {
         // Bolão regular: resultado automático
-        if(b.result || !b.game?.id) return;
+        if(b.result || !b.game?.id) continue;
         const sc = _ls[b.game.id];
-        if(sc?.status !== 'FT') return;
+        if(sc?.status !== 'FT') continue;
         b.result = {home: sc.h, away: sc.a};
         b.status = 'finished';
         const g = GAMES.find(x=>x.id===b.game.id);
         if(g) addSystemMessage(b.id, `⚽ Resultado final: ${g.home.flag} ${sc.h}×${sc.a} ${g.away.flag}`);
         _toSync.push(b);
-        _triggerWinnerPayouts(b);
+        await _triggerWinnerPayouts(b);
       }
-    });
+    }
     if(_toSync.length) {
       try{localStorage.setItem('bolao_boloes',JSON.stringify(state.boloes));}catch(e){}
       if(_sb) _toSync.forEach(b=>_syncBolaoToSupabase(b).catch(()=>{}));
