@@ -87,6 +87,22 @@ async function checkStatus(txid: string) {
   return { txid, status: data.status, paid: data.status === 'approved' }
 }
 
+async function searchPayments() {
+  const res = await fetch(`${MP_BASE}/v1/payments/search?sort=date_created&criteria=desc&range=date_created&limit=15`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` },
+  })
+  const text = await res.text()
+  if (!res.ok) throw new Error(`Erro ao buscar pagamentos (${res.status}): ${text.slice(0, 300)}`)
+  const data = JSON.parse(text)
+  return (data.results || []).map((p: Record<string, unknown>) => ({
+    txid: String(p.id),
+    status: p.status,
+    amount: p.transaction_amount,
+    description: p.description,
+    date: p.date_created,
+  }))
+}
+
 async function sendRefund(txid: string) {
   console.log('[MP] refund payment:', txid)
   const res = await fetch(`${MP_BASE}/v1/payments/${txid}/refunds`, {
@@ -223,6 +239,13 @@ serve(async (req) => {
     if (action === 'status') {
       if (!txid) throw new Error('txid é obrigatório')
       const result = await checkStatus(String(txid))
+      return new Response(JSON.stringify(result), {
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (action === 'search') {
+      const result = await searchPayments()
       return new Response(JSON.stringify(result), {
         headers: { ...cors, 'Content-Type': 'application/json' },
       })
