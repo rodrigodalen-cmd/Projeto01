@@ -2290,10 +2290,8 @@ function renderDetail() {
         </div>
       </div>`;
 
-  // 3. INSERT RESULT BUTTON (creator, game closed, no result yet)
-  const insertBtn = (isCreator && betClosed && !b.result)
-    ? `<button class="btn btn-primary" style="margin-bottom:12px" onclick="showResultModal('${b.id}')">Inserir resultado final</button>`
-    : '';
+  // 3. Resultado é definido automaticamente via ESPN API (sem botão manual)
+  const insertBtn = '';
 
   // 4. INVITE CARD (only while open)
   const inviteCard = !betClosed && !b.result ? `
@@ -3161,6 +3159,9 @@ async function _triggerWinnerPayouts(b) {
         addSystemMessage(b.id, `💰 Prêmio de R$${prizeEach} enviado via PIX para ${winner.name}!`);
         saveBoloes(b);
         showToast(`💰 PIX de R$${prizeEach} enviado para ${winner.name}!`);
+        if(winner.email === state.user?.email) {
+          _localNotify('💰 Você ganhou!', `Bolão "${b.title}" — R$${prizeEach} enviado no PIX`);
+        }
       } catch(err) {
         console.error('[payout] erro:', err.message);
         addSystemMessage(b.id, `⚠️ Falha ao enviar prêmio para ${winner.name} (${err.message?.slice(0,60)}). Tente manualmente.`);
@@ -3419,31 +3420,19 @@ async function fetchTabelaScores() {
           _toSync.push(b);
         }
       } else {
-        // Regular bolão: apply single result
+        // Regular bolão: resultado automático via ESPN
         if(b.result || !b.game?.id) return;
         const sc = _ls[b.game.id];
         if(sc?.status !== 'FT') return;
         b.result = {home: sc.h, away: sc.a};
         b.status = 'finished';
         const g = GAMES.find(x=>x.id===b.game.id);
-        // Find winner — sempre tem um (mais pontos; empate = quem entrou primeiro)
-        const ranked = (b.participants||[])
-          .map((p,i)=>({...p, pts:calcPoints(p,b.result,b), entryIdx:i}))
-          .sort((a,c)=>c.pts-a.pts||a.entryIdx-c.entryIdx);
-        const winner = ranked[0];
-        const prize = fmtPrize(b);
-        if(g && winner) {
+        if(g) {
           const scoreStr = `${g.home.flag} ${sc.h}×${sc.a} ${g.away.flag}`;
           addSystemMessage(b.id, `⚽ Resultado final: ${scoreStr}`);
-          const ptsLabel = winner.pts > 0
-            ? `${winner.pts} ponto${winner.pts!==1?'s':''}`
-            : 'desempate por ordem de entrada';
-          addSystemMessage(b.id, `🏆 ${esc(winner.name)} venceu (${ptsLabel})! Prêmio: R$${prize}`);
-          if(winner.email === state.user?.email) {
-            _localNotify('🏆 Você venceu!', `Bolão "${b.title}" — prêmio R$${prize}`);
-          }
         }
         _toSync.push(b);
+        _triggerWinnerPayouts(b); // dispara PIX automático para vencedor(es)
       }
     });
     if(_toSync.length) {
