@@ -14,6 +14,16 @@ function getToken(): string {
   return token
 }
 
+function detectPixKeyType(key: string): string {
+  const cleaned = key.replace(/[\s.()\-+]/g, '')
+  if (key.includes('@')) return 'email'
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) return 'random_key'
+  if (/^\d{14}$/.test(cleaned)) return 'CNPJ'
+  if (/^\d{11}$/.test(cleaned)) return 'CPF'
+  if (/^\d{10,11}$/.test(cleaned)) return 'phone'
+  return 'email'
+}
+
 async function createCharge(amount: number, bolaoId: string, description: string, email: string) {
   const idempotencyKey = `bolao-${bolaoId.replace(/[^a-zA-Z0-9]/g, '')}-${Date.now()}`
 
@@ -75,6 +85,60 @@ async function checkStatus(txid: string) {
 
   const data = await res.json()
   return { txid, status: data.status, paid: data.status === 'approved' }
+}
+
+async function sendRefund(txid: string) {
+  console.log('[MP] refund payment:', txid)
+  const res = await fetch(`${MP_BASE}/v1/payments/${txid}/refunds`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${getToken()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  })
+
+  const text = await res.text()
+  console.log('[MP] refund status:', res.status, '| body:', text.slice(0, 400))
+  if (!res.ok) throw new Error(`Erro ao reembolsar (${res.status}): ${text.slice(0, 300)}`)
+
+  const data = JSON.parse(text)
+  return { txid, refundId: String(data.id), status: data.status }
+}
+
+async function sendPayout(amount: number, pixKey: string, description: string) {
+  const keyType = detectPixKeyType(pixKey)
+  console.log('[MP] payout:', amount, 'BRL → pix key type:', keyType)
+
+  const body = {
+    amount,
+    currency_id: 'BRL',
+    description: description.substring(0, 60),
+    origin: { type: 'account' },
+    destination: {
+      type: 'pix',
+      pix_data: {
+        key: pixKey,
+        key_type: keyType,
+      },
+    },
+  }
+
+  const res = await fetch(`${MP_BASE}/v1/transfers`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${getToken()}`,
+      'Content-Type': 'application/json',
+      'X-Idempotency-Key': `payout-${Date.now()}-${pixKey.replace(/[^a-zA-Z0-9]/g, '').slice(0, 16)}`,
+    },
+    body: JSON.stringify(body),
+  })
+
+  const text = await res.text()
+  console.log('[MP] payout status:', res.status, '| body:', text.slice(0, 400))
+  if (!res.ok) throw new Error(`Erro ao enviar prêmio (${res.status}): ${text.slice(0, 300)}`)
+
+  return JSON.parse(text)
 }
 
 async function handleWebhook(body: Record<string, unknown>) {
@@ -141,7 +205,7 @@ serve(async (req) => {
       })
     }
 
-    const { action, bolaoId, amount, description, txid, email } = await req.json()
+    const { action, bolaoId, amount, description, txid, email, pixKey } = await req.json()
 
     if (action === 'create') {
       if (!bolaoId || !amount) throw new Error('bolaoId e amount são obrigatórios')
@@ -159,6 +223,26 @@ serve(async (req) => {
     if (action === 'status') {
       if (!txid) throw new Error('txid é obrigatório')
       const result = await checkStatus(String(txid))
+      return new Response(JSON.stringify(result), {
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (action === 'refund') {
+      if (!txid) throw new Error('txid é obrigatório')
+      const result = await sendRefund(String(txid))
+      return new Response(JSON.stringify(result), {
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (action === 'payout') {
+      if (!pixKey || !amount) throw new Error('pixKey e amount são obrigatórios')
+      const result = await sendPayout(
+        Number(amount),
+        String(pixKey),
+        description || 'Prêmio Bolão FC',
+      )
       return new Response(JSON.stringify(result), {
         headers: { ...cors, 'Content-Type': 'application/json' },
       })
