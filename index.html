@@ -765,9 +765,15 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
     <!-- PÓDIO RANKING -->
-    <div class="section-title" style="margin-bottom:10px">Ranking Global</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="openRanking()">
+      <div class="section-title" style="margin-bottom:0">Ranking Global</div>
+      <span style="font-size:12px;color:var(--text3);font-weight:600">Ver todos →</span>
+    </div>
     <div id="home-podium" style="margin-bottom:16px"></div>
-    <div class="section-title" style="margin-top:4px">Próximos Jogos</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;cursor:pointer" onclick="drawerGo('tabela')">
+      <div class="section-title" style="margin-bottom:0">Próximos Jogos</div>
+      <span style="font-size:12px;color:var(--text3);font-weight:600">Ver tabela →</span>
+    </div>
     <div class="section-sub">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
     <div id="news-section" style="margin-top:4px"></div>
@@ -1067,7 +1073,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === RANKING GLOBAL === -->
 <div class="screen" id="s-ranking">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">🏆 Ranking Global</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Ranking Global</span></div>
   <div class="scroll" style="padding-bottom:40px">
     <div id="ranking-screen-content" style="padding-top:8px">
       <div style="text-align:center;color:var(--text3);padding:48px 0">Carregando...</div>
@@ -1848,20 +1854,24 @@ function renderHome() {
 let _footballNews = [];
 let _newsFetching = false;
 
+function _rss2json(url) {
+  return fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`)
+    .then(r => r.json()).then(d => {
+      if(d.status !== 'ok' || !d.items?.length) throw new Error('rss empty');
+      return d.items.map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
+    });
+}
+
 const _NEWS_SOURCES = [
-  // ESPN Brasil (pt-BR) via rss2json
-  () => fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.espn.com.br/espn/rss/futebol/noticias')}&count=20`)
-    .then(r => r.json()).then(d => {
-      if(d.status !== 'ok') throw new Error('rss error');
-      return (d.items||[]).map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
-    }),
-  // Lance! (pt-BR) via rss2json
-  () => fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.lance.com.br/feed')}&count=20`)
-    .then(r => r.json()).then(d => {
-      if(d.status !== 'ok') throw new Error('rss error');
-      return (d.items||[]).map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
-    }),
-  // ESPN inglês como último fallback
+  // GloboEsporte (pt-BR) — editorial brasileiro, mais confiável
+  () => _rss2json('https://globoesporte.globo.com/rss.xml'),
+  // ESPN Brasil (pt-BR)
+  () => _rss2json('https://www.espn.com.br/espn/rss/futebol/noticias'),
+  // Lance! (pt-BR)
+  () => _rss2json('https://www.lance.com.br/feed'),
+  // UOL Esporte (pt-BR)
+  () => _rss2json('https://esporte.uol.com.br/futebol/rss.xml'),
+  // ESPN inglês — último fallback
   () => fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/news?limit=20')
     .then(r => r.json()).then(d =>
       (d.articles||[]).map(a=>({headline:a.headline||'',published:a.published||'',image:a.images?.[0]?.url||null,url:a.links?.web?.href||null}))
@@ -2044,6 +2054,14 @@ function renderLiveScores() {
   const upcoming = GAMES.filter(g=>gameDateTime(g)>now).sort((a,b)=>gameDateTime(a)-gameDateTime(b));
   if(liveGames.length===0 && upcoming.length===0) { section.style.display='none'; return; }
   section.style.display='block';
+  // Reposition: rise to top when live, return after news when not
+  const _newsSection = document.getElementById('news-section');
+  if(liveGames.length>0) {
+    const _scroll = section.closest('.scroll');
+    if(_scroll && section !== _scroll.firstElementChild) _scroll.prepend(section);
+  } else {
+    if(_newsSection && _newsSection.nextElementSibling !== section) _newsSection.after(section);
+  }
   if(liveGames.length>0) {
     document.getElementById('live-list').innerHTML = liveGames.map(g=>{
       const min = Math.floor((now-gameDateTime(g))/60000);
@@ -4793,7 +4811,7 @@ async function openRanking() {
   const data=await fetchGlobalRanking();
   if(!el) return;
   if(data.length===0){
-    el.innerHTML='<div style="text-align:center;color:var(--text3);padding:48px 0">Ainda sem pontuações. Participe dos bolões! 🏆</div>';
+    el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px;color:var(--text3)"><div style="font-size:52px">🏆</div><div style="font-size:15px;font-weight:700;color:var(--text)">Ainda sem pontuações</div><div style="font-size:13px">Participe dos bolões para aparecer aqui!</div></div>';
     return;
   }
   const top10=data.slice(0,10);
