@@ -3460,15 +3460,40 @@ async function confirmDeleteBolao() {
   setTimeout(()=>renderHome(), 300);
 }
 
-async function quitBolao(id) {
+// Modal de confirmação estilizado — substitui o confirm() nativo do navegador
+let _appConfirmCb = null;
+function appConfirm(title, msg, yesLabel, cb) {
+  _appConfirmCb = cb;
+  document.getElementById('app-confirm-title').textContent = title;
+  document.getElementById('app-confirm-text').textContent = msg || '';
+  document.getElementById('app-confirm-yes-btn').textContent = yesLabel || 'Confirmar';
+  document.getElementById('app-confirm-modal').style.display = 'flex';
+}
+function _appConfirmYes() {
+  document.getElementById('app-confirm-modal').style.display = 'none';
+  const cb = _appConfirmCb; _appConfirmCb = null;
+  if(cb) cb();
+}
+function _appConfirmNo() {
+  document.getElementById('app-confirm-modal').style.display = 'none';
+  _appConfirmCb = null;
+}
+
+function quitBolao(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b || !state.user) return;
   const me = b.participants.find(p=>p.email===state.user.email);
   if(!me) return;
-  const confirmMsg = me.paid
-    ? `Sair do bolão "${b.title}"?\nSeu PIX de R$${b.amount} será devolvido automaticamente.`
-    : `Sair do bolão "${b.title}"?`;
-  if(!confirm(confirmMsg)) return;
+  const msg = me.paid
+    ? `Seu PIX de R$${b.amount} será devolvido automaticamente.`
+    : 'Você poderá entrar novamente enquanto houver vagas.';
+  appConfirm(`Sair do bolão "${b.title}"?`, msg, 'Sair do bolão', ()=>_doQuitBolao(id));
+}
+async function _doQuitBolao(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b || !state.user) return;
+  const me = b.participants.find(p=>p.email===state.user.email);
+  if(!me) return;
   if(me.paid && me.pixTxid) {
     showToast('♻️ Processando reembolso PIX...');
     try {
@@ -3623,10 +3648,14 @@ async function adminForcePayout(id) {
   await _triggerWinnerPayouts(b);
 }
 
-async function adminDeleteBolao(id) {
+function adminDeleteBolao(id) {
   const b = _adminAllBoloes.find(x=>x.id===id);
   if(!b) return;
-  if(!confirm(`Excluir "${b.title}"? Participantes pagos serão reembolsados.`)) return;
+  appConfirm(`Excluir "${b.title}"?`, 'Participantes pagos serão reembolsados automaticamente.', 'Excluir', ()=>_doAdminDeleteBolao(id));
+}
+async function _doAdminDeleteBolao(id) {
+  const b = _adminAllBoloes.find(x=>x.id===id);
+  if(!b) return;
   if(!b.result) {
     let ok=0, fail=0;
     for(const p of b.participants.filter(p=>p.paid&&p.pixTxid)) {
@@ -4541,7 +4570,13 @@ function quitSeasonBolao() {
   const me=b.participants.find(p=>p.email===state.user.email);
   if(!me) return;
   if(me.paid) { showToast('Pagamento confirmado — participação definitiva'); return; }
-  if(!confirm(`Sair do "${b.title}"?`)) return;
+  appConfirm(`Sair do "${b.title}"?`, 'Sua vaga será liberada. Você pode entrar de novo quando quiser.', 'Sair do bolão', _doQuitSeasonBolao);
+}
+function _doQuitSeasonBolao() {
+  const b=state.boloes.find(x=>x.id===_curSeasonBolaoId);
+  if(!b || !state.user) return;
+  const me=b.participants.find(p=>p.email===state.user.email);
+  if(!me || me.paid) return;
   b.participants=b.participants.filter(p=>p.email!==state.user.email);
   addSystemMessage(b.id, `👋 ${state.user.name} saiu do bolão`);
   _setSeasonLeft(b.id, true);
@@ -4939,11 +4974,27 @@ async function openRanking() {
   el.innerHTML=`${myEntry}<div class="section-title">Top 10 Jogadores</div>${rows}`;
 }
 
+// Notifica quando alguém te ultrapassa no ranking global
+function _checkRankDrop(data) {
+  const email = state.user?.email;
+  if(!email || !data.length) return;
+  const pos = data.findIndex(x=>x.email===email);
+  if(pos < 0) return;
+  const key = 'rank_pos_' + email;
+  const prev = parseInt(localStorage.getItem(key) ?? '-1', 10);
+  if(prev >= 0 && pos > prev) {
+    const ahead = data[pos-1];
+    _localNotify('Você caiu no ranking', `${ahead?.name?.split(' ')[0]||'Alguém'} te ultrapassou — agora você é ${pos+1}°. Bora recuperar!`);
+  }
+  try { localStorage.setItem(key, String(pos)); } catch(_){}
+}
+
 // ===== PÓDIO HOME =====
 async function renderPodium() {
   const el = document.getElementById('home-podium');
   if(!el) return;
   const data = await fetchGlobalRanking();
+  _checkRankDrop(data);
   if(data.length < 1) {
     el.innerHTML = `<div class="podium-section" style="text-align:center;padding:24px 16px">
       <div style="font-size:48px;margin-bottom:10px">🏆</div>
@@ -5429,6 +5480,18 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="cancelLogout()">Cancelar</button>
       <button class="btn" style="background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3);font-weight:700" onclick="confirmLogout()">Sair da conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL GENÉRICO (substitui confirm() nativo) -->
+<div class="edit-bolao-modal" id="app-confirm-modal" onclick="if(event.target===this)_appConfirmNo()">
+  <div class="edit-bolao-sheet">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px" id="app-confirm-title">Confirmar</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:24px;white-space:pre-line" id="app-confirm-text"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="_appConfirmNo()">Cancelar</button>
+      <button class="btn" id="app-confirm-yes-btn" style="background:rgba(231,76,60,.15);color:var(--err);border:1px solid rgba(231,76,60,.3);font-weight:700" onclick="_appConfirmYes()">Confirmar</button>
     </div>
   </div>
 </div>
