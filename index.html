@@ -2817,7 +2817,7 @@ async function openPix(id) {
       const me2 = (b.participants||[]).find(p=>p.email===state.user?.email);
       if(me2) {
         me2.pixTxid = data.txid;
-        _sb.from('boloes').update({participants:b.participants}).eq('id',b.id).catch(()=>{});
+        _sb.from('boloes').update({participants:b.participants}).eq('id',b.id).then(null,()=>{});
       }
     }
 
@@ -3006,7 +3006,7 @@ function uploadPhoto(input) {
     saveSession(state.user);
     // Save to Supabase profiles table if connected
     if(_sb && state.user.id) {
-      _sb.from('profiles').update({photo}).eq('id', state.user.id).catch(()=>{});
+      _sb.from('profiles').update({photo}).eq('id', state.user.id).then(null,()=>{});
     }
     updateProfileUI();
     showToast('✅ Foto atualizada!');
@@ -3974,7 +3974,7 @@ async function initAppBoloes() {
     if(!state.boloes.find(x=>x.id===id)){
       const b=_genSeasonBolao(amount);
       state.boloes.push(b);
-      if(_sb) _sb.from('boloes').upsert(_bolaoToSbRow(b),{onConflict:'id'}).catch(()=>{});
+      if(_sb) _sb.from('boloes').upsert(_bolaoToSbRow(b),{onConflict:'id'}).then(null,()=>{});
     }
   });
 }
