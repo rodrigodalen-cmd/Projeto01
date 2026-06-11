@@ -1943,7 +1943,12 @@ function _fetchRSS(rssUrl) {
           || el.querySelector('media\\:content,media\\:thumbnail')?.getAttribute('url')
           || el.querySelector('[url]')?.getAttribute('url')
           || null;
-        return { headline: txt('title'), published: txt('pubDate'), image: img, url: txt('link') };
+        const linkEl = el.getElementsByTagName('link')[0];
+        const url = linkEl?.textContent?.trim()
+          || linkEl?.getAttribute('href')
+          || el.getElementsByTagName('guid')[0]?.textContent?.trim()
+          || null;
+        return { headline: txt('title'), published: txt('pubDate'), image: img, url };
       });
     });
 }
@@ -2150,13 +2155,17 @@ function renderLiveScores() {
   const upcoming = GAMES.filter(g=>gameDateTime(g)>now).sort((a,b)=>gameDateTime(a)-gameDateTime(b));
   if(liveGames.length===0 && upcoming.length===0) { section.style.display='none'; return; }
   section.style.display='block';
-  // Reposition: rise to top when live, return after news when not
-  const _newsSection = document.getElementById('news-section');
+  // Visual emphasis when live — no DOM repositioning (breaks game card click events)
   if(liveGames.length>0) {
-    const _scroll = section.closest('.scroll');
-    if(_scroll && section !== _scroll.firstElementChild) _scroll.prepend(section);
+    section.style.background='rgba(239,68,68,0.06)';
+    section.style.borderRadius='16px';
+    section.style.padding='12px';
+    section.style.margin='4px -4px 0';
   } else {
-    if(_newsSection && _newsSection.nextElementSibling !== section) _newsSection.after(section);
+    section.style.background='';
+    section.style.borderRadius='';
+    section.style.padding='';
+    section.style.margin='';
   }
   if(liveGames.length>0) {
     document.getElementById('live-list').innerHTML = liveGames.map(g=>{
