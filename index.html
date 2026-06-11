@@ -3008,6 +3008,7 @@ async function openPix(id) {
   if(!b) return;
   if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
   if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
+  state.pixTxid = null;
   state.pixBolaoId = id;
   go('s-pix');
   document.getElementById('pix-content').innerHTML=`
@@ -3115,24 +3116,36 @@ async function openPix(id) {
   }
 }
 
-function confirmPix() {
-  const b = state.boloes.find(x=>x.id===state.pixBolaoId);
-  if(!b || !state.user) return;
-  const me = b.participants.find(p=>p.email===state.user.email);
-  if(!me) { showToast('⚠️ Participe do bolão antes de confirmar'); return; }
-  if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
-  if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
-  _autoConfirmPix(b.id);
-}
-
-function _autoConfirmPix(bolaoId) {
+async function _autoConfirmPix(bolaoId) {
   if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
   if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   const b = state.boloes.find(x=>x.id===bolaoId);
-  if(!b) return;
+  if(!b || !state.user) return;
   const me = b.participants.find(p=>p.email===state.user.email);
-  if(me && !me.paid) {
+  if(!me) return;
+  if(me.paid) {
+    // Already marked paid (e.g. by webhook) — just show success UI
+  } else {
+    // Always verify with Mercado Pago before marking paid — prevents fraud via devtools or race conditions
+    const txid = state.pixTxid || me.pixTxid;
+    if(!txid) { console.warn('[PIX] _autoConfirmPix: sem txid — abortando'); return; }
+    try {
+      const r = await fetch(EFI_FN_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+        body: JSON.stringify({ action:'status', txid }),
+      });
+      const statusData = await r.json();
+      if(!statusData.paid) {
+        console.warn('[PIX] MP não confirmou pagamento para txid:', txid);
+        return;
+      }
+    } catch(e) {
+      console.error('[PIX] falha ao verificar com MP:', e);
+      return;
+    }
     me.paid = true;
+    me.pixPaidAt = new Date().toISOString();
     if(!me.pixKey && state.user?.pix) me.pixKey = state.user.pix;
     addSystemMessage(b.id, `💸 ${state.user.name} pagou via PIX · R$${b.amount}`);
     saveBoloes(b);
