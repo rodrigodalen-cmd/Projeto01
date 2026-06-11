@@ -88,7 +88,10 @@ async function checkStatus(txid: string) {
 }
 
 async function searchPayments() {
-  const res = await fetch(`${MP_BASE}/v1/payments/search?sort=date_created&criteria=desc&range=date_created&limit=15`, {
+  const begin = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().replace('Z', '-03:00')
+  const end = new Date().toISOString().replace('Z', '-03:00')
+  const url = `${MP_BASE}/v1/payments/search?sort=date_created&criteria=desc&range=date_created&begin_date=${encodeURIComponent(begin)}&end_date=${encodeURIComponent(end)}&limit=15`
+  const res = await fetch(url, {
     headers: { 'Authorization': `Bearer ${getToken()}` },
   })
   const text = await res.text()
