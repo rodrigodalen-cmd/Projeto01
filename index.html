@@ -932,8 +932,19 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">🏅 Ranking com amigos</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">📖 Ver tutorial novamente</button>
     </div>
+    <div id="admin-btn-wrap"></div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
+</div>
+
+<!-- === ADMIN PANEL === -->
+<div class="screen" id="s-admin">
+  <div class="topbar">
+    <button class="back-btn" onclick="back()">←</button>
+    <span class="topbar-title">Painel Admin</span>
+    <button onclick="openAdmin()" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;padding:0 4px">↻</button>
+  </div>
+  <div class="scroll" id="admin-content" style="padding-bottom:100px"></div>
 </div>
 
 <!-- === EDIT PROFILE === -->
@@ -2996,6 +3007,7 @@ function updateProfileUI() {
         :`<span style="font-size:12px;color:var(--text3);cursor:pointer" onclick="openRanking()">${title} · Ver ranking</span>`;
     }).catch(()=>{});
   }
+  _updateAdminBtn();
 }
 
 function uploadPhoto(input) {
@@ -3336,6 +3348,179 @@ async function quitBolao(id) {
   saveBoloes(b);
   back();
   setTimeout(()=>renderHome(), 300);
+}
+
+// ===== ADMIN PANEL =====
+const ADMIN_EMAIL = 'rodrigodalen@gmail.com';
+function isAdmin() { return state.user?.email === ADMIN_EMAIL; }
+
+let _adminTab = 'boloes';
+let _adminAllBoloes = [];
+let _adminAllUsers = [];
+
+function _updateAdminBtn() {
+  const wrap = document.getElementById('admin-btn-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = isAdmin()
+    ? `<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;margin-bottom:10px;border-color:var(--primary);color:var(--primary)" onclick="openAdmin()">🛡️ Painel Admin</button>`
+    : '';
+}
+
+async function openAdmin() {
+  if(!isAdmin()) return;
+  go('s-admin');
+  const el = document.getElementById('admin-content');
+  if(el) el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3)">⏳ Carregando dados...</div>`;
+  if(_sb) {
+    const [br, ur] = await Promise.all([
+      _sb.from('boloes').select('*').order('created_at', {ascending:false}),
+      _sb.from('profiles').select('*').order('name'),
+    ]);
+    _adminAllBoloes = (br.data||[]).map(_sbRowToBolao);
+    _adminAllUsers = ur.data||[];
+  }
+  _renderAdminPanel();
+}
+
+function setAdminTab(tab) { _adminTab = tab; _renderAdminPanel(); }
+
+function _adminStat(icon, label, val) {
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+    <div style="font-size:22px">${icon}</div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);margin:2px 0">${val}</div>
+    <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${label}</div>
+  </div>`;
+}
+
+function _renderAdminPanel() {
+  const el = document.getElementById('admin-content');
+  if(!el) return;
+  const bs = _adminAllBoloes;
+  const us = _adminAllUsers;
+  const totalCollected = bs.reduce((s,b)=>s+b.participants.filter(p=>p.paid).length*b.amount,0);
+  const appEarnings    = Math.floor(totalCollected*0.05);
+  const totalPaid      = bs.reduce((s,b)=>s+b.participants.filter(p=>p.paid).length,0);
+
+  let tabContent = '';
+  if(_adminTab==='boloes') {
+    tabContent = bs.length===0
+      ? `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum bolão encontrado</div>`
+      : bs.map(b=>{
+          const paid = b.participants.filter(p=>p.paid).length;
+          const prize = fmtPrize(b);
+          const status = b.result?'✅ Encerrado':isBetClosed(b.game)?'🔒 Apostas fechadas':'🟢 Aberto';
+          return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:800;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(b.creatorName)} · ${b.game.home.flag}${b.game.away.flag} · ${paid}/${b.maxPart} pagantes · R$${b.amount}</div>
+                <div style="font-size:11px;margin-top:3px">${status}${b.result?` · Prêmio R$${prize}`:''}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+                <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 10px" onclick="adminViewBolao('${b.id}')">Ver</button>
+                ${b.result&&paid>0?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:rgba(0,184,148,.15);color:#00b894;border:1px solid rgba(0,184,148,.3)" onclick="adminForcePayout('${b.id}')">💰 Pagar</button>`:''}
+                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:rgba(231,76,60,.12);color:var(--err);border:1px solid rgba(231,76,60,.25)" onclick="adminDeleteBolao('${b.id}')">Excluir</button>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+  } else if(_adminTab==='usuarios') {
+    tabContent = us.length===0
+      ? `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário encontrado</div>`
+      : us.map(u=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="font-weight:800;font-size:14px;color:var(--text)">${esc(u.name||'-')}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(u.email||'-')} · ${esc(u.phone||'-')}</div>
+          <div style="font-size:11px;color:var(--pix);margin-top:2px">Pix: ${esc(u.pix||'não cadastrado')}</div>
+        </div>`).join('');
+  } else if(_adminTab==='pagamentos') {
+    const pagamentos = [];
+    bs.forEach(b=>b.participants.filter(p=>p.paid).forEach(p=>{
+      pagamentos.push({bolaoTitle:b.title,name:p.name,amount:b.amount,paidAt:p.pixPaidAt||'',txid:p.pixTxid||''});
+    }));
+    pagamentos.sort((a,b)=>b.paidAt.localeCompare(a.paidAt));
+    tabContent = pagamentos.length===0
+      ? `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum pagamento encontrado</div>`
+      : pagamentos.map(p=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text)">${esc(p.name)}</div>
+              <div style="font-size:11px;color:var(--text3)">${esc(p.bolaoTitle)}</div>
+              ${p.paidAt?`<div style="font-size:10px;color:var(--text3)">${new Date(p.paidAt).toLocaleString('pt-BR')}</div>`:''}
+            </div>
+            <div style="font-size:18px;font-weight:900;color:#00b894">R$${p.amount}</div>
+          </div>
+        </div>`).join('');
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      ${_adminStat('📋','Bolões',bs.length)}
+      ${_adminStat('👥','Usuários',us.length)}
+      ${_adminStat('💰','Arrecadado','R$'+totalCollected)}
+      ${_adminStat('🏦','Taxa App','R$'+appEarnings)}
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px">
+      ${['boloes','usuarios','pagamentos'].map(t=>`<button onclick="setAdminTab('${t}')" class="t-chip${_adminTab===t?' active':''}" style="flex-shrink:0">${{boloes:'Bolões',usuarios:'Usuários',pagamentos:'Pagamentos'}[t]}</button>`).join('')}
+      <button onclick="exportAdminCSV()" class="t-chip" style="flex-shrink:0;margin-left:auto">📥 CSV</button>
+    </div>
+    <div>${tabContent}</div>`;
+}
+
+function adminViewBolao(id) {
+  const b = _adminAllBoloes.find(x=>x.id===id);
+  if(!b) return;
+  if(!state.boloes.find(x=>x.id===id)) state.boloes.push(b);
+  state.currentBolaoId = id;
+  go('s-detail');
+  renderDetail();
+}
+
+async function adminForcePayout(id) {
+  const b = _adminAllBoloes.find(x=>x.id===id);
+  if(!b||!b.result) { showToast('⚠️ Bolão sem resultado definido'); return; }
+  showToast('⏳ Processando pagamentos...');
+  await _triggerWinnerPayouts(b);
+}
+
+async function adminDeleteBolao(id) {
+  const b = _adminAllBoloes.find(x=>x.id===id);
+  if(!b) return;
+  if(!confirm(`Excluir "${b.title}"? Participantes pagos serão reembolsados.`)) return;
+  if(!b.result) {
+    for(const p of b.participants.filter(p=>p.paid&&p.pixTxid)) {
+      try {
+        await fetch(EFI_FN_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+          body:JSON.stringify({action:'refund',txid:p.pixTxid}),
+        });
+      } catch(_){}
+    }
+  }
+  if(_sb) await _sb.from('boloes').delete().eq('id',id);
+  _adminAllBoloes = _adminAllBoloes.filter(x=>x.id!==id);
+  state.boloes = state.boloes.filter(x=>x.id!==id);
+  saveBoloes();
+  showToast('Bolão excluído');
+  _renderAdminPanel();
+}
+
+function exportAdminCSV() {
+  const rows = [['ID','Título','Criador','Jogo','Valor R$','Participantes','Pagantes','Prêmio R$','Status','Resultado']];
+  _adminAllBoloes.forEach(b=>{
+    const paid = b.participants.filter(p=>p.paid).length;
+    const status = b.result?'Encerrado':isBetClosed(b.game)?'Apostas fechadas':'Aberto';
+    const result = b.result?`${b.result.home}x${b.result.away}`:'-';
+    rows.push([b.id,b.title,b.creatorName,`${b.game.home.name} x ${b.game.away.name}`,b.amount,b.participants.length,paid,fmtPrize(b),status,result]);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`bolaofc-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ CSV exportado!');
 }
 
 // ===== DEEP LINK =====
