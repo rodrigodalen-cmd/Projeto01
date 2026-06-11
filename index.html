@@ -2384,7 +2384,7 @@ function nextCreateStep() {
   renderCreateStep();
 }
 
-function finishCreate() {
+async function finishCreate() {
   const s = createState;
   const code = genCode();
   const bolao = {
@@ -2407,10 +2407,19 @@ function finishCreate() {
     messages: [],
   };
   state.boloes.unshift(bolao);
-  saveBoloes(bolao);
+  try { localStorage.setItem('bolao_boloes', JSON.stringify(state.boloes)); } catch(e) {}
+  // Aguarda confirmação do Supabase antes de navegar
+  if(_sb) {
+    try {
+      const {error} = await _sb.from('boloes').upsert(_bolaoToSbRow(bolao), {onConflict:'id'});
+      if(error) throw error;
+    } catch(e) {
+      console.error('[create] supabase sync:', e);
+      showToast('⚠️ Erro ao salvar na nuvem — verifique sua conexão');
+    }
+  }
   state.currentBolaoId = bolao.id;
   openDetail(bolao.id);
-  // Replace create screen in stack
   const idx = state.screenStack.indexOf('s-create');
   if(idx>-1) state.screenStack.splice(idx,1);
 }
