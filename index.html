@@ -3140,7 +3140,7 @@ async function _triggerWinnerPayouts(b) {
     const allPts = b.participants.map(p => calcPoints(p, b.result, b));
     const maxPts = allPts.length > 0 ? Math.max(...allPts) : 0;
     if(maxPts <= 0) return;
-    const winners = b.participants.filter(p => calcPoints(p, b.result, b) === maxPts && p.pixKey);
+    const winners = b.participants.filter(p => calcPoints(p, b.result, b) === maxPts && p.paid && p.pixKey);
     if(winners.length === 0) {
       addSystemMessage(b.id, `🏆 Prêmio de R$${prize} disponível — nenhum ganhador com chave PIX cadastrada.`);
       saveBoloes(b);
