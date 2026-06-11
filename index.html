@@ -623,7 +623,7 @@ input:checked+.slider:before{transform:translateX(18px)}
           • Quem acertar o placar exato divide o prêmio igualmente;<br>
           • Se ninguém acertar o placar exato, o prêmio vai para quem chegou mais próximo (menor diferença de gols);<br>
           • Em caso de empate na aproximação, o prêmio é dividido igualmente entre os finalistas;<br>
-          • Sobre o valor total arrecadado, incide taxa de <strong>10% (dez por cento)</strong> retida pela plataforma para custeio operacional.<br><br>
+          • Sobre o valor total arrecadado, incide taxa de <strong>5% (cinco por cento)</strong> retida pela plataforma para custeio operacional.<br><br>
           <strong>3.4 Limite:</strong> O máximo de 50 participantes por bolão visa manter o caráter privado e informal da atividade.
         </div>
       </div>
@@ -1945,7 +1945,7 @@ function esc(s) {
 }
 
 function fmtPrize(b) {
-  return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.9);
+  return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.95);
 }
 
 function renderLiveScores() {
@@ -2100,7 +2100,7 @@ function renderCreateStep() {
       </div>`:``}
       <div class="prize-preview">
         <span style="font-size:20px">🏆</span>
-        <span class="prize-preview-text">Com 10 participantes → prêmio de <span class="prize-preview-val">R$${Math.floor(s.amount*10*0.9)}</span> (após 10% do app)</span>
+        <span class="prize-preview-text">Com 10 participantes → prêmio de <span class="prize-preview-val">R$${Math.floor(s.amount*10*0.95)}</span> (após 5% do app)</span>
       </div>
       <div class="section-title" style="margin-top:16px;margin-bottom:4px">Limite de Participantes</div>
       <div class="section-sub">Máximo 50 para manter privacidade</div>
@@ -2166,7 +2166,7 @@ function renderCreateStep() {
         ${summaryRow('👥','Máx. participantes',`${s.maxPart} pessoas`)}
         ${summaryRow('🔒','Senha',s.hasPw?'✅ Sim':'🔓 Sem senha')}
         ${summaryRow('🎯','Pontuação',`Exato: ${s.pointsExact}pts · Resultado: ${s.pointsResult}pt`)}
-        ${summaryRow('📊','Taxa do app','10% do prêmio total')}
+        ${summaryRow('📊','Taxa do app','5% do prêmio total')}
       </div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="createState.step=2;renderCreateStep()">← Voltar</button>
@@ -2246,7 +2246,7 @@ function renderDetail() {
   if(b.isSeason) { _curSeasonBolaoId = b.id; renderSeasonDetail(); return; }
   document.getElementById('detail-title').textContent = b.title;
   const paidCount = b.participants.filter(p=>p.paid).length;
-  const prize = Math.floor(paidCount * b.amount * 0.9);
+  const prize = Math.floor(paidCount * b.amount * 0.95);
   const me = b.participants.find(p=>p.email===state.user?.email);
   const isCreator = b.creatorId===state.user?.email;
   const betClosed = isBetClosed(b.game);
@@ -2282,11 +2282,11 @@ function renderDetail() {
         <div class="prize-main">
           <div class="prize-lbl">Prêmio Acumulado</div>
           <div class="prize-val">R$${prize}</div>
-          <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 10% do app descontado</div>
+          <div class="prize-sub">${paidCount} de ${b.maxPart} pagantes · 5% do app descontado</div>
         </div>
         <div class="prize-proj">
           <span class="proj-lbl">Potencial máximo</span>
-          <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.9)}</span>
+          <span class="proj-val">R$${Math.floor(b.maxPart*b.amount*0.95)}</span>
         </div>
       </div>`;
 
