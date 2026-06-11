@@ -1280,6 +1280,7 @@ function _sbRowToBolao(row) {
     pointsExact: row.points_exact??3,
     pointsResult: row.points_result??1,
     messages: row.messages||[],
+    payoutClaimed: row.payout_claimed||false,
     isSeason, isAppBolao: isSeason
   };
 }
@@ -1296,7 +1297,8 @@ function _bolaoToSbRow(b) {
     result: b.isSeason ? (b.results||{}) : (b.result||null),
     points_exact: b.pointsExact??3,
     points_result: b.pointsResult??1,
-    messages: b.messages||[]
+    messages: b.messages||[],
+    payout_claimed: b.payoutClaimed||false
   };
 }
 
@@ -3292,6 +3294,22 @@ async function _triggerWinnerPayouts(b) {
       saveBoloes(b);
       return;
     }
+
+    // Trava atômica: só o primeiro dispositivo a marcar payout_claimed=true dispara o pagamento
+    if(_sb) {
+      const {data: locked} = await _sb
+        .from('boloes')
+        .update({payout_claimed: true})
+        .eq('id', b.id)
+        .or('payout_claimed.is.null,payout_claimed.eq.false')
+        .select('id');
+      if(!locked?.length) {
+        console.log('[payout] já reivindicado por outro dispositivo — ignorando');
+        return;
+      }
+      b.payoutClaimed = true;
+    }
+
     const prizeEach = Math.floor(prize / winners.length);
     addSystemMessage(b.id, `🚀 Enviando prêmio de R$${prizeEach} via PIX para ${winners.length > 1 ? 'cada vencedor' : winners[0].name}...`);
     saveBoloes(b);
