@@ -2044,6 +2044,14 @@ function renderLiveScores() {
   const upcoming = GAMES.filter(g=>gameDateTime(g)>now).sort((a,b)=>gameDateTime(a)-gameDateTime(b));
   if(liveGames.length===0 && upcoming.length===0) { section.style.display='none'; return; }
   section.style.display='block';
+  // Reposition: rise to top when live, return after news when not
+  const _newsSection = document.getElementById('news-section');
+  if(liveGames.length>0) {
+    const _scroll = section.closest('.scroll');
+    if(_scroll && section !== _scroll.firstElementChild) _scroll.prepend(section);
+  } else {
+    if(_newsSection && _newsSection.nextElementSibling !== section) _newsSection.after(section);
+  }
   if(liveGames.length>0) {
     document.getElementById('live-list').innerHTML = liveGames.map(g=>{
       const min = Math.floor((now-gameDateTime(g))/60000);
