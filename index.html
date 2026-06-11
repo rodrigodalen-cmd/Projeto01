@@ -759,37 +759,35 @@ input:checked+.slider:before{transform:translateX(18px)}
       </div>
       <div id="home-av-badge" class="trophy-badge" onclick="gnavTo('profile')" style="cursor:pointer;overflow:hidden;padding:0"></div>
     </div>
-    <div class="banner">
-      <h3>🇧🇷 Brasil no Grupo C</h3>
-      <p>Marrocos · Haiti · Escócia — Crie seu bolão!</p>
-      <button class="btn btn-secondary btn-sm" onclick="go_create()">Criar Bolão</button>
-    </div>
     <div id="pwa-install-banner" class="pwa-banner" style="display:none">
       <div class="pwa-banner-text">Instale o Bolão FC no celular para acesso rápido como um app</div>
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
-    <!-- PÓDIO RANKING -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="openRanking()">
-      <div class="section-title" style="margin-bottom:0">Ranking Global</div>
-      <span style="font-size:12px;color:var(--text3);font-weight:600">Ver todos →</span>
-    </div>
-    <div id="home-podium" style="margin-bottom:16px"></div>
-    <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer;padding:8px 0" onclick="drawerGo('tabela')">
-      <div class="section-title" style="margin-bottom:0">Próximos Jogos</div>
-      <span style="font-size:12px;color:var(--text3);font-weight:600">Ver tabela →</span>
-    </div>
-    <div class="section-sub" style="margin-top:-6px">Toque num jogo para criar um bolão</div>
-    <div id="games-list"></div>
-    <div id="news-section" style="margin-top:4px"></div>
-    <div id="live-section">
+    <div id="live-section" style="display:none;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div class="section-title" style="margin-bottom:0">Placares ao Vivo</div>
         <div class="live-pill"><div class="live-dot"></div>AO VIVO</div>
       </div>
       <div id="live-list"></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);display:flex;flex-direction:column;min-height:160px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;cursor:pointer" onclick="drawerGo('tabela')">
+          <div style="font-size:12px;font-weight:800;color:var(--text)">Próximos Jogos</div>
+          <span style="font-size:11px;color:var(--primary);font-weight:700">→</span>
+        </div>
+        <div id="home-games-mini" style="padding:0 8px 10px;flex:1"></div>
+      </div>
+      <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);display:flex;flex-direction:column;min-height:160px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;cursor:pointer" onclick="openRanking()">
+          <div style="font-size:12px;font-weight:800;color:var(--text)">Ranking</div>
+          <span style="font-size:11px;color:var(--primary);font-weight:700">→</span>
+        </div>
+        <div id="home-podium" style="padding:0 8px 10px;flex:1"></div>
+      </div>
+    </div>
+    <div id="news-section" style="margin-bottom:16px"></div>
   </div>
 </div>
 
@@ -2115,22 +2113,25 @@ function renderMyBoloes() {
 
 function renderGames() {
   const now_rg = new Date();
-  const upcoming = GAMES.filter(g=>gameDateTime(g)>now_rg).sort((a,b)=>gameDateTime(a)-gameDateTime(b)).slice(0,12);
-  if(!upcoming.length) { document.getElementById('games-list').innerHTML=''; return; }
-  document.getElementById('games-list').innerHTML = `
-    <div class="games-carousel">
-      ${upcoming.map(g=>`
-        <div class="snap-card" onclick="go_create_from_game('${g.id}')">
-          <div class="match-stage"><span>${g.group||g.stage}</span><span>${g.date}</span></div>
-          <div class="match-row" style="margin-top:6px">
-            <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
-            <div class="vs-block"><div class="vs-text" style="font-size:12px">VS</div></div>
-            <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
-          </div>
-          <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">🕐 ${g.time} BRT</div>
-        </div>`).join('')}
-    </div>
-    <div class="carousel-hint">← arraste para ver mais →</div>`;
+  const upcoming = GAMES.filter(g=>gameDateTime(g)>now_rg).sort((a,b)=>gameDateTime(a)-gameDateTime(b)).slice(0,5);
+  const el = document.getElementById('home-games-mini');
+  if(!el) return;
+  if(!upcoming.length) {
+    el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Sem jogos futuros</div>';
+    return;
+  }
+  el.innerHTML = upcoming.map(g=>`
+    <div onclick="go_create_from_game('${g.id}')"
+      style="cursor:pointer;padding:7px 6px;border-radius:10px;background:var(--surface2);margin-bottom:5px;-webkit-tap-highlight-color:transparent;user-select:none"
+      ontouchstart="this.style.opacity='.65'" ontouchend="this.style.opacity='1'" ontouchcancel="this.style.opacity='1'">
+      <div style="font-size:9px;color:var(--text3);font-weight:600;margin-bottom:3px">${g.date} · ${g.time}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+        <span style="font-size:16px">${g.home.flag}</span>
+        <span style="font-size:8px;color:var(--text3);font-weight:700">×</span>
+        <span style="font-size:16px">${g.away.flag}</span>
+      </div>
+      <div style="font-size:8px;color:var(--text2);text-align:center;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.home.name.split(' ')[0]} · ${g.away.name.split(' ')[0]}</div>
+    </div>`).join('');
 }
 
 function esc(s) {
@@ -2151,54 +2152,23 @@ function renderLiveScores() {
     const diff = now - dt;
     return diff >= 0 && diff <= 110*60*1000;
   });
-  // Find next upcoming game
-  const upcoming = GAMES.filter(g=>gameDateTime(g)>now).sort((a,b)=>gameDateTime(a)-gameDateTime(b));
-  if(liveGames.length===0 && upcoming.length===0) { section.style.display='none'; return; }
+  if(liveGames.length === 0) { section.style.display='none'; return; }
   section.style.display='block';
-  // Visual emphasis when live — no DOM repositioning (breaks game card click events)
-  if(liveGames.length>0) {
-    section.style.background='rgba(239,68,68,0.06)';
-    section.style.borderRadius='16px';
-    section.style.padding='12px';
-    section.style.margin='4px -4px 0';
-  } else {
-    section.style.background='';
-    section.style.borderRadius='';
-    section.style.padding='';
-    section.style.margin='';
-  }
-  if(liveGames.length>0) {
-    document.getElementById('live-list').innerHTML = liveGames.map(g=>{
-      const min = Math.floor((now-gameDateTime(g))/60000);
-      const sc = _ls[g.id];
-      const lh = sc?.h ?? '-';
-      const la = sc?.a ?? '-';
-      return `<div class="live-card">
-        <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>${min}'</div></div>
-        <div class="match-row" style="margin-top:8px">
-          <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
-          <div class="vs-block"><div class="live-score-big">${lh} - ${la}</div></div>
-          <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
-        </div>
-      </div>`;
-    }).join('');
-    document.querySelector('#live-section .section-title').textContent=liveGames.length>1?`Ao Vivo (${liveGames.length})`:'Ao Vivo';
-  } else {
-    // Show next upcoming game countdown
-    const next = upcoming[0];
-    const diff = gameDateTime(next)-now;
-    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000);
-    const countdown = d>0?`${d}d ${h}h`:`${h}h ${m}min`;
-    document.getElementById('live-list').innerHTML=`<div style="background:var(--surface);border-radius:14px;padding:14px;border:1px solid var(--border)">
-      <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Próximo jogo</div>
-      <div class="match-row">
-        <div class="team-block"><div class="flag">${next.home.flag}</div><div class="team-name">${next.home.name}</div></div>
-        <div class="vs-block"><div style="font-size:11px;color:var(--secondary);font-weight:800;text-align:center">${next.date} · ${next.time}<br><span style="font-size:16px;color:var(--text)">em ${countdown}</span></div></div>
-        <div class="team-block right"><div class="flag">${next.away.flag}</div><div class="team-name">${next.away.name}</div></div>
+  document.getElementById('live-list').innerHTML = liveGames.map(g => {
+    const min = Math.floor((now-gameDateTime(g))/60000);
+    const sc = _ls[g.id];
+    const lh = sc?.h ?? '-';
+    const la = sc?.a ?? '-';
+    return `<div class="live-card">
+      <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>${min}'</div></div>
+      <div class="match-row" style="margin-top:8px">
+        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
+        <div class="vs-block"><div class="live-score-big">${lh} - ${la}</div></div>
+        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
       </div>
     </div>`;
-    document.querySelector('#live-section .section-title').textContent='Próximo Jogo';
-  }
+  }).join('');
+  document.querySelector('#live-section .section-title').textContent = liveGames.length>1 ? `Ao Vivo (${liveGames.length})` : 'Ao Vivo';
 }
 
 // ===== CREATE BOLÃO =====
@@ -4963,44 +4933,20 @@ async function openRanking() {
 
 // ===== PÓDIO HOME =====
 async function renderPodium() {
-  const el=document.getElementById('home-podium');
+  const el = document.getElementById('home-podium');
   if(!el) return;
-  const data=await fetchGlobalRanking();
-  if(data.length<1) {
-    el.innerHTML=`<div class="podium-section" style="text-align:center;padding:24px 16px">
-      <div style="font-size:48px;margin-bottom:10px">🏆</div>
-      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Ranking começa na 1ª rodada</div>
-      <div style="font-size:12px;color:var(--text3);line-height:1.6">Assim que os jogos começarem e os resultados forem lançados, o pódio com os melhores apostadores aparecerá aqui.</div>
-      <button class="btn btn-ghost btn-sm" style="margin-top:14px;width:auto" onclick="openRanking()">Ver ranking →</button>
-    </div>`;
+  const data = await fetchGlobalRanking();
+  if(data.length < 1) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 4px;line-height:1.5">Ranking começa na 1ª rodada</div>';
     return;
   }
-  const [p1,p2,p3]=[data[0],data[1],data[2]];
-  function slot(p,rank) {
-    if(!p) return `<div class="podium-slot podium-slot-${rank}"></div>`;
-    const av=p.photo
-      ?`<img src="${p.photo}" class="podium-av-${rank}" alt="${esc(p.name)}">`
-      :`<div class="podium-av-${rank}" style="background:${_avColor(p.email)};display:flex;align-items:center;justify-content:center;font-size:${rank===1?26:22}px;font-weight:900;color:#fff">${p.name.charAt(0).toUpperCase()}</div>`;
-    const trophy=rank===1?'<div style="font-size:20px;text-align:center;margin-bottom:2px">🏆</div>':'';
-    return `<div class="podium-slot podium-slot-${rank}" onclick="openRanking()">
-      ${trophy}
-      ${av}
-      <div class="podium-title-${rank}">${rank===1?'🥇 1°':rank===2?'🥈 2°':'🥉 3°'}</div>
-      <div class="podium-name">${esc(p.name.split(' ')[0])}</div>
-      <div class="podium-pts">${p.pts}pts</div>
-    </div>`;
-  }
-  el.innerHTML=`<div class="podium-section">
-    <div class="podium-header">
-      <div style="font-size:12px;color:var(--text3)">Baseado em todos os bolões</div>
-      <button class="btn-link" onclick="openRanking()" style="font-size:12px">Ver todos →</button>
-    </div>
-    <div class="podium-wrap">
-      ${slot(p2,2)}
-      ${slot(p1,1)}
-      ${slot(p3,3)}
-    </div>
-  </div>`;
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = data.slice(0,3).map((p,i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:7px 4px;${i<2?'border-bottom:1px solid var(--border)':''}">
+      <span style="font-size:14px;flex-shrink:0">${medals[i]}</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name.split(' ')[0])}</span>
+      <span style="font-size:11px;font-weight:800;color:var(--secondary);flex-shrink:0">${p.pts}pts</span>
+    </div>`).join('');
 }
 
 // ===== SYSTEM MESSAGES =====
