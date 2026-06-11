@@ -3430,9 +3430,30 @@ function cancelDeleteBolao() {
 async function confirmDeleteBolao() {
   const id = document.getElementById('delete-bolao-modal').dataset.id;
   document.getElementById('delete-bolao-modal').style.display = 'none';
-  const b = state.boloes.find(x=>x.id===id);
+  let b = state.boloes.find(x=>x.id===id);
+  // Re-fetch from Supabase to catch webhook-confirmed payments not yet reflected in memory
+  if(_sb && b) {
+    try {
+      const {data} = await _sb.from('boloes').select('participants,result').eq('id',id).single();
+      if(data?.participants) b = {...b, participants: data.participants, result: data.result ?? b.result};
+    } catch(e) { /* use in-memory data */ }
+  }
   if(b && !b.result) {
-    const toRefund = (b.participants||[]).filter(p=>p.paid && p.pixTxid);
+    // Check every participant who has a pixTxid — paid=false ones may just not have received the webhook yet
+    const withTxid = (b.participants||[]).filter(p=>p.pixTxid);
+    const toRefund = [];
+    for(const p of withTxid) {
+      if(p.paid) { toRefund.push(p); continue; }
+      try {
+        const r = await fetch(EFI_FN_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+          body: JSON.stringify({action:'status', txid:p.pixTxid}),
+        });
+        const s = await r.json();
+        if(s.paid) toRefund.push(p);
+      } catch(e) { console.error('[delete] status check:', e); }
+    }
     if(toRefund.length > 0) {
       showToast('♻️ Processando reembolsos PIX...');
       let ok = 0, fail = 0;
@@ -3660,11 +3681,31 @@ function adminDeleteBolao(id) {
   appConfirm(`Excluir "${b.title}"?`, 'Participantes pagos serão reembolsados automaticamente.', 'Excluir', ()=>_doAdminDeleteBolao(id));
 }
 async function _doAdminDeleteBolao(id) {
-  const b = _adminAllBoloes.find(x=>x.id===id);
+  let b = _adminAllBoloes.find(x=>x.id===id);
   if(!b) return;
   if(!b.result) {
+    if(_sb) {
+      try {
+        const {data} = await _sb.from('boloes').select('participants,result').eq('id',id).single();
+        if(data?.participants) b = {...b, participants: data.participants, result: data.result ?? b.result};
+      } catch(e) { /* use in-memory data */ }
+    }
+    const withTxid = (b.participants||[]).filter(p=>p.pixTxid);
+    const toRefund = [];
+    for(const p of withTxid) {
+      if(p.paid) { toRefund.push(p); continue; }
+      try {
+        const r = await fetch(EFI_FN_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
+          body:JSON.stringify({action:'status',txid:p.pixTxid}),
+        });
+        const s = await r.json();
+        if(s.paid) toRefund.push(p);
+      } catch(e) { console.error('[admin-delete] status check:',e); }
+    }
     let ok=0, fail=0;
-    for(const p of b.participants.filter(p=>p.paid&&p.pixTxid)) {
+    for(const p of toRefund) {
       try {
         const r = await fetch(EFI_FN_URL, {
           method:'POST',
