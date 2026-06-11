@@ -229,6 +229,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 .live-pill{display:inline-flex;align-items:center;gap:4px;background:var(--err);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.5px}
 .live-dot{width:6px;height:6px;border-radius:3px;background:#fff;animation:blink 1.2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes newsfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .live-card{background:var(--surface);border-radius:16px;padding:14px;border:1px solid rgba(231,76,60,.25);margin-bottom:10px;cursor:default}
 .live-score-big{color:var(--secondary);font-size:28px;font-weight:900;text-align:center;letter-spacing:2px}
 .live-min{color:var(--err);font-size:11px;font-weight:700;text-align:center;margin-top:2px}
@@ -1864,6 +1865,7 @@ async function loginSuccess() {
   if(window._liveInterval) clearInterval(window._liveInterval);
   window._liveInterval = setInterval(()=>{ if(navigator.onLine && state.user){ fetchTabelaScores(); renderLiveScores(); } }, 60000);
   setTimeout(()=>{ fetchTabelaScores(); renderLiveScores(); }, 300);
+  _startNewsTimers();
   requestNotificationPermission();
   scheduleGameNotifications();
   // Carrega dados do Supabase em background — não bloqueia a tela
@@ -1921,25 +1923,29 @@ function renderHome() {
 let _footballNews = [];
 let _newsFetching = false;
 
-// Busca RSS via allorigins.win (proxy CORS gratuito) e parseia XML no browser
+// Busca RSS via allorigins.win (proxy CORS gratuito) e parseia XML no browser.
+// Decodifica como bytes: feeds BR antigos (UOL) vêm em Latin-1/Windows-1252, não UTF-8.
 function _fetchRSS(rssUrl) {
   const proxy = 'https://api.allorigins.win/raw?url=';
   return fetch(proxy + encodeURIComponent(rssUrl), {cache:'no-store'})
-    .then(r => { if(!r.ok) throw new Error('http '+r.status); return r.text(); })
-    .then(xml => {
+    .then(r => { if(!r.ok) throw new Error('http '+r.status); return r.arrayBuffer(); })
+    .then(buf => {
+      let xml = new TextDecoder('utf-8').decode(buf);
+      if(xml.includes('�')) xml = new TextDecoder('windows-1252').decode(buf);
       const doc = new DOMParser().parseFromString(xml, 'text/xml');
-      const items = [...doc.querySelectorAll('item')].slice(0, 18);
+      const items = [...doc.getElementsByTagName('item')].slice(0, 20);
       if(!items.length) throw new Error('rss vazio');
       return items.map(el => {
-        const txt = tag => el.querySelector(tag)?.textContent?.trim() || '';
+        const txt = tag => el.getElementsByTagName(tag)[0]?.textContent?.trim() || '';
+        const desc = txt('description');
         const img = el.querySelector('enclosure[type^="image"]')?.getAttribute('url')
-          || el.querySelector('media\\:content,media\\:thumbnail')?.getAttribute('url')
-          || el.querySelector('[url]')?.getAttribute('url')
-          || null;
+          || el.getElementsByTagName('media:content')[0]?.getAttribute('url')
+          || el.getElementsByTagName('media:thumbnail')[0]?.getAttribute('url')
+          || (desc.match(/<img[^>]+src=['"]([^'"]+)['"]/i)?.[1] ?? null);
         const linkEl = el.getElementsByTagName('link')[0];
         const url = linkEl?.textContent?.trim()
           || linkEl?.getAttribute('href')
-          || el.getElementsByTagName('guid')[0]?.textContent?.trim()
+          || txt('guid')
           || null;
         return { headline: txt('title'), published: txt('pubDate'), image: img, url };
       });
@@ -1947,14 +1953,14 @@ function _fetchRSS(rssUrl) {
 }
 
 const _NEWS_SOURCES = [
-  // GE Globo / GloboEsporte (pt-BR) — maior portal esportivo do Brasil
+  // UOL Esporte (pt-BR — feed confirmado funcionando via allorigins)
+  () => _fetchRSS('https://rss.uol.com.br/feed/esporte.xml'),
+  // Google News futebol (pt-BR — agrega GE, Lance, ESPN BR etc.)
+  () => _fetchRSS('https://news.google.com/rss/search?q=futebol&hl=pt-BR&gl=BR&ceid=BR:pt'),
+  // GE Globo (pt-BR)
   () => _fetchRSS('https://ge.globo.com/rss.xml'),
-  // Lance! (pt-BR)
-  () => _fetchRSS('https://www.lance.com.br/feed'),
-  // UOL Esporte (pt-BR)
-  () => _fetchRSS('https://esporte.uol.com.br/futebol/rss.xml'),
-  // ESPN Brasil (pt-BR)
-  () => _fetchRSS('https://www.espn.com.br/espn/rss/futebol/noticias'),
+  // Lance! (pt-BR — caminho Arc Publishing; /feed retorna 404)
+  () => _fetchRSS('https://www.lance.com.br/arc/outboundfeeds/rss/'),
   // Brasileirão via ESPN API (em pt quando disponível)
   () => fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/news?limit=20')
     .then(r => r.json()).then(d => {
@@ -1969,6 +1975,14 @@ const _NEWS_SOURCES = [
     ),
 ];
 
+// Prioriza futebol em feeds esportivos genéricos (UOL mistura tênis, vôlei…)
+const _FUT_RE = /futebol|copa|sele[cç][aã]o|brasileir[aã]o|libertadores|gol|t[eé]cnico|flamengo|palmeiras|corinthians|s[aã]o paulo|vasco|gr[eê]mio|cruzeiro|atl[eé]tico|santos|fluminense|botafogo|internacional|bahia|fifa|uefa|champions/i;
+function _sortFutebolFirst(items) {
+  return items.map((n,i)=>({n,i,fut:_FUT_RE.test(n.headline+' '+(n.url||''))}))
+    .sort((a,b)=>(b.fut-a.fut)||(a.i-b.i))
+    .map(x=>x.n);
+}
+
 async function fetchFootballNews() {
   if(_newsFetching) return;
   _newsFetching = true;
@@ -1977,13 +1991,31 @@ async function fetchFootballNews() {
       try {
         const items = await source();
         const valid = items.filter(n => n.headline && n.url);
-        if(valid.length > 0) { _footballNews = valid; break; }
+        if(valid.length > 0) {
+          _footballNews = _sortFutebolFirst(valid);
+          _newsRotIdx = 0;
+          break;
+        }
       } catch(e) { console.warn('[news]', e.message); }
     }
   } finally {
     _newsFetching = false;
     _renderNews();
   }
+}
+
+// Rotação automática dos 2 quadrados a cada 5s + atualização do feed a cada 5min
+let _newsRotIdx = 0, _newsRotTimer = null, _newsRefetchTimer = null;
+function _startNewsTimers() {
+  if(_newsRotTimer) clearInterval(_newsRotTimer);
+  _newsRotTimer = setInterval(() => {
+    if(_footballNews.length <= 2) return;
+    if(!document.getElementById('s-home')?.classList.contains('active')) return;
+    _newsRotIdx = (_newsRotIdx + 2) % _footballNews.length;
+    _renderNews();
+  }, 5000);
+  if(_newsRefetchTimer) clearInterval(_newsRefetchTimer);
+  _newsRefetchTimer = setInterval(() => { if(navigator.onLine && state.user) fetchFootballNews(); }, 5*60*1000);
 }
 
 function _timeAgo(iso) {
@@ -2003,9 +2035,12 @@ function _renderNews() {
     </div>`;
     return;
   }
-  el.innerHTML = _footballNews.slice(0, 2).map(n => `
+  const pick = [];
+  for(let k = 0; k < Math.min(2, _footballNews.length); k++)
+    pick.push(_footballNews[(_newsRotIdx + k) % _footballNews.length]);
+  el.innerHTML = pick.map(n => `
     <div onclick="if(this.dataset.url)window.open(this.dataset.url,'_blank')" data-url="${esc(n.url)}"
-      style="flex:1;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;border:1px solid var(--border);background:var(--surface2);min-height:150px;-webkit-tap-highlight-color:transparent">
+      style="flex:1;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;border:1px solid var(--border);background:var(--surface2);min-height:150px;-webkit-tap-highlight-color:transparent;animation:newsfade .5s ease">
       ${n.image ? `<img src="${esc(n.image)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px">⚽</div>`}
       <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(5,15,25,.93) 35%,rgba(5,15,25,.15))"></div>
       <div style="position:absolute;left:0;right:0;bottom:0;padding:10px">
