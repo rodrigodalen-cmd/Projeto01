@@ -763,7 +763,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div id="pwa-install-banner" class="pwa-banner" style="display:none">
       <div class="pwa-banner-text">Instale o Bolão FC no celular para acesso rápido como um app</div>
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
-      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
+      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';try{localStorage.setItem('ios_banner_dismissed','1')}catch(e){}">×</button>
     </div>
     <div class="banner">
       <h3>🇧🇷 Brasil no Grupo C</h3>
@@ -1895,7 +1895,6 @@ function goRegister() {
 function renderHome() {
   document.getElementById('home-greeting').textContent = `Olá, ${state.user?.name?.split(' ')[0] || 'amigo'} 👋`;
   renderGames();
-  renderLiveScores();
   renderPodium();
   fetchFootballNews();
 }
@@ -3473,7 +3472,13 @@ function appConfirm(title, msg, yesLabel, cb) {
 function _appConfirmYes() {
   document.getElementById('app-confirm-modal').style.display = 'none';
   const cb = _appConfirmCb; _appConfirmCb = null;
-  if(cb) cb();
+  if(!cb) return;
+  // Callbacks podem ser async (reembolso, delete no Supabase) — captura falhas
+  const r = cb();
+  if(r && typeof r.catch === 'function') r.catch(e => {
+    console.error('[confirm]', e);
+    showToast(`⚠️ Erro: ${(e.message||'falha de rede').slice(0,60)}`);
+  });
 }
 function _appConfirmNo() {
   document.getElementById('app-confirm-modal').style.display = 'none';
