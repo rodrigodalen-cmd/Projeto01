@@ -775,11 +775,12 @@ input:checked+.slider:before{transform:translateX(18px)}
       <span style="font-size:12px;color:var(--text3);font-weight:600">Ver todos →</span>
     </div>
     <div id="home-podium" style="margin-bottom:16px"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;cursor:pointer" onclick="drawerGo('tabela')">
+    <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer;padding:8px 0" onclick="drawerGo('tabela')">
       <div class="section-title" style="margin-bottom:0">Próximos Jogos</div>
       <span style="font-size:12px;color:var(--text3);font-weight:600">Ver tabela →</span>
     </div>
-    <div class="section-sub">Toque num jogo para criar um bolão</div>
+    <div class="section-sub" style="margin-top:-6px">Toque num jogo para criar um bolão</div>
     <div id="games-list"></div>
     <div id="news-section" style="margin-top:4px"></div>
     <div id="live-section">
@@ -1594,9 +1595,12 @@ function back() {
     if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
     if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   }
-  document.getElementById(cur).classList.remove('active');
-  document.getElementById(prev).classList.remove('prev');
-  document.getElementById(prev).classList.add('active');
+  const curEl = document.getElementById(cur);
+  const prevEl = document.getElementById(prev);
+  if(!curEl || !prevEl) return;
+  curEl.classList.remove('active');
+  prevEl.classList.remove('prev');
+  prevEl.classList.add('active');
   updateGlobalNav(prev);
   if(prev === 's-detail' && state.currentBolaoId) renderDetail();
   if(prev === 's-home') renderHome();
@@ -1924,24 +1928,43 @@ function renderHome() {
 let _footballNews = [];
 let _newsFetching = false;
 
-function _rss2json(url) {
-  return fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`)
-    .then(r => r.json()).then(d => {
-      if(d.status !== 'ok' || !d.items?.length) throw new Error('rss empty');
-      return d.items.map(i=>({headline:i.title||'',published:i.pubDate||'',image:i.thumbnail||null,url:i.link||null}));
+// Busca RSS via allorigins.win (proxy CORS gratuito) e parseia XML no browser
+function _fetchRSS(rssUrl) {
+  const proxy = 'https://api.allorigins.win/raw?url=';
+  return fetch(proxy + encodeURIComponent(rssUrl), {cache:'no-store'})
+    .then(r => { if(!r.ok) throw new Error('http '+r.status); return r.text(); })
+    .then(xml => {
+      const doc = new DOMParser().parseFromString(xml, 'text/xml');
+      const items = [...doc.querySelectorAll('item')].slice(0, 18);
+      if(!items.length) throw new Error('rss vazio');
+      return items.map(el => {
+        const txt = tag => el.querySelector(tag)?.textContent?.trim() || '';
+        const img = el.querySelector('enclosure[type^="image"]')?.getAttribute('url')
+          || el.querySelector('media\\:content,media\\:thumbnail')?.getAttribute('url')
+          || el.querySelector('[url]')?.getAttribute('url')
+          || null;
+        return { headline: txt('title'), published: txt('pubDate'), image: img, url: txt('link') };
+      });
     });
 }
 
 const _NEWS_SOURCES = [
-  // GloboEsporte (pt-BR) — editorial brasileiro, mais confiável
-  () => _rss2json('https://globoesporte.globo.com/rss.xml'),
-  // ESPN Brasil (pt-BR)
-  () => _rss2json('https://www.espn.com.br/espn/rss/futebol/noticias'),
+  // GE Globo / GloboEsporte (pt-BR) — maior portal esportivo do Brasil
+  () => _fetchRSS('https://ge.globo.com/rss.xml'),
   // Lance! (pt-BR)
-  () => _rss2json('https://www.lance.com.br/feed'),
+  () => _fetchRSS('https://www.lance.com.br/feed'),
   // UOL Esporte (pt-BR)
-  () => _rss2json('https://esporte.uol.com.br/futebol/rss.xml'),
-  // ESPN inglês — último fallback
+  () => _fetchRSS('https://esporte.uol.com.br/futebol/rss.xml'),
+  // ESPN Brasil (pt-BR)
+  () => _fetchRSS('https://www.espn.com.br/espn/rss/futebol/noticias'),
+  // Brasileirão via ESPN API (em pt quando disponível)
+  () => fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/news?limit=20')
+    .then(r => r.json()).then(d => {
+      const arts = d.articles||[];
+      if(!arts.length) throw new Error('empty');
+      return arts.map(a=>({headline:a.headline||'',published:a.published||'',image:a.images?.[0]?.url||null,url:a.links?.web?.href||null}));
+    }),
+  // Copa do Mundo via ESPN (inglês — último fallback)
   () => fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/news?limit=20')
     .then(r => r.json()).then(d =>
       (d.articles||[]).map(a=>({headline:a.headline||'',published:a.published||'',image:a.images?.[0]?.url||null,url:a.links?.web?.href||null}))
@@ -1951,15 +1974,18 @@ const _NEWS_SOURCES = [
 async function fetchFootballNews() {
   if(_newsFetching) return;
   _newsFetching = true;
-  for(const source of _NEWS_SOURCES) {
-    try {
-      const items = await source();
-      const valid = items.filter(n => n.headline && n.url);
-      if(valid.length > 0) { _footballNews = valid; break; }
-    } catch(e) { console.warn('[news]', e.message); }
+  try {
+    for(const source of _NEWS_SOURCES) {
+      try {
+        const items = await source();
+        const valid = items.filter(n => n.headline && n.url);
+        if(valid.length > 0) { _footballNews = valid; break; }
+      } catch(e) { console.warn('[news]', e.message); }
+    }
+  } finally {
+    _newsFetching = false;
+    _renderNews();
   }
-  _newsFetching = false;
-  _renderNews();
 }
 
 function _timeAgo(iso) {
