@@ -764,30 +764,25 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';localStorage.setItem('ios_banner_dismissed','1')">×</button>
     </div>
-    <div id="live-section" style="display:none;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <div class="section-title" style="margin-bottom:0">Placares ao Vivo</div>
-        <div class="live-pill"><div class="live-dot"></div>AO VIVO</div>
-      </div>
-      <div id="live-list"></div>
+    <div class="banner">
+      <h3>🇧🇷 Brasil no Grupo C</h3>
+      <p>Marrocos · Haiti · Escócia — Crie seu bolão!</p>
+      <button class="btn btn-secondary btn-sm" onclick="go_create()">Criar Bolão</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);display:flex;flex-direction:column;min-height:160px">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;cursor:pointer" onclick="drawerGo('tabela')">
-          <div style="font-size:12px;font-weight:800;color:var(--text)">Próximos Jogos</div>
-          <span style="font-size:11px;color:var(--primary);font-weight:700">→</span>
-        </div>
-        <div id="home-games-mini" style="padding:0 8px 10px;flex:1"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;align-items:stretch">
+      <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+        <div style="font-size:12px;font-weight:800;color:var(--text);padding:12px 12px 8px">Próximos Jogos</div>
+        <div id="home-live-slot" style="padding:0 8px"></div>
+        <div id="home-games-mini" style="padding:0 8px;flex:1"></div>
+        <div onclick="drawerGo('tabela')" style="cursor:pointer;text-align:center;padding:9px 8px 12px;font-size:11px;color:var(--primary-light);font-weight:700;-webkit-tap-highlight-color:transparent">Ver mais →</div>
       </div>
-      <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);display:flex;flex-direction:column;min-height:160px">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;cursor:pointer" onclick="openRanking()">
-          <div style="font-size:12px;font-weight:800;color:var(--text)">Ranking</div>
-          <span style="font-size:11px;color:var(--primary);font-weight:700">→</span>
-        </div>
-        <div id="home-podium" style="padding:0 8px 10px;flex:1"></div>
-      </div>
+      <div id="home-news-col" style="display:flex;flex-direction:column;gap:10px;min-height:320px"></div>
     </div>
-    <div id="news-section" style="margin-bottom:16px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="openRanking()">
+      <div class="section-title" style="margin-bottom:0">Ranking Global</div>
+      <span style="font-size:12px;color:var(--text3);font-weight:600">Ver todos →</span>
+    </div>
+    <div id="home-podium" style="margin-bottom:16px"></div>
   </div>
 </div>
 
@@ -2000,26 +1995,24 @@ function _timeAgo(iso) {
 }
 
 function _renderNews() {
-  const el = document.getElementById('news-section');
+  const el = document.getElementById('home-news-col');
   if(!el) return;
-  if(!_footballNews.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `
-    <div class="section-title" style="margin-bottom:10px">Notícias do Futebol</div>
-    <div style="display:flex;overflow-x:auto;gap:10px;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
-      ${_footballNews.slice(0, 15).map(n => `
-        <div onclick="if(event.currentTarget.dataset.url)window.open(event.currentTarget.dataset.url,'_blank')" data-url="${esc(n.url)}"
-          style="flex-shrink:0;width:190px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;active:opacity:.8">
-          ${n.image
-            ? `<img src="${esc(n.image)}" loading="lazy" style="width:100%;height:105px;object-fit:cover;display:block" onerror="this.parentElement.querySelector('.news-fallback').style.display='flex';this.remove()">`
-            : ''}
-          <div class="news-fallback" style="display:${n.image?'none':'flex'};width:100%;height:105px;background:var(--surface2);align-items:center;justify-content:center;font-size:36px">⚽</div>
-          <div style="padding:10px 10px 12px">
-            <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${esc(n.headline)}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:600">${_timeAgo(n.published)}</div>
-          </div>
-        </div>`).join('')}
-    </div>
-    <div class="carousel-hint">← arraste para ver mais →</div>`;
+  if(!_footballNews.length) {
+    el.innerHTML = `<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)">
+      <div style="font-size:28px">📰</div><div style="font-size:11px;font-weight:600">Notícias do futebol</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = _footballNews.slice(0, 2).map(n => `
+    <div onclick="if(this.dataset.url)window.open(this.dataset.url,'_blank')" data-url="${esc(n.url)}"
+      style="flex:1;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;border:1px solid var(--border);background:var(--surface2);min-height:150px;-webkit-tap-highlight-color:transparent">
+      ${n.image ? `<img src="${esc(n.image)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px">⚽</div>`}
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(5,15,25,.93) 35%,rgba(5,15,25,.15))"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:10px">
+        <div style="font-size:9px;font-weight:800;color:var(--secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Notícia · ${_timeAgo(n.published)}</div>
+        <div style="font-size:11px;font-weight:700;color:#fff;line-height:1.4;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">${esc(n.headline)}</div>
+      </div>
+    </div>`).join('');
 }
 
 function setMbFilter(filter, btn) {
@@ -2112,18 +2105,46 @@ function renderMyBoloes() {
 }
 
 function renderGames() {
-  const now_rg = new Date();
-  const upcoming = GAMES.filter(g=>gameDateTime(g)>now_rg).sort((a,b)=>gameDateTime(a)-gameDateTime(b)).slice(0,5);
+  const slotEl = document.getElementById('home-live-slot');
   const el = document.getElementById('home-games-mini');
-  if(!el) return;
-  if(!upcoming.length) {
-    el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Sem jogos futuros</div>';
-    return;
-  }
-  el.innerHTML = upcoming.map(g=>`
-    <div onclick="go_create_from_game('${g.id}')"
-      style="cursor:pointer;padding:7px 6px;border-radius:10px;background:var(--surface2);margin-bottom:5px;-webkit-tap-highlight-color:transparent;user-select:none"
-      ontouchstart="this.style.opacity='.65'" ontouchend="this.style.opacity='1'" ontouchcancel="this.style.opacity='1'">
+  if(!slotEl || !el) return;
+  const now = new Date();
+  const live = GAMES.filter(g=>{ const d = now - gameDateTime(g); return d >= 0 && d <= 110*60*1000; });
+  const upcoming = GAMES.filter(g=>gameDateTime(g)>now).sort((a,b)=>gameDateTime(a)-gameDateTime(b));
+  // Slot do topo: placar ao vivo quando rolando, senão contagem regressiva pro próximo jogo
+  if(live.length) {
+    slotEl.innerHTML = live.map(g=>{
+      const min = Math.floor((now-gameDateTime(g))/60000);
+      const sc = _ls[g.id];
+      return `<div style="padding:8px 6px;border-radius:10px;background:rgba(231,76,60,.10);border:1px solid rgba(231,76,60,.4);margin-bottom:5px">
+        <div style="display:flex;justify-content:center;margin-bottom:4px"><div class="live-pill"><div class="live-dot"></div>${min}'</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+          <span style="font-size:16px">${g.home.flag}</span>
+          <span style="font-size:15px;font-weight:900;color:var(--secondary);letter-spacing:1px">${sc?.h ?? '-'}–${sc?.a ?? '-'}</span>
+          <span style="font-size:16px">${g.away.flag}</span>
+        </div>
+        <div style="font-size:8px;color:var(--text2);text-align:center;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.home.name.split(' ')[0]} · ${g.away.name.split(' ')[0]}</div>
+      </div>`;
+    }).join('');
+  } else if(upcoming.length) {
+    const next = upcoming[0];
+    const diff = gameDateTime(next)-now;
+    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000);
+    const countdown = d>0?`${d}d ${h}h`:h>0?`${h}h ${m}min`:`${m}min`;
+    slotEl.innerHTML = `<div style="padding:8px 6px;border-radius:10px;background:rgba(0,166,81,.12);border:1px solid rgba(0,166,81,.45);margin-bottom:5px">
+      <div style="font-size:9px;color:var(--primary-light);font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;text-align:center">Começa em ${countdown}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+        <span style="font-size:16px">${next.home.flag}</span>
+        <span style="font-size:8px;color:var(--text3);font-weight:700">×</span>
+        <span style="font-size:16px">${next.away.flag}</span>
+      </div>
+      <div style="font-size:8px;color:var(--text2);text-align:center;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${next.home.name.split(' ')[0]} · ${next.away.name.split(' ')[0]}</div>
+    </div>`;
+  } else slotEl.innerHTML='';
+  // Lista de barras — sem clique (toque no "Ver mais" abre a Tabela)
+  const list = live.length ? upcoming.slice(0,4) : upcoming.slice(1,5);
+  el.innerHTML = list.map(g=>`
+    <div style="padding:7px 6px;border-radius:10px;background:var(--surface2);margin-bottom:5px">
       <div style="font-size:9px;color:var(--text3);font-weight:600;margin-bottom:3px">${g.date} · ${g.time}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
         <span style="font-size:16px">${g.home.flag}</span>
@@ -2131,7 +2152,7 @@ function renderGames() {
         <span style="font-size:16px">${g.away.flag}</span>
       </div>
       <div style="font-size:8px;color:var(--text2);text-align:center;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.home.name.split(' ')[0]} · ${g.away.name.split(' ')[0]}</div>
-    </div>`).join('');
+    </div>`).join('') || (live.length ? '' : '<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Sem jogos futuros</div>');
 }
 
 function esc(s) {
@@ -2142,34 +2163,8 @@ function fmtPrize(b) {
   return Math.floor(b.participants.filter(p=>p.paid).length * b.amount * 0.95);
 }
 
-function renderLiveScores() {
-  const now = new Date();
-  const section = document.getElementById('live-section');
-  if(!section) return;
-  // Find live games (within kickoff time + 110 minutes)
-  const liveGames = GAMES.filter(g=>{
-    const dt = gameDateTime(g);
-    const diff = now - dt;
-    return diff >= 0 && diff <= 110*60*1000;
-  });
-  if(liveGames.length === 0) { section.style.display='none'; return; }
-  section.style.display='block';
-  document.getElementById('live-list').innerHTML = liveGames.map(g => {
-    const min = Math.floor((now-gameDateTime(g))/60000);
-    const sc = _ls[g.id];
-    const lh = sc?.h ?? '-';
-    const la = sc?.a ?? '-';
-    return `<div class="live-card">
-      <div class="match-stage"><span>${g.stage}</span><div class="live-pill"><div class="live-dot"></div>${min}'</div></div>
-      <div class="match-row" style="margin-top:8px">
-        <div class="team-block"><div class="flag">${g.home.flag}</div><div class="team-name">${g.home.name}</div></div>
-        <div class="vs-block"><div class="live-score-big">${lh} - ${la}</div></div>
-        <div class="team-block right"><div class="flag">${g.away.flag}</div><div class="team-name">${g.away.name}</div></div>
-      </div>
-    </div>`;
-  }).join('');
-  document.querySelector('#live-section .section-title').textContent = liveGames.length>1 ? `Ao Vivo (${liveGames.length})` : 'Ao Vivo';
-}
+// Placar ao vivo agora mora no topo da coluna Próximos Jogos (home-live-slot)
+function renderLiveScores() { renderGames(); }
 
 // ===== CREATE BOLÃO =====
 let createState = {step:1, title:'', game:null, amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false};
@@ -4937,16 +4932,38 @@ async function renderPodium() {
   if(!el) return;
   const data = await fetchGlobalRanking();
   if(data.length < 1) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 4px;line-height:1.5">Ranking começa na 1ª rodada</div>';
+    el.innerHTML = `<div class="podium-section" style="text-align:center;padding:24px 16px">
+      <div style="font-size:48px;margin-bottom:10px">🏆</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Ranking começa na 1ª rodada</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6">Assim que os jogos começarem e os resultados forem lançados, o pódio com os melhores apostadores aparecerá aqui.</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:14px;width:auto" onclick="openRanking()">Ver ranking →</button>
+    </div>`;
     return;
   }
-  const medals = ['🥇','🥈','🥉'];
-  el.innerHTML = data.slice(0,3).map((p,i) => `
-    <div style="display:flex;align-items:center;gap:6px;padding:7px 4px;${i<2?'border-bottom:1px solid var(--border)':''}">
-      <span style="font-size:14px;flex-shrink:0">${medals[i]}</span>
-      <span style="font-size:11px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name.split(' ')[0])}</span>
-      <span style="font-size:11px;font-weight:800;color:var(--secondary);flex-shrink:0">${p.pts}pts</span>
-    </div>`).join('');
+  const PODIUM = [
+    {h:64, color:'#FFD700', bg:'linear-gradient(180deg,rgba(255,215,0,.35),rgba(255,215,0,.08))'},
+    {h:44, color:'#C0C0C0', bg:'linear-gradient(180deg,rgba(192,192,192,.32),rgba(192,192,192,.07))'},
+    {h:30, color:'#CD7F32', bg:'linear-gradient(180deg,rgba(205,127,50,.32),rgba(205,127,50,.07))'},
+  ];
+  function slot(p, rank) {
+    if(!p) return '<div style="flex:1;max-width:110px"></div>';
+    const cfg = PODIUM[rank-1];
+    const av = p.photo
+      ? `<img src="${p.photo}" class="podium-av-${rank}" alt="${esc(p.name)}">`
+      : `<div class="podium-av-${rank}" style="background:${_avColor(p.email)};display:flex;align-items:center;justify-content:center;font-size:${rank===1?26:22}px;font-weight:900;color:#fff">${p.name.charAt(0).toUpperCase()}</div>`;
+    return `<div style="flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" onclick="openRanking()">
+      ${rank===1?'<div style="font-size:20px;line-height:1">👑</div>':''}
+      ${av}
+      <div class="podium-name">${esc(p.name.split(' ')[0])}</div>
+      <div class="podium-pts" style="font-weight:800;color:var(--secondary)">${p.pts}pts</div>
+      <div style="width:100%;height:${cfg.h}px;border-radius:10px 10px 0 0;background:${cfg.bg};border:1px solid ${cfg.color}44;border-bottom:none;display:flex;align-items:center;justify-content:center;font-size:${rank===1?24:19}px;font-weight:900;color:${cfg.color}">${rank}°</div>
+    </div>`;
+  }
+  el.innerHTML = `<div class="podium-section" style="padding-bottom:0;overflow:hidden">
+    <div style="display:flex;align-items:flex-end;justify-content:center;gap:8px;padding-top:12px">
+      ${slot(data[1],2)}${slot(data[0],1)}${slot(data[2],3)}
+    </div>
+  </div>`;
 }
 
 // ===== SYSTEM MESSAGES =====
