@@ -3905,7 +3905,19 @@ async function _doAdminDeleteBolao(id) {
     }
     if(ok>0||fail>0) showToast(fail===0?`♻️ ${ok} reembolso(s) iniciado(s)`:`⚠️ ${ok} ok · ${fail} falhou`);
   }
-  if(_sb) await _sb.from('boloes').delete().eq('id',id);
+  if(_sb) {
+    const { data: deleted, error: delErr } = await _sb.from('boloes').delete().eq('id',id).select('id');
+    if(delErr) {
+      showToast(`⚠️ Erro ao excluir do servidor: ${delErr.message}`);
+      console.error('[admin-delete]', delErr);
+      return;
+    }
+    if(!deleted?.length) {
+      showToast('⚠️ Bolão não foi excluído do servidor — verifique a política RLS do Supabase');
+      console.warn('[admin-delete] 0 linhas deletadas — provável bloqueio de RLS');
+      return;
+    }
+  }
   _adminAllBoloes = _adminAllBoloes.filter(x=>x.id!==id);
   state.boloes = state.boloes.filter(x=>x.id!==id);
   saveBoloes();
