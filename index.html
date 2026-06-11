@@ -3771,7 +3771,7 @@ function _renderAdminPanel() {
                 <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 10px" onclick="adminViewBolao('${b.id}')">Ver</button>
                 ${b.result&&paid>0?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:rgba(0,184,148,.15);color:#00b894;border:1px solid rgba(0,184,148,.3)" onclick="adminForcePayout('${b.id}')">💰 Pagar</button>`:''}
                 ${!b.result&&!b.isSeason?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.25)" onclick="adminSetResult('${b.id}')">Resultado</button>`:''}
-                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:rgba(231,76,60,.12);color:var(--err);border:1px solid rgba(231,76,60,.25)" onclick="adminDeleteBolao('${b.id}')">Excluir</button>
+                ${b.creatorId===state.user?.email?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:rgba(231,76,60,.12);color:var(--err);border:1px solid rgba(231,76,60,.25)" onclick="adminDeleteBolao('${b.id}')">Excluir</button>`:'<span style="font-size:10px;color:var(--text3);padding:4px 6px">🔒 dono</span>'}
               </div>
             </div>
           </div>`;
