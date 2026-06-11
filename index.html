@@ -5209,8 +5209,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const EDGE = 28;   // px da borda que inicia o gesto
   const MIN_X = 72;  // deslocamento mínimo horizontal para ativar
   const MAX_Y = 55;  // desvio vertical máximo permitido
-  // Telas raiz (sem voltar)
-  const ROOT = new Set(['s-home','s-login','s-register','s-tabela','s-join','s-meus-boloes','s-season']);
+  // Telas raiz onde não faz sentido voltar (bottom nav ou tela inicial)
+  const ROOT = new Set(['s-home','s-login','s-tabela']);
   let tx = 0, ty = 0, active = false;
 
   document.addEventListener('touchstart', e => {
