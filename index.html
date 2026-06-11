@@ -386,7 +386,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 .filter-chips::-webkit-scrollbar{display:none}
 .chip-btn{flex-shrink:0;padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
 .chip-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
-.edit-bolao-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:950;display:none;align-items:flex-end;justify-content:center}
+.edit-bolao-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1600;display:none;align-items:flex-end;justify-content:center}
 .edit-bolao-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:24px;padding-bottom:40px}
 .pwa-banner{background:var(--surface2);border-radius:12px;padding:12px 14px;border:1px solid var(--border);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .pwa-banner-text{flex:1;font-size:12px;color:var(--text2);line-height:1.4}
@@ -1854,6 +1854,7 @@ async function loginSuccess() {
 }
 
 function doLogout() {
+  closeDrawer();
   document.getElementById('logout-modal').style.display = 'flex';
 }
 async function confirmLogout() {
