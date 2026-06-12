@@ -14,16 +14,16 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
-// Força limpeza de cache e SW antigos na primeira carga da versão 11
+// Força limpeza de cache e SW antigos na primeira carga da versão 12
 (function(){
-  const VER = '11';
+  const VER = '12';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=11'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=12'); });
   }
 })();
 </script>
@@ -1587,16 +1587,25 @@ function saveSession(u){ try{localStorage.setItem('bolao_session',JSON.stringify
 function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){} }
 
 // ===== NAV =====
+// Autoritativo sobre o DOM: SOMENTE a tela alvo fica com 'active'.
+// Qualquer tela "fantasma" que tenha sobrado com 'active' (ex.: s-ranking-geral,
+// que é a última no DOM e por isso pinta por cima de tudo) é removida aqui.
+function _activate(targetId, outgoingId) {
+  document.querySelectorAll('.screen').forEach(s=>{
+    if(s.id === targetId) return;
+    if(s.id === outgoingId) { s.classList.remove('active'); s.classList.add('prev'); }
+    else s.classList.remove('active','prev');
+  });
+  const t = document.getElementById(targetId);
+  if(t) { t.classList.remove('prev'); t.classList.add('active'); }
+  setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{ if(s.id!==targetId) s.classList.remove('prev'); }), 400);
+}
+
 function _navCore(screenId, push=true) {
   const cur = state.screenStack[state.screenStack.length-1];
-  if(cur === screenId) return;
-  if(cur) {
-    document.getElementById(cur)?.classList.remove('active');
-    document.getElementById(cur)?.classList.add('prev');
-  }
-  document.getElementById(screenId)?.classList.add('active');
+  if(cur === screenId) { _activate(screenId, null); return; }
+  _activate(screenId, cur);
   if(push) state.screenStack.push(screenId);
-  setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{if(s.id!==screenId)s.classList.remove('prev')}),400);
 }
 
 function go(screenId, push=true) {
@@ -1612,16 +1621,21 @@ function back() {
     if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
     if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   }
-  const curEl = document.getElementById(cur);
-  const prevEl = document.getElementById(prev);
-  if(!curEl || !prevEl) return;
-  curEl.classList.remove('active');
-  prevEl.classList.remove('prev');
-  prevEl.classList.add('active');
+  if(!document.getElementById(prev)) { drawerGo('home'); return; }
+  _activate(prev, cur);
   updateGlobalNav(prev);
   if(prev === 's-detail' && state.currentBolaoId) renderDetail();
   if(prev === 's-home') renderHome();
   if(prev === 's-meus-boloes') renderMyBoloes();
+}
+
+// Conserta o estado das telas para bater com a pilha de navegação.
+// Chamado ao retomar o app (iOS/Android voltam do background com telas fantasmas).
+function _healScreens() {
+  const top = state.screenStack[state.screenStack.length-1];
+  if(!top || !document.getElementById(top)) return;
+  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!==top) s.classList.remove('active','prev'); });
+  document.getElementById(top).classList.add('active');
 }
 
 function showToast(msg) {
@@ -4287,13 +4301,9 @@ function _hardGoCreate(prevScreenId) {
   // Guard: never use ranking/auth screens as the back target from create
   if(_INVALID_CREATE_PREV.has(prevScreenId)) prevScreenId = 's-home';
   renderCreateStep();
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
-  const prevEl = prevScreenId ? document.getElementById(prevScreenId) : null;
-  if(prevEl) prevEl.classList.add('prev');
-  document.getElementById('s-create')?.classList.add('active');
   state.screenStack = prevScreenId ? [prevScreenId, 's-create'] : ['s-create'];
+  _activate('s-create', prevScreenId || null);
   updateGlobalNav('s-create');
-  if(prevEl) setTimeout(()=>prevEl.classList.remove('prev'), 400);
 }
 
 function go_create_from_game(gameId, prevScreen) {
@@ -5917,14 +5927,10 @@ if('serviceWorker' in navigator) {
   });
 }
 
-// Garante tela correta ao retomar o PWA (iOS volta do background via pageshow)
-window.addEventListener('pageshow', e => {
-  if(!e.persisted) return;
-  const cur = state.screenStack[state.screenStack.length - 1];
-  if(!cur || !document.getElementById(cur)?.classList.contains('active')) {
-    drawerGo('home');
-  }
-});
+// Conserta telas fantasmas ao retomar o app (iOS/Android voltam do background
+// e às vezes deixam uma tela antiga com 'active', pintando por cima da atual).
+window.addEventListener('pageshow', () => { if(state.user) _healScreens(); });
+document.addEventListener('visibilitychange', () => { if(!document.hidden && state.user) _healScreens(); });
 
 // ===== SWIPE-BACK GESTURE (borda esquerda → voltar) =====
 (function() {
