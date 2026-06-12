@@ -14,16 +14,16 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
-// Força limpeza de cache e SW antigos na primeira carga da versão 12
+// Força limpeza de cache e SW antigos na primeira carga da versão 13
 (function(){
-  const VER = '12';
+  const VER = '13';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=12'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=13'); });
   }
 })();
 </script>
@@ -976,7 +976,6 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
       <button id="theme-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="toggleTheme()">Modo claro</button>
       <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">Ativar notificações</button>
-      <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="openRankingGeral()">Ranking com amigos</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">Ver tutorial novamente</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;justify-content:space-between;gap:10px" onclick="go('s-policies')">Políticas e Termos <span style="color:var(--text3);font-size:13px">→</span></button>
     </div>
@@ -1219,14 +1218,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 </div>
 
 <!-- === RANKING GERAL === -->
-<div class="screen" id="s-ranking-geral">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Ranking com Amigos</span></div>
-  <div class="scroll" style="padding-bottom:40px">
-    <div id="ranking-geral-content" style="padding-top:8px">
-      <div style="text-align:center;color:var(--text3);padding:48px 0">Carregando...</div>
-    </div>
-  </div>
-</div>
+<div class="screen" id="s-ranking-geral" style="display:none"></div>
 
 </div><!-- #app -->
 
@@ -4295,7 +4287,7 @@ function renderTabela() {
 }
 
 // Screens that should never be used as the "back" destination from s-create
-const _INVALID_CREATE_PREV = new Set(['s-ranking-geral','s-ranking','s-login','s-register','s-terms']);
+const _INVALID_CREATE_PREV = new Set(['s-ranking','s-login','s-register','s-terms']);
 
 function _hardGoCreate(prevScreenId) {
   // Guard: never use ranking/auth screens as the back target from create
@@ -4771,67 +4763,6 @@ function goTermsSection(secId) {
       if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 320);
   }
-}
-
-// ===== RANKING GERAL DE AMIGOS =====
-function openRankingGeral() {
-  const email = state.user?.email;
-  if(!email) return;
-  const boloes = state.boloes.filter(b=>b.result);
-  const friends = {};
-  boloes.forEach(b=>{
-    b.participants.forEach(p=>{
-      if(p.email===email) return;
-      if(!friends[p.email]) friends[p.email]={email:p.email,name:p.name,photo:p.photo,pts:0,boloes:0,wins:0};
-    });
-    const myPts = calcPoints(b.participants.find(p=>p.email===email)||{},b.result,b);
-    const ranked = b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
-    const myRank = ranked.findIndex(p=>p.email===email);
-    b.participants.forEach(p=>{
-      if(p.email===email) return;
-      if(!friends[p.email]) return;
-      friends[p.email].boloes++;
-      friends[p.email].pts += calcPoints(p,b.result,b);
-      if(ranked[0]?.email===p.email && ranked[0].pts>0) friends[p.email].wins++;
-    });
-  });
-  const myTotalPts = boloes.reduce((s,b)=>{
-    const me=b.participants.find(p=>p.email===email);
-    return s+calcPoints(me||{},b.result,b);
-  },0);
-  const myWins = boloes.filter(b=>{
-    const me=b.participants.find(p=>p.email===email);
-    if(!me) return false;
-    const ranked=b.participants.map(p=>({...p,pts:calcPoints(p,b.result,b)})).sort((a,c)=>c.pts-a.pts);
-    return ranked[0]?.email===email && ranked[0].pts>0;
-  }).length;
-  const list = Object.values(friends).sort((a,c)=>c.pts-a.pts);
-  const rows = list.length===0
-    ? `<div style="text-align:center;color:var(--text3);padding:32px 0;font-size:14px">Participe de bolões com resultado para ver o ranking 🏆</div>`
-    : list.map((f,i)=>{
-        const medals=['🥇','🥈','🥉'];
-        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:18px;width:28px;text-align:center">${medals[i]||`${i+1}°`}</div>
-          ${_avHtml(f.email,f.name,f.photo,40)}
-          <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(f.name)}</div>
-            <div style="font-size:11px;color:var(--text3)">${f.boloes} bolão${f.boloes!==1?'s':''} · ${f.wins} vitória${f.wins!==1?'s':''}</div>
-          </div>
-          <div style="font-size:16px;font-weight:900;color:var(--secondary)">${f.pts}pts</div>
-        </div>`;
-      }).join('');
-  const el = document.getElementById('ranking-geral-content');
-  if(el) {
-    el.innerHTML = `
-      <div style="background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);margin-bottom:16px;text-align:center">
-        <div style="font-size:13px;color:var(--text3);margin-bottom:4px">Seus pontos totais</div>
-        <div style="font-size:36px;font-weight:900;color:var(--secondary)">${myTotalPts}</div>
-        <div style="font-size:12px;color:var(--ok);margin-top:4px">🏆 ${myWins} vitória${myWins!==1?'s':''} em ${boloes.length} bolão${boloes.length!==1?'s':''}</div>
-      </div>
-      <div class="section-title">Seus amigos</div>
-      <div style="background:var(--surface);border-radius:16px;padding:0 16px;border:1px solid var(--border)">${rows}</div>`;
-  }
-  go('s-ranking-geral');
 }
 
 // ===== APP BOLÕES =====
