@@ -524,6 +524,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+<div id="_dbg" style="position:fixed;bottom:60px;left:8px;background:rgba(0,0,0,.85);color:#0f0;font-family:monospace;font-size:9px;z-index:99999;padding:4px 6px;border-radius:6px;max-width:90vw;word-break:break-all;pointer-events:none;display:none"></div>
 
 <!-- === LOGIN === -->
 <div class="screen active" id="s-login">
@@ -1622,6 +1623,17 @@ function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){
 // Qualquer tela "fantasma" que tenha sobrado com 'active' (ex.: s-ranking-geral,
 // que é a última no DOM e por isso pinta por cima de tudo) é removida aqui.
 function _activate(targetId, outgoingId) {
+  // DEBUG: log activation calls
+  try {
+    const dbg = document.getElementById('_dbg');
+    if(dbg) {
+      dbg.style.display = 'block';
+      const ghosts = [...document.querySelectorAll('.screen.active')].filter(s=>s.id!==targetId).map(s=>s.id).join(',');
+      const ts = new Date().toISOString().slice(11,23);
+      dbg.textContent = '['+ts+'] →'+targetId+(ghosts?'\nGHOST:'+ghosts:'');
+    }
+  } catch(e) {}
+
   document.querySelectorAll('.screen').forEach(s=>{
     s.style.zIndex = '';  // reseta z-index inline de todos
     if(s.id === targetId) return;
@@ -1634,6 +1646,17 @@ function _activate(targetId, outgoingId) {
     t.classList.add('active');
     t.style.zIndex = '10';  // garante que o alvo sempre ganha, independente de ordem no DOM
   }
+  // DEBUG: log post-activation state
+  try {
+    const dbg = document.getElementById('_dbg');
+    if(dbg) {
+      const ghosts2 = [...document.querySelectorAll('.screen.active')].filter(s=>s.id!==targetId).map(s=>s.id).join(',');
+      if(ghosts2) dbg.textContent += '\nPÓS-GHOST:'+ghosts2;
+      const tEl = document.getElementById(targetId);
+      dbg.textContent += '\nzIdx:'+(tEl?.style?.zIndex||'?');
+    }
+  } catch(e) {}
+
   setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{ if(s.id!==targetId) { s.classList.remove('prev'); s.style.zIndex = ''; } }), 400);
 }
 
