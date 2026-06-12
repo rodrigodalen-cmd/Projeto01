@@ -13,6 +13,20 @@
 <meta name="apple-mobile-web-app-title" content="Bolão">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
+<script>
+// Força limpeza de cache e SW antigos na primeira carga da versão 8
+(function(){
+  const VER = '8';
+  if(localStorage.getItem('_fv') === VER) return;
+  localStorage.setItem('_fv', VER);
+  if('serviceWorker' in navigator && 'caches' in window) {
+    Promise.all([
+      navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    ]).then(() => { location.reload(); });
+  }
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
@@ -5843,25 +5857,29 @@ function resetOnboarding() {
 document.addEventListener('DOMContentLoaded', async ()=>{
   applyTheme();
 
-  // ===== DEBUG TRAP: captura quem ativa s-ranking-geral =====
+  // ===== DEBUG TRAP v2: MutationObserver (funciona no iOS Safari) =====
+  const _APP_VER = 8;
   (function() {
     const srg = document.getElementById('s-ranking-geral');
     if (!srg) return;
-    const _origAdd = srg.classList.add.bind(srg.classList);
-    srg.classList.add = function(...tokens) {
-      if (tokens.includes('active')) {
+    // MutationObserver é garantido em todos browsers, diferente de sobrescrever classList.add
+    const obs = new MutationObserver(() => {
+      if (srg.classList.contains('active')) {
         let trace = 'sem stack';
         try { trace = new Error().stack || 'sem stack'; } catch(e) {}
         const ts = new Date().toLocaleTimeString('pt-BR');
         const c = document.getElementById('ranking-geral-content');
         if (c) c.innerHTML = `<div style="background:#111;color:#ffd700;padding:16px;border-radius:12px;font-size:9px;word-break:break-all;line-height:1.6;margin:8px;overflow-x:auto">
-          <div style="font-size:14px;font-weight:800;margin-bottom:8px">🐛 DEBUG — ${ts}</div>
-          <div style="color:#0f0;margin-bottom:6px">Stack (quem ativou esta tela):</div>
+          <div style="font-size:14px;font-weight:800;margin-bottom:8px">🐛 DEBUG v${_APP_VER} — ${ts}</div>
+          <div style="color:#0f0;margin-bottom:6px">Stack:</div>
           <pre style="white-space:pre-wrap;font-size:8px;color:#fff;margin:0">${trace.substring(0,1200)}</pre>
         </div>`;
       }
-      return _origAdd(...tokens);
-    };
+    });
+    obs.observe(srg, {attributes: true, attributeFilter: ['class']});
+    // Adiciona versão visível no topbar de s-ranking-geral para confirmar versão do código
+    const topbar = srg.querySelector('.topbar-title');
+    if (topbar) topbar.textContent = `Ranking com Amigos [v${_APP_VER}]`;
   })();
   // ===== FIM DEBUG TRAP =====
 
