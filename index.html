@@ -14,9 +14,9 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
-// Força limpeza de cache e SW antigos na primeira carga da versão 9
+// Força limpeza de cache e SW antigos na primeira carga da versão 10
 (function(){
-  const VER = '9';
+  const VER = '10';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -926,7 +926,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === PROFILE (tab dentro do home) === -->
 <div class="screen" id="s-profile">
-  <div class="topbar"><span class="topbar-title" style="flex:0;margin-right:auto">Perfil</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Perfil</span></div>
   <div class="scroll" style="padding-top:16px">
     <div class="avatar-card">
       <div class="avatar-upload" onclick="document.getElementById('photo-input').click()">
@@ -1286,10 +1286,6 @@ const EFI_FN_URL = `${SUPABASE_URL}/functions/v1/bright-api`;
 
 let _sb = null;
 
-// Debug: captura síncrona de quem chama go('s-ranking-geral')
-let _dbgRankingStack = '';
-let _dbgLastClickInfo = '';
-
 // Capture pending invite code immediately, before any auth redirects strip the URL
 const _pendingJoin = new URLSearchParams(window.location.search).get('join') || '';
 
@@ -1592,10 +1588,6 @@ function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){
 
 // ===== NAV =====
 function _navCore(screenId, push=true) {
-  if(screenId === 's-ranking-geral') {
-    try { _dbgRankingStack = (new Error('→ _navCore(s-ranking-geral)')).stack || 'sem stack'; }
-    catch(ex) { _dbgRankingStack = 'erro ao capturar stack'; }
-  }
   const cur = state.screenStack[state.screenStack.length-1];
   if(cur === screenId) return;
   if(cur) {
@@ -1613,7 +1605,7 @@ function go(screenId, push=true) {
 }
 
 function back() {
-  if(state.screenStack.length <= 1) return;
+  if(state.screenStack.length <= 1) { drawerGo('home'); return; }
   const cur = state.screenStack.pop();
   const prev = state.screenStack[state.screenStack.length-1];
   if(cur === 's-pix') {
@@ -4305,7 +4297,6 @@ function _hardGoCreate(prevScreenId) {
 }
 
 function go_create_from_game(gameId, prevScreen) {
-  try { _dbgLastClickInfo = `jogo=${gameId} prev=${prevScreen} hora=${new Date().toLocaleTimeString('pt-BR')} | ${(new Error().stack||'').substring(0,300)}`; } catch(ex) {}
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
   if(gameDateTime(g) <= Date.now()) { showToast('⛔ Este jogo já começou ou encerrou'); return; }
@@ -5866,36 +5857,6 @@ function resetOnboarding() {
 document.addEventListener('DOMContentLoaded', async ()=>{
   applyTheme();
 
-  // ===== DEBUG TRAP v3: captura síncrona + painel em português =====
-  const _APP_VER = 9;
-  (function() {
-    const srg = document.getElementById('s-ranking-geral');
-    if (!srg) return;
-    const obs = new MutationObserver(() => {
-      if (srg.classList.contains('active')) {
-        const ts = new Date().toLocaleTimeString('pt-BR');
-        const c = document.getElementById('ranking-geral-content');
-        const pilha = _dbgRankingStack || '(classe adicionada diretamente, sem passar por _navCore)';
-        const telas = JSON.stringify(state?.screenStack || []);
-        const ultimoJogo = _dbgLastClickInfo || '(nenhum jogo clicado)';
-        if (c) c.innerHTML = `<div style="background:#1a0000;color:#ffd700;padding:16px;border-radius:12px;font-size:11px;line-height:1.7;margin:8px;overflow-x:auto;border:2px solid #ff4444">
-          <div style="font-size:15px;font-weight:900;margin-bottom:10px;color:#ff6b6b">🔴 BUG DETECTADO [v${_APP_VER}] — ${ts}</div>
-          <div style="background:#002200;color:#00ff88;padding:8px;border-radius:8px;margin-bottom:10px;font-weight:700;text-align:center">📸 TIRE UM SCREENSHOT E ENVIE!</div>
-          <div style="color:#88ccff;font-weight:700;margin-bottom:4px">📋 Pilha de chamadas:</div>
-          <pre style="white-space:pre-wrap;font-size:8px;color:#fff;margin:0 0 10px;background:#000;padding:8px;border-radius:6px;word-break:break-all">${pilha.replace(/https?:\/\/[^\/]+\//g,'').substring(0,1200)}</pre>
-          <div style="color:#88ccff;font-weight:700;margin-bottom:4px">🗂️ Histórico de telas:</div>
-          <pre style="font-size:9px;color:#fff;margin:0 0 10px;background:#000;padding:8px;border-radius:6px">${telas}</pre>
-          <div style="color:#88ccff;font-weight:700;margin-bottom:4px">👆 Último jogo clicado:</div>
-          <pre style="font-size:8px;color:#fff;margin:0;background:#000;padding:8px;border-radius:6px;word-break:break-all">${ultimoJogo.substring(0,400)}</pre>
-        </div>`;
-      }
-    });
-    obs.observe(srg, {attributes: true, attributeFilter: ['class']});
-    const topbar = srg.querySelector('.topbar-title');
-    if (topbar) topbar.textContent = `Ranking com Amigos [v${_APP_VER}]`;
-  })();
-  // ===== FIM DEBUG TRAP =====
-
   initSupabase();
   loadPersistedData();
 
@@ -5948,8 +5909,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 
-// Reload automático quando nova versão do SW ativar — deve ficar fora do DOMContentLoaded
-// para funcionar em todos os fluxos de autenticação (Supabase ou local)
+// Reload quando nova versão do SW ativar
 if('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
   navigator.serviceWorker.addEventListener('message', e => {
@@ -5957,13 +5917,22 @@ if('serviceWorker' in navigator) {
   });
 }
 
+// Garante tela correta ao retomar o PWA (iOS volta do background via pageshow)
+window.addEventListener('pageshow', e => {
+  if(!e.persisted) return;
+  const cur = state.screenStack[state.screenStack.length - 1];
+  if(!cur || !document.getElementById(cur)?.classList.contains('active')) {
+    drawerGo('home');
+  }
+});
+
 // ===== SWIPE-BACK GESTURE (borda esquerda → voltar) =====
 (function() {
   const EDGE = 28;   // px da borda que inicia o gesto
   const MIN_X = 72;  // deslocamento mínimo horizontal para ativar
   const MAX_Y = 55;  // desvio vertical máximo permitido
   // Telas raiz onde não faz sentido voltar (bottom nav ou tela inicial)
-  const ROOT = new Set(['s-home','s-login','s-tabela']);
+  const ROOT = new Set(['s-home','s-login']);
   let tx = 0, ty = 0, active = false;
 
   document.addEventListener('touchstart', e => {
