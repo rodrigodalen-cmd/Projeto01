@@ -4243,7 +4243,7 @@ function renderTabela() {
         bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px;line-height:1.2">📍 ${g.venue.split(',')[0]}<br>em ${cd}</div>`;
       }
 
-      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}')">
+      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}','s-tabela')">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
           <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px">Gr. ${grpL}</span>
           ${topStatus}
@@ -4266,7 +4266,12 @@ function renderTabela() {
   }).join('');
 }
 
+// Screens that should never be used as the "back" destination from s-create
+const _INVALID_CREATE_PREV = new Set(['s-ranking-geral','s-ranking','s-login','s-register','s-terms']);
+
 function _hardGoCreate(prevScreenId) {
+  // Guard: never use ranking/auth screens as the back target from create
+  if(_INVALID_CREATE_PREV.has(prevScreenId)) prevScreenId = 's-home';
   renderCreateStep();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   const prevEl = prevScreenId ? document.getElementById(prevScreenId) : null;
@@ -4283,8 +4288,10 @@ function go_create_from_game(gameId, prevScreen) {
   if(gameDateTime(g) <= Date.now()) { showToast('⛔ Este jogo já começou ou encerrou'); return; }
   createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false,isPrivate:true};
   _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
-  // Determine the origin screen to go back to, defaulting to tabela
-  const origin = prevScreen || state.screenStack[state.screenStack.length-1] || 's-tabela';
+  // Use explicit prevScreen when provided, otherwise find last valid screen in stack
+  const origin = prevScreen
+    || state.screenStack.slice().reverse().find(s => !_INVALID_CREATE_PREV.has(s))
+    || 's-tabela';
   _hardGoCreate(origin);
 }
 
