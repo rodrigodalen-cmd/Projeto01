@@ -14,16 +14,16 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
-// Força limpeza de cache e SW antigos na primeira carga da versão 10
+// Força limpeza de cache e SW antigos na primeira carga da versão 11
 (function(){
-  const VER = '10';
+  const VER = '11';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.reload(); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=11'); });
   }
 })();
 </script>
@@ -47,7 +47,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 #app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .screen{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform .3s ease;z-index:1}
 .screen.active{transform:translateX(0);z-index:2}
-.screen.prev{transform:translateX(-30%)}
+.screen.prev{transform:translateX(-30%);pointer-events:none}
 .scroll{overflow-y:auto;flex:1;padding:20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:16px 20px 0;position:sticky;top:0;background:var(--bg);z-index:10}
