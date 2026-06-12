@@ -16,14 +16,14 @@
 <script>
 // Força limpeza de cache e SW antigos na primeira carga da versão 13
 (function(){
-  const VER = '14';
+  const VER = '15';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=14'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=15'); });
   }
 })();
 </script>
@@ -1623,13 +1623,18 @@ function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){
 // que é a última no DOM e por isso pinta por cima de tudo) é removida aqui.
 function _activate(targetId, outgoingId) {
   document.querySelectorAll('.screen').forEach(s=>{
+    s.style.zIndex = '';  // reseta z-index inline de todos
     if(s.id === targetId) return;
     if(s.id === outgoingId) { s.classList.remove('active'); s.classList.add('prev'); }
     else s.classList.remove('active','prev');
   });
   const t = document.getElementById(targetId);
-  if(t) { t.classList.remove('prev'); t.classList.add('active'); }
-  setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{ if(s.id!==targetId) s.classList.remove('prev'); }), 400);
+  if(t) {
+    t.classList.remove('prev');
+    t.classList.add('active');
+    t.style.zIndex = '10';  // garante que o alvo sempre ganha, independente de ordem no DOM
+  }
+  setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{ if(s.id!==targetId) { s.classList.remove('prev'); s.style.zIndex = ''; } }), 400);
 }
 
 function _navCore(screenId, push=true) {
@@ -1665,8 +1670,10 @@ function back() {
 function _healScreens() {
   const top = state.screenStack[state.screenStack.length-1];
   if(!top || !document.getElementById(top)) return;
-  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!==top) s.classList.remove('active','prev'); });
-  document.getElementById(top).classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!==top) { s.classList.remove('active','prev'); s.style.zIndex = ''; } });
+  const t = document.getElementById(top);
+  t.classList.add('active');
+  t.style.zIndex = '10';
 }
 
 function showToast(msg) {
