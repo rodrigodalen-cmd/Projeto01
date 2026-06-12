@@ -14,9 +14,9 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
-// Força limpeza de cache e SW antigos na primeira carga da versão 8
+// Força limpeza de cache e SW antigos na primeira carga da versão 9
 (function(){
-  const VER = '8';
+  const VER = '9';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1286,6 +1286,10 @@ const EFI_FN_URL = `${SUPABASE_URL}/functions/v1/bright-api`;
 
 let _sb = null;
 
+// Debug: captura síncrona de quem chama go('s-ranking-geral')
+let _dbgRankingStack = '';
+let _dbgLastClickInfo = '';
+
 // Capture pending invite code immediately, before any auth redirects strip the URL
 const _pendingJoin = new URLSearchParams(window.location.search).get('join') || '';
 
@@ -1588,6 +1592,10 @@ function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){
 
 // ===== NAV =====
 function _navCore(screenId, push=true) {
+  if(screenId === 's-ranking-geral') {
+    try { _dbgRankingStack = (new Error('→ _navCore(s-ranking-geral)')).stack || 'sem stack'; }
+    catch(ex) { _dbgRankingStack = 'erro ao capturar stack'; }
+  }
   const cur = state.screenStack[state.screenStack.length-1];
   if(cur === screenId) return;
   if(cur) {
@@ -4297,6 +4305,7 @@ function _hardGoCreate(prevScreenId) {
 }
 
 function go_create_from_game(gameId, prevScreen) {
+  try { _dbgLastClickInfo = `jogo=${gameId} prev=${prevScreen} hora=${new Date().toLocaleTimeString('pt-BR')} | ${(new Error().stack||'').substring(0,300)}`; } catch(ex) {}
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
   if(gameDateTime(g) <= Date.now()) { showToast('⛔ Este jogo já começou ou encerrou'); return; }
@@ -5857,27 +5866,31 @@ function resetOnboarding() {
 document.addEventListener('DOMContentLoaded', async ()=>{
   applyTheme();
 
-  // ===== DEBUG TRAP v2: MutationObserver (funciona no iOS Safari) =====
-  const _APP_VER = 8;
+  // ===== DEBUG TRAP v3: captura síncrona + painel em português =====
+  const _APP_VER = 9;
   (function() {
     const srg = document.getElementById('s-ranking-geral');
     if (!srg) return;
-    // MutationObserver é garantido em todos browsers, diferente de sobrescrever classList.add
     const obs = new MutationObserver(() => {
       if (srg.classList.contains('active')) {
-        let trace = 'sem stack';
-        try { trace = new Error().stack || 'sem stack'; } catch(e) {}
         const ts = new Date().toLocaleTimeString('pt-BR');
         const c = document.getElementById('ranking-geral-content');
-        if (c) c.innerHTML = `<div style="background:#111;color:#ffd700;padding:16px;border-radius:12px;font-size:9px;word-break:break-all;line-height:1.6;margin:8px;overflow-x:auto">
-          <div style="font-size:14px;font-weight:800;margin-bottom:8px">🐛 DEBUG v${_APP_VER} — ${ts}</div>
-          <div style="color:#0f0;margin-bottom:6px">Stack:</div>
-          <pre style="white-space:pre-wrap;font-size:8px;color:#fff;margin:0">${trace.substring(0,1200)}</pre>
+        const pilha = _dbgRankingStack || '(classe adicionada diretamente, sem passar por _navCore)';
+        const telas = JSON.stringify(state?.screenStack || []);
+        const ultimoJogo = _dbgLastClickInfo || '(nenhum jogo clicado)';
+        if (c) c.innerHTML = `<div style="background:#1a0000;color:#ffd700;padding:16px;border-radius:12px;font-size:11px;line-height:1.7;margin:8px;overflow-x:auto;border:2px solid #ff4444">
+          <div style="font-size:15px;font-weight:900;margin-bottom:10px;color:#ff6b6b">🔴 BUG DETECTADO [v${_APP_VER}] — ${ts}</div>
+          <div style="background:#002200;color:#00ff88;padding:8px;border-radius:8px;margin-bottom:10px;font-weight:700;text-align:center">📸 TIRE UM SCREENSHOT E ENVIE!</div>
+          <div style="color:#88ccff;font-weight:700;margin-bottom:4px">📋 Pilha de chamadas:</div>
+          <pre style="white-space:pre-wrap;font-size:8px;color:#fff;margin:0 0 10px;background:#000;padding:8px;border-radius:6px;word-break:break-all">${pilha.replace(/https?:\/\/[^\/]+\//g,'').substring(0,1200)}</pre>
+          <div style="color:#88ccff;font-weight:700;margin-bottom:4px">🗂️ Histórico de telas:</div>
+          <pre style="font-size:9px;color:#fff;margin:0 0 10px;background:#000;padding:8px;border-radius:6px">${telas}</pre>
+          <div style="color:#88ccff;font-weight:700;margin-bottom:4px">👆 Último jogo clicado:</div>
+          <pre style="font-size:8px;color:#fff;margin:0;background:#000;padding:8px;border-radius:6px;word-break:break-all">${ultimoJogo.substring(0,400)}</pre>
         </div>`;
       }
     });
     obs.observe(srg, {attributes: true, attributeFilter: ['class']});
-    // Adiciona versão visível no topbar de s-ranking-geral para confirmar versão do código
     const topbar = srg.querySelector('.topbar-title');
     if (topbar) topbar.textContent = `Ranking com Amigos [v${_APP_VER}]`;
   })();
