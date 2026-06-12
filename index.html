@@ -2291,7 +2291,11 @@ function setCreateGroupFilter(g, el) {
 function renderCreateGamesCarousel() {
   const carousel = document.getElementById('create-carousel');
   if(!carousel) return;
-  const games = _createGroupFilter==='all' ? GAMES : GAMES.filter(g=>(g.group||'').replace('Grupo ','')===_createGroupFilter);
+  const now = Date.now();
+  const allGames = (_createGroupFilter==='all' ? GAMES : GAMES.filter(g=>(g.group||'').replace('Grupo ','')===_createGroupFilter))
+    .filter(g => gameDateTime(g) > now);
+  const games = allGames;
+  if(!games.length) { carousel.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Nenhum jogo disponível neste grupo</div>'; return; }
   carousel.innerHTML = games.map(g=>`
     <div class="snap-card${createState.game?.id===g.id?' selected':''}" onclick="selectCreateGame(this,'${g.id}')">
       <div class="match-stage"><span>${g.group||g.stage}</span><span>${g.date}</span></div>

@@ -31,6 +31,36 @@
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     }
   ],
+  "screenshots": [
+    {
+      "src": "screenshot-home.jpeg",
+      "sizes": "828x1105",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Próximos jogos e notícias"
+    },
+    {
+      "src": "screenshot-jogos.jpeg",
+      "sizes": "828x1105",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Tabela de jogos da Copa 2026"
+    },
+    {
+      "src": "screenshot-ligas.jpeg",
+      "sizes": "828x1105",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Ligas e competições"
+    },
+    {
+      "src": "screenshot-criar.jpeg",
+      "sizes": "828x1105",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Criar bolão"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
