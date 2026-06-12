@@ -4391,6 +4391,28 @@ function setChampRound(r, el) {
   renderChampionshipDetail();
 }
 
+function _copaMundoAsChampGames() {
+  const now = new Date();
+  return GAMES.map(g => {
+    const dt = gameDateTime(g);
+    const sc = _ls[g.id];
+    const isLive = sc?.status==='LIVE' || (now-dt>=0 && now-dt<=110*60000 && sc?.status!=='FT');
+    const isDone = sc?.status==='FT' || (now-dt>110*60000);
+    return {
+      id: g.id,
+      home: {name:g.home.name, code:g.home.code, flag:g.home.flag},
+      away: {name:g.away.name, code:g.away.code, flag:g.away.flag},
+      homeScore: sc?.h??'', awayScore: sc?.a??'',
+      isLive, isDone, min: sc?.min||'',
+      round: g.group||g.stage||'',
+      date: dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+      time: dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      dateObj: dt, venue: g.venue||'',
+      _copaId: g.id,
+    };
+  });
+}
+
 function openChampionship(c) {
   if(state.champPollInterval) { clearInterval(state.champPollInterval); state.champPollInterval = null; }
   state.customChampionship = c;
@@ -4398,6 +4420,18 @@ function openChampionship(c) {
   state.champRound = 'all';
   state.champGames = [];
   document.getElementById('custom-create-title').textContent = c.name;
+  go('s-custom-create');
+  if(c.espn === 'fifa.world') {
+    state.champGames = _copaMundoAsChampGames();
+    renderChampionshipDetail();
+    state.champPollInterval = setInterval(()=>{
+      if(state.screenStack[state.screenStack.length-1]==='s-custom-create') {
+        state.champGames = _copaMundoAsChampGames();
+        renderChampionshipDetail();
+      }
+    }, 30000);
+    return;
+  }
   const el = document.getElementById('custom-create-content');
   if(el) el.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:16px">
@@ -4408,7 +4442,6 @@ function openChampionship(c) {
       <div style="font-size:28px;margin-bottom:10px">⏳</div>
       <div style="font-size:13px">Buscando jogos...</div>
     </div>`;
-  go('s-custom-create');
   const doFetch = () => fetchChampionshipScores(c.espn||'').then(games=>{
     state.champGames = games;
     renderChampionshipDetail();
@@ -4513,8 +4546,9 @@ function renderChampionshipDetail() {
 }
 
 function go_create_from_champ_game(g) {
-  if(g.isDone) { showToast('⏰ Jogo encerrado — apostas não são aceitas'); return; }
-  if(g.isLive) { showToast('⏰ Jogo em andamento — apostas encerradas'); return; }
+  if(g._copaId) { go_create_from_game(g._copaId); return; }
+  if(g.isDone) { showToast('⛔ Jogo encerrado — apostas não são aceitas'); return; }
+  if(g.isLive) { showToast('⛔ Jogo em andamento — apostas encerradas'); return; }
   const c = state.customChampionship;
   const customGame = {
     id: 'champ-'+g.id,
