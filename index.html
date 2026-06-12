@@ -1082,6 +1082,35 @@ input:checked+.slider:before{transform:translateX(18px)}
   </div>
 </div>
 
+<!-- === SOBRE O APP === -->
+<div class="screen" id="s-about">
+  <div class="topbar">
+    <button class="back-btn" onclick="back()">←</button>
+    <span class="topbar-title">Sobre o app</span>
+  </div>
+  <div class="scroll" style="padding-bottom:48px">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:32px 0 24px">
+      <img src="icon-192.png" alt="Bolão FC" style="width:80px;height:80px;border-radius:20px;margin-bottom:14px">
+      <div style="font-size:22px;font-weight:900;color:var(--text)">Bolão FC</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px">Copa do Mundo 2026</div>
+    </div>
+    <div class="about-card" style="margin-bottom:16px">
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>Versão</span><span style="color:var(--text)">1.0.0</span></div>
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>Taxa do app</span><span style="color:var(--text)">5% sobre o prêmio</span></div>
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>Máximo por bolão</span><span style="color:var(--text)">50 participantes</span></div>
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>CNPJ</span><span style="color:var(--text)">67.182.496/0001-32</span></div>
+    </div>
+    <div class="about-card">
+      <div class="about-item" style="color:var(--text3);font-size:12px;line-height:1.7">
+        Bolão FC é uma plataforma de entretenimento para apostas entre amigos nos jogos da Copa do Mundo 2026. Apenas para maiores de 18 anos. Jogue com responsabilidade.
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:24px">
+      <button class="btn btn-ghost" style="font-size:13px" onclick="go('s-policies')">Políticas e Termos →</button>
+    </div>
+  </div>
+</div>
+
 <!-- === CREATE BOLÃO === -->
 <div class="screen" id="s-create">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar Bolão</span></div>
@@ -1217,35 +1246,6 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === RANKING GERAL === -->
 <div class="screen" id="s-ranking-geral" style="display:none"></div>
-
-<!-- === SOBRE O APP === -->
-<div class="screen" id="s-about">
-  <div class="topbar">
-    <button class="back-btn" onclick="back()">←</button>
-    <span class="topbar-title">Sobre o app</span>
-  </div>
-  <div class="scroll" style="padding-bottom:48px">
-    <div style="display:flex;flex-direction:column;align-items:center;padding:32px 0 24px">
-      <img src="icon-192.png" alt="Bolão FC" style="width:80px;height:80px;border-radius:20px;margin-bottom:14px">
-      <div style="font-size:22px;font-weight:900;color:var(--text)">Bolão FC</div>
-      <div style="font-size:13px;color:var(--text3);margin-top:4px">Copa do Mundo 2026</div>
-    </div>
-    <div class="about-card" style="margin-bottom:16px">
-      <div class="about-item" style="display:flex;justify-content:space-between"><span>Versão</span><span style="color:var(--text)">1.0.0</span></div>
-      <div class="about-item" style="display:flex;justify-content:space-between"><span>Taxa do app</span><span style="color:var(--text)">5% sobre o prêmio</span></div>
-      <div class="about-item" style="display:flex;justify-content:space-between"><span>Máximo por bolão</span><span style="color:var(--text)">50 participantes</span></div>
-      <div class="about-item" style="display:flex;justify-content:space-between"><span>CNPJ</span><span style="color:var(--text)">67.182.496/0001-32</span></div>
-    </div>
-    <div class="about-card">
-      <div class="about-item" style="color:var(--text3);font-size:12px;line-height:1.7">
-        Bolão FC é uma plataforma de entretenimento para apostas entre amigos nos jogos da Copa do Mundo 2026. Apenas para maiores de 18 anos. Jogue com responsabilidade.
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:24px">
-      <button class="btn btn-ghost" style="font-size:13px" onclick="go('s-policies')">Políticas e Termos →</button>
-    </div>
-  </div>
-</div>
 
 <!-- GAME BOTTOM SHEET -->
 <div class="gbs-overlay" id="gbs-overlay" onclick="hideGameModal()">
@@ -4329,8 +4329,9 @@ function renderTabela() {
 const _INVALID_CREATE_PREV = new Set(['s-ranking','s-login','s-register','s-terms']);
 
 function _hardGoCreate(prevScreenId) {
-  // Guard: never use ranking/auth screens as the back target from create
   if(_INVALID_CREATE_PREV.has(prevScreenId)) prevScreenId = 's-home';
+  // Força limpeza absoluta de todos os screens antes de ativar s-create
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','prev'));
   renderCreateStep();
   state.screenStack = prevScreenId ? [prevScreenId, 's-create'] : ['s-create'];
   _activate('s-create', prevScreenId || null);
@@ -4387,11 +4388,13 @@ function hideGameModal() {
 function confirmCreateFromModal() {
   if(!_modalGame) return;
   const m = _modalGame;
-  hideGameModal();
-  setTimeout(() => {
-    if(m.type === 'tabela') go_create_from_game(m.gameId, m.prevScreen);
-    else go_create_from_champ_game(m.g);
-  }, 330);
+  _modalGame = null;
+  // Fecha o modal imediatamente (sem animação) antes de navegar
+  const el = document.getElementById('gbs-overlay');
+  el.classList.remove('open');
+  el.style.display = 'none';
+  if(m.type === 'tabela') go_create_from_game(m.gameId, m.prevScreen);
+  else go_create_from_champ_game(m.g);
 }
 
 function go_create_from_game(gameId, prevScreen) {
