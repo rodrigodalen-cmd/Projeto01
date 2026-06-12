@@ -5842,6 +5842,29 @@ function resetOnboarding() {
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async ()=>{
   applyTheme();
+
+  // ===== DEBUG TRAP: captura quem ativa s-ranking-geral =====
+  (function() {
+    const srg = document.getElementById('s-ranking-geral');
+    if (!srg) return;
+    const _origAdd = srg.classList.add.bind(srg.classList);
+    srg.classList.add = function(...tokens) {
+      if (tokens.includes('active')) {
+        let trace = 'sem stack';
+        try { trace = new Error().stack || 'sem stack'; } catch(e) {}
+        const ts = new Date().toLocaleTimeString('pt-BR');
+        const c = document.getElementById('ranking-geral-content');
+        if (c) c.innerHTML = `<div style="background:#111;color:#ffd700;padding:16px;border-radius:12px;font-size:9px;word-break:break-all;line-height:1.6;margin:8px;overflow-x:auto">
+          <div style="font-size:14px;font-weight:800;margin-bottom:8px">🐛 DEBUG — ${ts}</div>
+          <div style="color:#0f0;margin-bottom:6px">Stack (quem ativou esta tela):</div>
+          <pre style="white-space:pre-wrap;font-size:8px;color:#fff;margin:0">${trace.substring(0,1200)}</pre>
+        </div>`;
+      }
+      return _origAdd(...tokens);
+    };
+  })();
+  // ===== FIM DEBUG TRAP =====
+
   initSupabase();
   loadPersistedData();
 
