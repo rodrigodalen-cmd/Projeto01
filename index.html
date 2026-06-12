@@ -4265,7 +4265,14 @@ function go_create_from_game(gameId) {
   createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false,isPrivate:true};
   _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
   renderCreateStep();
-  go('s-create');
+  // Hard-reset: clear every active/prev state so no stale screen can surface on top
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
+  state.screenStack = ['s-tabela'];
+  document.getElementById('s-tabela')?.classList.add('prev');
+  document.getElementById('s-create')?.classList.add('active');
+  state.screenStack.push('s-create');
+  updateGlobalNav('s-create');
+  setTimeout(()=>document.getElementById('s-tabela')?.classList.remove('prev'), 400);
 }
 
 // ===== NAV GLOBAL =====
