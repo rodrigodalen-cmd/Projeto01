@@ -5891,14 +5891,17 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   updateGlobalNav('s-login');
   updateFloatingAvatar();
-  if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    // Reload automático quando nova versão do SW ativar
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
-  }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
+
+// Reload automático quando nova versão do SW ativar — deve ficar fora do DOMContentLoaded
+// para funcionar em todos os fluxos de autenticação (Supabase ou local)
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+  navigator.serviceWorker.addEventListener('message', e => {
+    if(e.data?.type === 'SW_ACTIVATED') window.location.reload();
+  });
+}
 
 // ===== SWIPE-BACK GESTURE (borda esquerda → voltar) =====
 (function() {

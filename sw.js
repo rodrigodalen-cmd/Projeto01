@@ -1,4 +1,4 @@
-const CACHE = 'bolao-fc-v6';
+const CACHE = 'bolao-fc-v7';
 const STATIC = [
   './', './index.html', './manifest.json', './icon.svg', './icon-maskable.svg',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
@@ -6,7 +6,6 @@ const STATIC = [
 ];
 
 self.addEventListener('install', e => {
-  // Ativa imediatamente sem esperar — força troca da versão antiga
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC).catch(() => {})));
 });
@@ -20,6 +19,18 @@ self.addEventListener('activate', e => {
     caches.keys()
       .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => clients.claim())
+      .then(() => self.clients.matchAll({type: 'window', includeUncontrolled: true}))
+      .then(clientList => {
+        return Promise.all(clientList.map(client => {
+          // Force all open windows to reload so they pick up new JS
+          if (typeof client.navigate === 'function') {
+            return client.navigate(client.url).catch(() => {
+              client.postMessage({type: 'SW_ACTIVATED'});
+            });
+          }
+          client.postMessage({type: 'SW_ACTIVATED'});
+        }));
+      })
   );
 });
 
@@ -28,7 +39,6 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
-  // Nunca cacheia APIs dinâmicas
   if (url.hostname.includes('espn.com') ||
       url.hostname.includes('supabase.co') ||
       url.pathname.includes('/functions/') ||
