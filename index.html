@@ -536,12 +536,10 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div class="screen" id="s-register">
   <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Criar conta</span></div>
   <div class="scroll">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <img src="icon.svg" style="width:44px;height:44px;border-radius:11px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.4)" alt="Bolão">
-      <div>
-        <div style="font-size:18px;font-weight:900;color:var(--secondary);line-height:1">Bolão FC</div>
-        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-top:2px">Copa 2026</div>
-      </div>
+    <div class="auth-logo" style="margin-bottom:24px">
+      <img src="icon-512.png" class="auth-icon" alt="Bolão FC">
+      <span class="auth-appname">Bolão FC</span>
+      <span class="auth-tagline">Copa 2026</span>
     </div>
     <div class="field"><label>Nome completo</label><input id="rg-name" placeholder="Seu nome"></div>
     <div class="field"><label>E-mail</label><input id="rg-email" type="email" placeholder="seu@email.com"></div>
@@ -4479,7 +4477,7 @@ function renderChampionshipDetail() {
   const roundChips = rounds.length>1?`
     <div class="t-filter-row" id="champ-round-filter">
       <button class="t-chip${state.champRound==='all'?' active':''}" onclick="setChampRound('all',this)">Todas</button>
-      ${rounds.map(r=>`<button class="t-chip${state.champRound===r?' active':''}" onclick="setChampRound(${JSON.stringify(r)},this)">${esc(r)}</button>`).join('')}
+      ${rounds.map(r=>`<button class="t-chip${state.champRound===r?' active':''}" data-round="${esc(r)}" onclick="setChampRound(this.dataset.round,this)">${esc(r)}</button>`).join('')}
     </div>`:'';
   const hasLive = games.some(g=>g.isLive);
   const emptyMsg = games.length===0
@@ -5336,7 +5334,21 @@ async function fetchGlobalRanking() {
       if(data) boloes=data.map(r=>({participants:r.participants||[],result:r.result,pointsExact:r.points_exact??3,pointsResult:r.points_result??1}));
     } catch(_){}
   }
-  return _calcRanking(boloes);
+  const ranking = _calcRanking(boloes);
+  // Patch current user's latest photo from session
+  if(state.user?.email && state.user?.photo) {
+    const me = ranking.find(r=>r.email===state.user.email);
+    if(me) me.photo = state.user.photo;
+  }
+  // Enrich top-20 photos from Supabase profiles (latest uploaded photo)
+  if(_sb && ranking.length > 0) {
+    try {
+      const emails = ranking.slice(0,20).map(r=>r.email);
+      const {data:profs} = await _sb.from('profiles').select('email,photo').in('email',emails);
+      if(profs) profs.forEach(p=>{ if(p.photo){ const r=ranking.find(x=>x.email===p.email); if(r) r.photo=p.photo; }});
+    } catch(_){}
+  }
+  return ranking;
 }
 
 function _rankTitle(i) {
