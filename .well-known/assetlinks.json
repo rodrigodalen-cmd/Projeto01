@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "br.net.bolaofc.twa",
-        "sha256_cert_fingerprints": ["94:89:12:A6:1B:44:A1:DC:2F:09:99:2F:E5:62:EE:AA:0B:AA:21:9F:DF:85:4E:19:5E:2F:82:48:C5:9D:31:DC"]
+        "sha256_cert_fingerprints": ["00:CE:6B:9A:49:E4:14:BF:99:49:35:46:20:B9:78:59:2C:D7:F6:76:EB:AC:7C:D4:72:35:9A:51:32:D8:B9:C5"]
       }
     }]
