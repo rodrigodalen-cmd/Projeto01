@@ -1578,9 +1578,11 @@ function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){
 function _navCore(screenId, push=true) {
   const cur = state.screenStack[state.screenStack.length-1];
   if(cur === screenId) return;
-  document.getElementById(cur).classList.remove('active');
-  document.getElementById(cur).classList.add('prev');
-  document.getElementById(screenId).classList.add('active');
+  if(cur) {
+    document.getElementById(cur)?.classList.remove('active');
+    document.getElementById(cur)?.classList.add('prev');
+  }
+  document.getElementById(screenId)?.classList.add('active');
   if(push) state.screenStack.push(screenId);
   setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{if(s.id!==screenId)s.classList.remove('prev')}),400);
 }
@@ -4297,6 +4299,9 @@ function closeDrawer() {
 }
 function drawerGo(tab) {
   closeDrawer();
+  // Reset navigation stack so drawer navigation never leaves orphaned screens in history
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
+  state.screenStack = [];
   if(tab==='home') { renderHome(); go('s-home'); }
   else if(tab==='meus-boloes') { renderMyBoloes(); go('s-meus-boloes'); }
   else if(tab==='tabela') { openTabela(); go('s-tabela'); }
