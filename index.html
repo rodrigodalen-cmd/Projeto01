@@ -45,9 +45,9 @@
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.screen{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform .3s ease;z-index:1}
-.screen.active{transform:translateX(0);z-index:2}
-.screen.prev{transform:translateX(-30%);pointer-events:none}
+.screen{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform .3s ease;z-index:1;visibility:hidden}
+.screen.active{transform:translateX(0);z-index:2;visibility:visible}
+.screen.prev{transform:translateX(-30%);pointer-events:none;visibility:visible}
 .scroll{overflow-y:auto;flex:1;padding:20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:16px 20px 0;position:sticky;top:0;background:var(--bg);z-index:10}
