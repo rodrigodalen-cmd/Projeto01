@@ -16,14 +16,14 @@
 <script>
 // Força limpeza de cache e SW antigos na primeira carga da versão 13
 (function(){
-  const VER = '13';
+  const VER = '14';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=13'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=14'); });
   }
 })();
 </script>
@@ -439,6 +439,11 @@ input:checked+.slider:before{transform:translateX(18px)}
 .chat-send{background:var(--primary);border:none;border-radius:12px;padding:10px 18px;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
 /* CONFETTI */
 #confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:9999;display:none}
+/* GAME BOTTOM SHEET */
+.gbs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.gbs-overlay.open .gbs-panel{transform:translateY(0)}
+.gbs-panel{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+.gbs-drag{width:36px;height:4px;border-radius:2px;background:var(--border);margin:12px auto 0}
 /* ONBOARDING */
 .ob-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px}
 .ob-modal{background:var(--surface);border-radius:24px;width:100%;max-width:360px;padding:32px 24px;text-align:center}
@@ -1221,7 +1226,7 @@ input:checked+.slider:before{transform:translateX(18px)}
   </div>
   <div class="scroll" style="padding-bottom:48px">
     <div style="display:flex;flex-direction:column;align-items:center;padding:32px 0 24px">
-      <img src="icon-maskable.svg" alt="Bolão FC" style="width:80px;height:80px;border-radius:20px;margin-bottom:14px">
+      <img src="icon-192.png" alt="Bolão FC" style="width:80px;height:80px;border-radius:20px;margin-bottom:14px">
       <div style="font-size:22px;font-weight:900;color:var(--text)">Bolão FC</div>
       <div style="font-size:13px;color:var(--text3);margin-top:4px">Copa do Mundo 2026</div>
     </div>
@@ -1238,6 +1243,18 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div style="text-align:center;margin-top:24px">
       <button class="btn btn-ghost" style="font-size:13px" onclick="go('s-policies')">Políticas e Termos →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME BOTTOM SHEET -->
+<div class="gbs-overlay" id="gbs-overlay" onclick="hideGameModal()">
+  <div class="gbs-panel" onclick="event.stopPropagation()">
+    <div class="gbs-drag"></div>
+    <div id="gbs-content" style="padding:16px 20px 8px"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:12px 20px 20px">
+      <button class="btn btn-primary" style="font-size:15px;font-weight:800" onclick="confirmCreateFromModal()">⚽ Criar Bolão</button>
+      <button class="btn btn-ghost" onclick="hideGameModal()">Cancelar</button>
     </div>
   </div>
 </div>
@@ -4285,7 +4302,7 @@ function renderTabela() {
         bottom=`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px;line-height:1.2">📍 ${g.venue.split(',')[0]}<br>em ${cd}</div>`;
       }
 
-      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="go_create_from_game('${g.id}','s-tabela')">
+      return `<div class="t-gcell${isBra?' bra':''}${isLive?' live':''}" onclick="showGameModal('${g.id}','s-tabela')">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
           <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px">Gr. ${grpL}</span>
           ${topStatus}
@@ -4318,6 +4335,63 @@ function _hardGoCreate(prevScreenId) {
   state.screenStack = prevScreenId ? [prevScreenId, 's-create'] : ['s-create'];
   _activate('s-create', prevScreenId || null);
   updateGlobalNav('s-create');
+}
+
+// ===== GAME BOTTOM SHEET MODAL =====
+let _modalGame = null;
+
+function showGameModal(gameId, prevScreen) {
+  const g = GAMES.find(x=>x.id===gameId);
+  if(!g) return;
+  if(gameDateTime(g) <= Date.now()) { showToast('⛔ Este jogo já começou ou encerrou'); return; }
+  _modalGame = { type:'tabela', gameId, prevScreen };
+  const dt = gameDateTime(g);
+  const dayStr = dt.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  const timeStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('gbs-content').innerHTML = `
+    <div style="text-align:center;font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">${dayStr} · ${timeStr}</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="text-align:center;flex:1"><div style="font-size:40px;line-height:1">${g.home.flag}</div><div style="font-size:12px;font-weight:700;margin-top:6px;color:var(--text)">${g.home.name}</div></div>
+      <div style="font-size:13px;font-weight:900;color:var(--text3)">VS</div>
+      <div style="text-align:center;flex:1"><div style="font-size:40px;line-height:1">${g.away.flag}</div><div style="font-size:12px;font-weight:700;margin-top:6px;color:var(--text)">${g.away.name}</div></div>
+    </div>`;
+  _openGameModal();
+}
+
+function showChampGameModal(g) {
+  if(g.isDone) { showToast('⛔ Jogo encerrado — apostas não são aceitas'); return; }
+  if(g.isLive) { showToast('⛔ Jogo em andamento — apostas encerradas'); return; }
+  _modalGame = { type:'champ', g };
+  document.getElementById('gbs-content').innerHTML = `
+    <div style="text-align:center;font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">${g.round||''}</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="text-align:center;flex:1"><div style="font-size:40px;line-height:1">${g.home.flag||'🏳️'}</div><div style="font-size:12px;font-weight:700;margin-top:6px;color:var(--text)">${g.home.name}</div></div>
+      <div style="font-size:13px;font-weight:900;color:var(--text3)">VS</div>
+      <div style="text-align:center;flex:1"><div style="font-size:40px;line-height:1">${g.away.flag||'🏳️'}</div><div style="font-size:12px;font-weight:700;margin-top:6px;color:var(--text)">${g.away.name}</div></div>
+    </div>`;
+  _openGameModal();
+}
+
+function _openGameModal() {
+  const el = document.getElementById('gbs-overlay');
+  el.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
+}
+
+function hideGameModal() {
+  const el = document.getElementById('gbs-overlay');
+  el.classList.remove('open');
+  setTimeout(() => { el.style.display = 'none'; _modalGame = null; }, 320);
+}
+
+function confirmCreateFromModal() {
+  if(!_modalGame) return;
+  const m = _modalGame;
+  hideGameModal();
+  setTimeout(() => {
+    if(m.type === 'tabela') go_create_from_game(m.gameId, m.prevScreen);
+    else go_create_from_champ_game(m.g);
+  }, 330);
 }
 
 function go_create_from_game(gameId, prevScreen) {
@@ -4563,7 +4637,7 @@ function renderChampionshipDetail() {
         :`<div style="font-size:10px;font-weight:800;color:var(--text3)">VS</div>`;
       const gJson=JSON.stringify(g).replace(/"/g,'&quot;');
       const closedStyle=g.isDone?'opacity:.55;cursor:not-allowed':'';
-      return `<div class="t-gcell${g.isLive?' live':''}" style="${closedStyle}" onclick="go_create_from_champ_game(JSON.parse(this.dataset.g))" data-g="${gJson}">
+      return `<div class="t-gcell${g.isLive?' live':''}" style="${closedStyle}" onclick="showChampGameModal(JSON.parse(this.dataset.g))" data-g="${gJson}">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
           <span style="font-size:9px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.round||'')}</span>
           ${topStatus}
