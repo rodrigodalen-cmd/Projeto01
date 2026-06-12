@@ -962,15 +962,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="stat-div"></div>
       <div class="stat" id="perf-melhor"><div class="stat-val">-</div><div class="stat-lbl">Melhor lugar</div></div>
     </div>
-    <div class="section-title" style="margin-top:4px">Sobre o app</div>
-    <div class="about-card">
-      <div class="about-item">Bolão FC v1.0.0</div>
-      <div class="about-item">Feito para a Copa do Mundo 2026</div>
-      <div class="about-item">Taxa de 5% sobre o prêmio</div>
-      <div class="about-item">Máximo 50 participantes por bolão</div>
-      <div class="about-item">Apenas para uso entre amigos</div>
-    </div>
-    <div class="section-title" style="margin-top:20px">Histórico de apostas</div>
+    <div class="section-title" style="margin-top:4px">Histórico de apostas</div>
     <div id="bet-history"></div>
     <div class="section-title" style="margin-top:20px">Preferências</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
@@ -978,6 +970,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <button id="notif-toggle-btn" class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="requestNotifications()">Ativar notificações</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px" onclick="resetOnboarding()">Ver tutorial novamente</button>
       <button class="btn btn-ghost" style="justify-content:flex-start;justify-content:space-between;gap:10px" onclick="go('s-policies')">Políticas e Termos <span style="color:var(--text3);font-size:13px">→</span></button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;justify-content:space-between;gap:10px" onclick="go('s-about')">Sobre o app <span style="color:var(--text3);font-size:13px">→</span></button>
     </div>
     <div id="admin-btn-wrap"></div>
     <button class="signout-btn" onclick="doLogout()">Sair da conta</button>
@@ -1219,6 +1212,35 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === RANKING GERAL === -->
 <div class="screen" id="s-ranking-geral" style="display:none"></div>
+
+<!-- === SOBRE O APP === -->
+<div class="screen" id="s-about">
+  <div class="topbar">
+    <button class="back-btn" onclick="back()">←</button>
+    <span class="topbar-title">Sobre o app</span>
+  </div>
+  <div class="scroll" style="padding-bottom:48px">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:32px 0 24px">
+      <img src="icon.svg" alt="Bolão FC" style="width:72px;height:72px;border-radius:18px;margin-bottom:14px">
+      <div style="font-size:22px;font-weight:900;color:var(--text)">Bolão FC</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px">Copa do Mundo 2026</div>
+    </div>
+    <div class="about-card" style="margin-bottom:16px">
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>Versão</span><span style="color:var(--text)">1.0.0</span></div>
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>Taxa do app</span><span style="color:var(--text)">5% sobre o prêmio</span></div>
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>Máximo por bolão</span><span style="color:var(--text)">50 participantes</span></div>
+      <div class="about-item" style="display:flex;justify-content:space-between"><span>CNPJ</span><span style="color:var(--text)">67.182.496/0001-32</span></div>
+    </div>
+    <div class="about-card">
+      <div class="about-item" style="color:var(--text3);font-size:12px;line-height:1.7">
+        Bolão FC é uma plataforma de entretenimento para apostas entre amigos nos jogos da Copa do Mundo 2026. Apenas para maiores de 18 anos. Jogue com responsabilidade.
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:24px">
+      <button class="btn btn-ghost" style="font-size:13px" onclick="go('s-policies')">Políticas e Termos →</button>
+    </div>
+  </div>
+</div>
 
 </div><!-- #app -->
 
