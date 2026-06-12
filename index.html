@@ -584,7 +584,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       </label>
     </div>
 
-    <button class="btn btn-primary" onclick="doRegister()">Criar minha conta</button>
+    <button class="btn btn-primary" id="register-btn" onclick="doRegister()">Criar minha conta</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="back()">Cancelar</button>
   </div>
 </div>
@@ -1644,6 +1644,7 @@ async function doLogin() {
   const remember = document.getElementById('li-remember')?.checked;
   const btn = document.getElementById('login-btn');
 
+  if(btn?.disabled) return;
   if(!identifier || !pass) { showToast('⚠️ Preencha e-mail/CPF e senha'); return; }
 
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Entrando...'; }
@@ -1777,6 +1778,14 @@ function initDobPicker() {
 }
 
 async function doRegister() {
+  const btn = document.getElementById('register-btn');
+  if(btn?.disabled) return;
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Criando conta...'; }
+  try { await _doRegisterInner(); } finally {
+    if(btn) { btn.disabled = false; btn.textContent = 'Criar minha conta'; }
+  }
+}
+async function _doRegisterInner() {
   const name = document.getElementById('rg-name').value.trim();
   const email = document.getElementById('rg-email').value.trim().toLowerCase();
   const phone = document.getElementById('rg-phone').value.trim();
@@ -3149,7 +3158,7 @@ async function openPix(id) {
       ? `<div style="margin:12px 0;text-align:center">
           <div style="font-size:10px;font-weight:800;color:var(--pix);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pix Copia e Cola</div>
           <div style="background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--text2);word-break:break-all;text-align:left;max-height:72px;overflow:hidden">${data.copiaECola}</div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pix="${data.copiaECola}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('✅ Código copiado!'))">📋 Copiar código PIX</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pix="${data.copiaECola}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.pix).then(()=>showToast('✅ Código copiado!')).catch(()=>showToast('❌ Falha ao copiar'))">📋 Copiar código PIX</button>
         </div>`
       : '';
     document.getElementById('pix-content').innerHTML=`
@@ -3335,6 +3344,7 @@ function updateProfileUI() {
 function uploadPhoto(input) {
   const file = input.files[0];
   if(!file) return;
+  if(!file.type.startsWith('image/')) { showToast('❌ Selecione um arquivo de imagem'); input.value=''; return; }
   if(file.size > 5*1024*1024) { showToast('❌ Imagem muito grande (máx 5MB)'); return; }
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -4256,21 +4266,26 @@ function renderTabela() {
   }).join('');
 }
 
-function go_create_from_game(gameId) {
+function _hardGoCreate(prevScreenId) {
+  renderCreateStep();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
+  const prevEl = prevScreenId ? document.getElementById(prevScreenId) : null;
+  if(prevEl) prevEl.classList.add('prev');
+  document.getElementById('s-create')?.classList.add('active');
+  state.screenStack = prevScreenId ? [prevScreenId, 's-create'] : ['s-create'];
+  updateGlobalNav('s-create');
+  if(prevEl) setTimeout(()=>prevEl.classList.remove('prev'), 400);
+}
+
+function go_create_from_game(gameId, prevScreen) {
   const g = GAMES.find(x=>x.id===gameId);
   if(!g) return;
   if(gameDateTime(g) <= Date.now()) { showToast('⛔ Este jogo já começou ou encerrou'); return; }
   createState={step:1,title:'',game:g,amount:50,maxPart:20,hasPw:false,pw:'',pointsExact:3,pointsResult:1,_customAmt:false,isPrivate:true};
   _createGroupFilter = g.group ? g.group.replace('Grupo ','') : 'all';
-  renderCreateStep();
-  // Hard-reset: clear every active/prev state so no stale screen can surface on top
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
-  state.screenStack = ['s-tabela'];
-  document.getElementById('s-tabela')?.classList.add('prev');
-  document.getElementById('s-create')?.classList.add('active');
-  state.screenStack.push('s-create');
-  updateGlobalNav('s-create');
-  setTimeout(()=>document.getElementById('s-tabela')?.classList.remove('prev'), 400);
+  // Determine the origin screen to go back to, defaulting to tabela
+  const origin = prevScreen || state.screenStack[state.screenStack.length-1] || 's-tabela';
+  _hardGoCreate(origin);
 }
 
 // ===== NAV GLOBAL =====
@@ -4551,7 +4566,7 @@ function renderChampionshipDetail() {
 }
 
 function go_create_from_champ_game(g) {
-  if(g._copaId) { go_create_from_game(g._copaId); return; }
+  if(g._copaId) { go_create_from_game(g._copaId, 's-custom-create'); return; }
   if(g.isDone) { showToast('⛔ Jogo encerrado — apostas não são aceitas'); return; }
   if(g.isLive) { showToast('⛔ Jogo em andamento — apostas encerradas'); return; }
   const c = state.customChampionship;
@@ -4567,8 +4582,7 @@ function go_create_from_champ_game(g) {
     step:1, title:`${g.home.name} × ${g.away.name}`, game:customGame,
     amount:50, maxPart:20, hasPw:false, pw:'', pointsExact:3, pointsResult:1, _customAmt:false, isPrivate:true
   };
-  renderCreateStep();
-  go('s-create');
+  _hardGoCreate('s-custom-create');
 }
 
 function renderPublicBoloes() {
