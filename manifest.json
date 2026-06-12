@@ -1,15 +1,36 @@
 {
+  "id": "br.net.bolaofc.app",
   "name": "Bolão FC",
   "short_name": "Bolão FC",
-  "description": "Bolão FC · Aposte com seus amigos nos jogos de futebol",
+  "description": "Bolão FC · Aposte com seus amigos nos jogos de futebol da Copa do Mundo 2026",
   "start_url": "/?pwa=1",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#071525",
   "theme_color": "#006B3F",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
+  "dir": "ltr",
   "categories": ["sports", "games", "social"],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Meus Bolões",
+      "short_name": "Bolões",
+      "description": "Ver meus bolões",
+      "url": "/?pwa=1#s-home",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Criar Bolão",
+      "short_name": "Criar",
+      "description": "Criar novo bolão",
+      "url": "/?pwa=1#s-create",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
