@@ -3965,6 +3965,88 @@ function checkDeepLink() {
 let _tf = 'all', _tg = 'all';
 const _ls = {}; // live scores: {gameId: {h,a,status,min}}
 
+// ── Bracket: preserva referências originais dos jogos eliminatórios ──
+const _bracketRefs = {};
+(function() {
+  for (const g of GAMES) {
+    if (g.stage === 'Fase de Grupos') continue;
+    _bracketRefs[g.id] = { h: g.home.code, a: g.away.code };
+  }
+})();
+
+function _calcGroupStandings() {
+  const st = {};
+  for (const g of GAMES) {
+    if (g.stage !== 'Fase de Grupos') continue;
+    const sc = _ls[g.id];
+    if (!sc || sc.status !== 'FT') continue;
+    if (!st[g.group]) st[g.group] = {};
+    const add = t => { if (!st[g.group][t.code]) st[g.group][t.code] = {pts:0,gf:0,ga:0,gd:0,mp:0,name:t.name,flag:t.flag,code:t.code}; };
+    add(g.home); add(g.away);
+    const h = parseInt(sc.h)||0, a = parseInt(sc.a)||0;
+    const ht = st[g.group][g.home.code], at = st[g.group][g.away.code];
+    ht.gf+=h; ht.ga+=a; ht.gd+=h-a; ht.mp++;
+    at.gf+=a; at.ga+=h; at.gd+=a-h; at.mp++;
+    if(h>a) ht.pts+=3; else if(a>h) at.pts+=3; else { ht.pts++; at.pts++; }
+  }
+  return st;
+}
+
+function _sortGroup(teams) {
+  return [...teams].sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf || a.name.localeCompare(b.name));
+}
+
+function _updateKnockoutBracket() {
+  const standings = _calcGroupStandings();
+
+  // Posições por grupo: '1ºA', '2ºA', '3ºA' → equipe
+  const posMap = {};
+  for (const [group, teamMap] of Object.entries(standings)) {
+    const L = group.replace('Grupo ', '');
+    const sorted = _sortGroup(Object.values(teamMap));
+    if (sorted[0]) posMap[`1º${L}`] = sorted[0];
+    if (sorted[1]) posMap[`2º${L}`] = sorted[1];
+    if (sorted[2]) posMap[`3º${L}`] = sorted[2];
+  }
+
+  // Melhores 8 terceiros colocados (após todos os 12 grupos concluídos)
+  const allDone = Object.keys(standings).length === 12 &&
+    Object.values(standings).every(grp => Object.values(grp).every(t => t.mp === 3));
+  const thirds = allDone
+    ? Object.keys(posMap).filter(k => /^3º[A-L]$/.test(k)).map(k => posMap[k])
+        .sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf).slice(0, 8)
+    : [];
+
+  let thirdIdx = 0;
+  const winnerMap = {}; // gameId → equipe vencedora
+
+  const resolve = (ref, gameId, side) => {
+    if (!ref) return null;
+    if (ref === '3º X') return thirds[thirdIdx++] || null;
+    if (posMap[ref]) return posMap[ref];
+    if (ref.startsWith('Jogo ')) return winnerMap[ref.replace('Jogo ', '')] || null;
+    return null;
+  };
+
+  for (const stage of ['Oitavas de Final', 'Quartas de Final', 'Semifinal']) {
+    for (const g of GAMES) {
+      if (g.stage !== stage) continue;
+      const refs = _bracketRefs[g.id];
+      if (!refs) continue;
+      const homeTeam = resolve(refs.h, g.id, 'h');
+      const awayTeam = resolve(refs.a, g.id, 'a');
+      if (homeTeam) g.home = { ...g.home, name: homeTeam.name, flag: homeTeam.flag, code: homeTeam.code };
+      if (awayTeam) g.away = { ...g.away, name: awayTeam.name, flag: awayTeam.flag, code: awayTeam.code };
+      const sc = _ls[g.id];
+      if (sc?.status === 'FT') {
+        const h = parseInt(sc.h)||0, a = parseInt(sc.a)||0;
+        if (h > a && homeTeam) winnerMap[g.id] = homeTeam;
+        else if (a > h && awayTeam) winnerMap[g.id] = awayTeam;
+      }
+    }
+  }
+}
+
 function setTF(f, el) {
   _tf = f;
   document.querySelectorAll('#t-main-filter .t-chip').forEach(c=>c.classList.remove('active'));
@@ -4032,6 +4114,9 @@ async function fetchTabelaScores() {
       } catch(e) {}
     }
   } catch(e) {}
+
+  // Atualiza bracket eliminatório com equipes classificadas
+  _updateKnockoutBracket();
 
   // Aplica resultados a todos os bolões
   try {
