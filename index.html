@@ -1630,7 +1630,8 @@ function _activate(targetId, outgoingId) {
       dbg.style.display = 'block';
       const ghosts = [...document.querySelectorAll('.screen.active')].filter(s=>s.id!==targetId).map(s=>s.id).join(',');
       const ts = new Date().toISOString().slice(11,23);
-      dbg.textContent = '['+ts+'] →'+targetId+(ghosts?'\nGHOST:'+ghosts:'');
+      dbg.textContent += (dbg.textContent?'\n':'')+'['+ts+'] →'+targetId+(ghosts?' G:'+ghosts:'');
+      if(dbg.textContent.split('\n').length > 8) dbg.textContent = dbg.textContent.split('\n').slice(-8).join('\n');
     }
   } catch(e) {}
 
@@ -1693,6 +1694,14 @@ function back() {
 function _healScreens() {
   const top = state.screenStack[state.screenStack.length-1];
   if(!top || !document.getElementById(top)) return;
+  try {
+    const dbg = document.getElementById('_dbg');
+    if(dbg) {
+      const ts = new Date().toISOString().slice(11,23);
+      dbg.style.display = 'block';
+      dbg.textContent += '\n['+ts+'] HEAL→'+top+' stk:'+state.screenStack.join(',');
+    }
+  } catch(e) {}
   document.querySelectorAll('.screen').forEach(s=>{ if(s.id!==top) { s.classList.remove('active','prev'); s.style.zIndex = ''; } });
   const t = document.getElementById(top);
   t.classList.add('active');
@@ -5989,8 +5998,14 @@ if('serviceWorker' in navigator) {
 
 // Conserta telas fantasmas ao retomar o app (iOS/Android voltam do background
 // e às vezes deixam uma tela antiga com 'active', pintando por cima da atual).
-window.addEventListener('pageshow', () => { if(state.user) _healScreens(); });
-document.addEventListener('visibilitychange', () => { if(!document.hidden && state.user) _healScreens(); });
+window.addEventListener('pageshow', () => {
+  try { const d=document.getElementById('_dbg'); if(d){d.style.display='block';d.textContent+=(d.textContent?'\n':'')+'['+new Date().toISOString().slice(11,23)+'] pageshow';} } catch(e) {}
+  if(state.user) _healScreens();
+});
+document.addEventListener('visibilitychange', () => {
+  try { const d=document.getElementById('_dbg'); if(d){d.style.display='block';d.textContent+=(d.textContent?'\n':'')+'['+new Date().toISOString().slice(11,23)+'] visChange hidden='+document.hidden;} } catch(e) {}
+  if(!document.hidden && state.user) _healScreens();
+});
 
 // ===== SWIPE-BACK GESTURE (borda esquerda → voltar) =====
 (function() {
