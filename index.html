@@ -781,9 +781,13 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div id="home-av-badge" class="trophy-badge" onclick="gnavTo('profile')" style="cursor:pointer;overflow:hidden;padding:0"></div>
     </div>
     <div id="pwa-install-banner" class="pwa-banner" style="display:none">
-      <div class="pwa-banner-text">Instale o Bolão FC no celular para acesso rápido como um app</div>
-      <button class="pwa-banner-btn" onclick="installPWA()">Instalar</button>
-      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px" onclick="this.parentElement.style.display='none';try{localStorage.setItem('ios_banner_dismissed','1')}catch(e){}">×</button>
+      <span style="font-size:22px;flex-shrink:0">📲</span>
+      <div class="pwa-banner-text" id="pwa-banner-text">Instale o Bolão FC no celular para acesso rápido</div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <button class="pwa-banner-btn" id="pwa-install-btn" onclick="installPWA()">Instalar</button>
+        <a id="apk-dl-btn" href="/bolaofc.apk" download style="display:none;padding:6px 12px;border-radius:8px;background:rgba(0,107,63,.15);color:var(--primary);border:1px solid var(--primary);font-size:11px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer">⬇ Baixar APK</a>
+      </div>
+      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;align-self:flex-start" onclick="this.parentElement.style.display='none';try{localStorage.setItem('pwa_banner_dismissed','1')}catch(e){}">×</button>
     </div>
     <div class="banner">
       <h3>🇧🇷 Brasil no Grupo C</h3>
@@ -5421,14 +5425,23 @@ window.addEventListener('appinstalled', ()=>{
   _pwaPrompt = null;
 });
 
-// Show install banner on iOS Safari (if not already installed and not dismissed)
+// Mostra banner de instalação dependendo da plataforma
 document.addEventListener('DOMContentLoaded', ()=>{
-  if(_isIOS && !_isStandalone && !localStorage.getItem('ios_banner_dismissed')) {
-    const banner = document.getElementById('pwa-install-banner');
-    if(banner) {
-      banner.querySelector('.pwa-banner-text').textContent = 'Instale o Bolão Copa na tela de início do iPhone/iPad';
-      banner.style.display = 'flex';
-    }
+  if(_isStandalone || localStorage.getItem('pwa_banner_dismissed') || localStorage.getItem('ios_banner_dismissed')) return;
+  const banner  = document.getElementById('pwa-install-banner');
+  const txt     = document.getElementById('pwa-banner-text');
+  const apkBtn  = document.getElementById('apk-dl-btn');
+  const instBtn = document.getElementById('pwa-install-btn');
+  if(!banner) return;
+  const isAndroid = /android/i.test(navigator.userAgent);
+  if(_isIOS) {
+    if(txt) txt.textContent = 'Instale o Bolão FC na tela de início do iPhone/iPad';
+    if(instBtn) instBtn.textContent = 'Como instalar';
+    banner.style.display = 'flex';
+  } else if(isAndroid) {
+    if(txt) txt.textContent = 'Instale o Bolão FC no seu Android';
+    if(apkBtn) apkBtn.style.display = 'block';
+    banner.style.display = 'flex';
   }
 });
 

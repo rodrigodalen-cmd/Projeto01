@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "br.net.bolaofc.twa",
+        "sha256_cert_fingerprints": ["94:89:12:A6:1B:44:A1:DC:2F:09:99:2F:E5:62:EE:AA:0B:AA:21:9F:DF:85:4E:19:5E:2F:82:48:C5:9D:31:DC"]
+      }
+    }]
