@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '27';
+  const VER = '28';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3324,7 +3324,29 @@ async function kycCapture() {
   _kycStopDetection(); // para o loop antes de capturar
   canvas.width  = video.videoWidth  || 720;
   canvas.height = video.videoHeight || 960;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  // Verifica luminosidade — rejeita fotos muito escuras
+  const sample = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let brightness = 0;
+  for(let i = 0; i < sample.data.length; i += 16) {
+    brightness += (sample.data[i] * 0.299 + sample.data[i+1] * 0.587 + sample.data[i+2] * 0.114);
+  }
+  brightness /= (sample.data.length / 16);
+  if(brightness < 45) {
+    status.textContent = '⚠️ Ambiente muito escuro. Vá para um local iluminado.';
+    _kycStopStream();
+    btn.textContent = 'Tentar novamente';
+    btn.disabled = false;
+    btn.onclick = () => _kycOpen(
+      document.getElementById('kyc-title').textContent,
+      document.getElementById('kyc-subtitle').textContent,
+      'user'
+    );
+    return;
+  }
+
   const base64 = canvas.toDataURL('image/jpeg', 0.82);
   _kycCapturedPhoto = base64;
   _kycStopStream();
