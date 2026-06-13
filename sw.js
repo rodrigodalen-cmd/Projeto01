@@ -1,6 +1,6 @@
-const CACHE = 'bolao-fc-v15';
+const CACHE = 'bolao-fc-v16';
 const STATIC = [
-  './', './index.html', './manifest.json', './icon.svg', './icon-maskable.svg',
+  './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
 ];
