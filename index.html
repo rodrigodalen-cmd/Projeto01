@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bolão">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-512.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
@@ -3126,7 +3126,7 @@ function scheduleGameNotifications() {
         if(me?.homeScore == null) {
           new Notification('⚽ Bolão Copa — faltam 1h!', {
             body: `${b.game.home.name} × ${b.game.away.name} começa em 1h. Registre seu palpite em "${b.title}"!`,
-            icon: './icon.svg',
+            icon: './icon-512.png',
             tag: `bet-1h-${b.id}`
           });
         }
@@ -3139,7 +3139,7 @@ function scheduleGameNotifications() {
         if(me?.homeScore == null) {
           new Notification('⏰ Último aviso — 15 minutos!', {
             body: `Apostas para ${b.game.home.name} × ${b.game.away.name} fecham em 15 minutos!`,
-            icon: './icon.svg',
+            icon: './icon-512.png',
             tag: `bet-15m-${b.id}`
           });
         }
@@ -4801,7 +4801,7 @@ async function requestNotifications() {
 }
 function _localNotify(title, body) {
   if(Notification.permission!=='granted') return;
-  try { new Notification(title,{body,icon:'./icon.svg'}); } catch(_){}
+  try { new Notification(title,{body,icon:'./icon-512.png'}); } catch(_){}
 }
 
 // ===== LIVE RANKING (bolão ao vivo) =====
