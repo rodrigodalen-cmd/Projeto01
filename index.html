@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '28';
+  const VER = '29';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3269,9 +3269,7 @@ async function _kycOpen(title, subtitle, camera) {
 async function _kycLoadModels() {
   if(_kycModelsLoaded || typeof faceapi === 'undefined') return false;
   try {
-    await faceapi.nets.tinyFaceDetector.loadFromUri(
-      'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'
-    );
+    await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
     _kycModelsLoaded = true;
     return true;
   } catch(e) { return false; }
