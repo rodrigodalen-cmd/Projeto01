@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '35';
+  const VER = '36';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1972,15 +1972,13 @@ async function _doRegisterInner() {
 }
 
 async function loginSuccess() {
-  // Mostra a home imediatamente sem esperar pela rede
-  await initAppBoloes();
-  updateProfileUI();
-  renderHome();
-  // Clear stack and go home
+  // Mostra home e menu imediatamente, sem esperar rede
   state.screenStack = ['s-home'];
   _activate('s-home');
   updateGlobalNav('s-home');
   updateFloatingAvatar();
+  updateProfileUI();
+  renderHome();
   checkDeepLink();
   setTimeout(checkOnboarding, 600);
   if(window._liveInterval) clearInterval(window._liveInterval);
@@ -1989,7 +1987,8 @@ async function loginSuccess() {
   _startNewsTimers();
   requestNotificationPermission();
   scheduleGameNotifications();
-  // Carrega dados do Supabase em background — não bloqueia a tela
+  // Carrega bolões e dados em background — não bloqueia a UI
+  initAppBoloes().then(()=>{ updateProfileUI(); renderHome(); }).catch(()=>{});
   if(_sb) {
     _sbCall(_loadBoloesFromSupabase(), 12000)
       .then(() => initAppBoloes())
