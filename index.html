@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '40';
+  const VER = '41';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3272,12 +3272,31 @@ function _loadScript(src) {
 
 async function _kycLoadModels() {
   if(_kycBlazeFace) return true;
+  const deadline = (ms) => new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), ms));
   try {
-    await _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
-    await _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0/dist/blazeface.min.js');
-    _kycBlazeFace = await blazeface.load();
+    await Promise.race([
+      _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js'),
+      deadline(15000)
+    ]);
+    // WebGL (GPU) primeiro; cai para CPU se iOS/device não suportar
+    await Promise.race([tf.setBackend('webgl'), deadline(2000)]).catch(() => tf.setBackend('cpu'));
+    await tf.ready();
+    await Promise.race([
+      _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0/dist/blazeface.min.js'),
+      deadline(12000)
+    ]);
+    if(typeof blazeface === 'undefined') throw new Error('blazeface unavailable');
+    // scoreThreshold 0.85: só aceita rostos com ≥85% de confiança (exclui objetos)
+    _kycBlazeFace = await Promise.race([
+      blazeface.load({ maxFaces: 1, scoreThreshold: 0.85 }),
+      deadline(20000)
+    ]);
+    // Warm-up: primeira inferência é lenta; roda em canvas vazio para pré-aquecer
+    const warmup = document.createElement('canvas');
+    warmup.width = 128; warmup.height = 128;
+    await _kycBlazeFace.estimateFaces(warmup, false).catch(() => {});
     return true;
-  } catch(e) { return false; }
+  } catch(e) { _kycBlazeFace = null; return false; }
 }
 
 async function _kycDetectFace() {
@@ -3285,7 +3304,7 @@ async function _kycDetectFace() {
   if(!video || video.paused || video.ended || !video.videoWidth || !_kycBlazeFace) return false;
   try {
     const faces = await _kycBlazeFace.estimateFaces(video, false);
-    return faces.length > 0;
+    return faces.length > 0; // threshold já filtrado pelo scoreThreshold no load()
   } catch(e) { return false; }
 }
 
