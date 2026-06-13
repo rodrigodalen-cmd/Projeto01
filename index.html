@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '26';
+  const VER = '27';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -4039,6 +4039,7 @@ function isAdmin() { return state.user?.email === ADMIN_EMAIL; }
 let _adminTab = 'boloes';
 let _adminAllBoloes = [];
 let _adminAllUsers = [];
+let _adminRealtimeCh = null;
 
 function _updateAdminBtn() {
   const wrap = document.getElementById('admin-btn-wrap');
@@ -4048,20 +4049,46 @@ function _updateAdminBtn() {
     : '';
 }
 
+async function _adminFetchData() {
+  if(!_sb) return;
+  const [br, ur] = await Promise.all([
+    _sb.from('boloes').select('*').order('created_at', {ascending:false}),
+    _sb.from('profiles').select('*').order('name'),
+  ]);
+  _adminAllBoloes = (br.data||[]).map(_sbRowToBolao);
+  _adminAllUsers = ur.data||[];
+}
+
 async function openAdmin() {
   if(!isAdmin()) return;
   go('s-admin');
   const el = document.getElementById('admin-content');
   if(el) el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3)">⏳ Carregando dados...</div>`;
-  if(_sb) {
-    const [br, ur] = await Promise.all([
-      _sb.from('boloes').select('*').order('created_at', {ascending:false}),
-      _sb.from('profiles').select('*').order('name'),
-    ]);
-    _adminAllBoloes = (br.data||[]).map(_sbRowToBolao);
-    _adminAllUsers = ur.data||[];
-  }
+  await _adminFetchData();
   _renderAdminPanel();
+  _adminSubscribeRealtime();
+}
+
+function _adminSubscribeRealtime() {
+  if(!_sb || _adminRealtimeCh) return;
+  _adminRealtimeCh = _sb.channel('admin-realtime')
+    .on('postgres_changes', {event:'*', schema:'public', table:'profiles'}, async () => {
+      await _adminFetchData();
+      _renderAdminPanel();
+      showToast('🔄 Painel atualizado');
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'boloes'}, async () => {
+      await _adminFetchData();
+      _renderAdminPanel();
+    })
+    .subscribe();
+}
+
+function adminUnsubscribeRealtime() {
+  if(_adminRealtimeCh) {
+    _sb?.removeChannel(_adminRealtimeCh);
+    _adminRealtimeCh = null;
+  }
 }
 
 function setAdminTab(tab) { _adminTab = tab; _renderAdminPanel(); }
@@ -4117,22 +4144,49 @@ function _renderAdminPanel() {
         </div>`).join('');
   } else if(_adminTab==='pagamentos') {
     const pagamentos = [];
-    bs.forEach(b=>b.participants.filter(p=>p.paid).forEach(p=>{
-      pagamentos.push({bolaoTitle:b.title,name:p.name,amount:b.amount,paidAt:p.pixPaidAt||'',txid:p.pixTxid||''});
+    bs.forEach(b => b.participants.forEach(p => {
+      pagamentos.push({
+        bolaoTitle: b.title, bolaoId: b.id,
+        name: p.name||'-', email: p.email||'-',
+        pixKey: p.pixKey||'', amount: b.amount,
+        paid: !!p.paid, paidAt: p.pixPaidAt||'', txid: p.pixTxid||'',
+        kycOk: !!(USERS.find(u=>u.email===p.email)?.kyc_selfie_ok ?? p.kycOk)
+      });
     }));
-    pagamentos.sort((a,b)=>b.paidAt.localeCompare(a.paidAt));
-    tabContent = pagamentos.length===0
-      ? `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum pagamento encontrado</div>`
-      : pagamentos.map(p=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-weight:700;font-size:13px;color:var(--text)">${esc(p.name)}</div>
-              <div style="font-size:11px;color:var(--text3)">${esc(p.bolaoTitle)}</div>
-              ${p.paidAt?`<div style="font-size:10px;color:var(--text3)">${new Date(p.paidAt).toLocaleString('pt-BR')}</div>`:''}
+    pagamentos.sort((a,b) => {
+      if(a.paid !== b.paid) return a.paid ? -1 : 1;
+      return b.paidAt.localeCompare(a.paidAt);
+    });
+    const totalPago     = pagamentos.filter(p=>p.paid).length;
+    const totalPendente = pagamentos.filter(p=>!p.paid).length;
+    const totalValor    = pagamentos.filter(p=>p.paid).reduce((s,p)=>s+p.amount,0);
+    tabContent = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+        ${_adminStat('✅','Pagos',totalPago)}
+        ${_adminStat('⏳','Pendentes',totalPendente)}
+        ${_adminStat('💰','Total','R$'+totalValor)}
+      </div>
+      ${pagamentos.length===0
+        ? `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum participante</div>`
+        : pagamentos.map(p=>`
+        <div style="background:var(--surface);border:1px solid ${p.paid?'rgba(39,174,96,.3)':'var(--border)'};border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:800;font-size:13px;color:var(--text)">${esc(p.name)}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:1px">${esc(p.email)}</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:3px">📋 ${esc(p.bolaoTitle)}</div>
+              ${p.pixKey?`<div style="font-size:11px;color:var(--pix);margin-top:2px">🔑 Pix: ${esc(p.pixKey)}</div>`:''}
+              ${p.paidAt?`<div style="font-size:10px;color:var(--text3);margin-top:3px">📅 ${new Date(p.paidAt).toLocaleString('pt-BR')}</div>`:''}
+              ${p.txid?`<div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:monospace">ID: ${p.txid.length>20?p.txid.slice(0,20)+'…':p.txid}</div>`:''}
             </div>
-            <div style="font-size:18px;font-weight:900;color:#00b894">R$${p.amount}</div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:17px;font-weight:900;color:${p.paid?'#00b894':'var(--warn)'}">R$${p.amount}</div>
+              <div style="font-size:10px;font-weight:700;margin-top:4px;padding:3px 8px;border-radius:20px;${p.paid?'background:rgba(39,174,96,.15);color:var(--ok)':'background:rgba(243,156,18,.12);color:var(--warn)'}">
+                ${p.paid?'✅ Pago':'⏳ Pendente'}
+              </div>
+            </div>
           </div>
-        </div>`).join('');
+        </div>`).join('')}`;
   }
 
   el.innerHTML = `
@@ -4141,6 +4195,10 @@ function _renderAdminPanel() {
       ${_adminStat('👥','Usuários',us.length)}
       ${_adminStat('💰','Arrecadado','R$'+totalCollected)}
       ${_adminStat('🏦','Taxa App','R$'+appEarnings)}
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:10px;color:var(--ok);font-weight:700">● AO VIVO</span>
+      <button onclick="openAdmin()" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:6px;border:1px solid var(--border)">🔄 Atualizar</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px">
       ${['boloes','usuarios','pagamentos'].map(t=>`<button onclick="setAdminTab('${t}')" class="t-chip${_adminTab===t?' active':''}" style="flex-shrink:0">${{boloes:'Bolões',usuarios:'Usuários',pagamentos:'Pagamentos'}[t]}</button>`).join('')}
