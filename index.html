@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '43';
+  const VER = '44';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1363,7 +1363,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_mEG37L4_qna9MSFlNjFDHQ_LCeOfW0D';
 // Slug real da Edge Function da Efí no Supabase (a URL não muda mesmo após renomear)
 const EFI_FN_URL = `${SUPABASE_URL}/functions/v1/bright-api`;
 // Edge Function de verificação de rosto via Azure Face API
-const KYC_VERIFY_FN = `${SUPABASE_URL}/functions/v1/kyc-verify`;
+const KYC_VERIFY_FN = `${SUPABASE_URL}/functions/v1/smooth-endpoint`;
 
 let _sb = null;
 
