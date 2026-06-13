@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '34';
+  const VER = '35';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3244,15 +3244,12 @@ async function _kycOpen(title, subtitle, camera) {
       video: { facingMode: camera, width:{ideal:720}, height:{ideal:960} }
     });
     video.srcObject = _kycStream;
-    document.getElementById('kyc-status').textContent = 'Aguarde...';
+    document.getElementById('kyc-status').textContent = 'Posicione seu rosto e tire a foto';
+    // Libera botão após 2s — detecção de rosto é visual, não bloqueante
+    setTimeout(() => { btn.disabled = false; }, 2000);
     video.addEventListener('loadedmetadata', async () => {
       const ok = await _kycLoadModels();
-      if(ok) {
-        _kycStartDetection();
-      } else {
-        btn.disabled = false;
-        document.getElementById('kyc-status').textContent = 'Posicione seu rosto e tire a foto';
-      }
+      if(ok) _kycStartDetection(); // feedback visual (borda verde) sem bloquear
     }, { once: true });
   } catch(e) {
     document.getElementById('kyc-status').textContent = '⚠️ Permita o acesso à câmera e tente novamente.';
@@ -3297,8 +3294,7 @@ function _kycStartDetection() {
         ? '3px solid rgba(0,200,80,.9)'
         : '3px solid rgba(255,255,255,.2)';
     }
-    if(status) status.textContent = _kycFaceDetected ? '✅ Rosto detectado — pode tirar a foto!' : 'Aponte a câmera para seu rosto';
-    if(btn) btn.disabled = !_kycFaceDetected;
+    if(status && _kycFaceDetected) status.textContent = '✅ Rosto detectado!';
   }, 300);
 }
 
