@@ -1,0 +1,24 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # Todo dia às 10h UTC (7h Brasília)
+  workflow_dispatch:        # Permite rodar manualmente pelo GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://fzrvjdmhymzneiuekvqc.supabase.co/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: sb_publishable_mEG37L4_qna9MSFlNjFDHQ_LCeOfW0D" \
+            -H "Authorization: Bearer sb_publishable_mEG37L4_qna9MSFlNjFDHQ_LCeOfW0D")
+          echo "Status HTTP: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
+            echo "✅ Supabase ativo"
+          else
+            echo "⚠️ Resposta inesperada: $STATUS"
+            exit 1
+          fi
