@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '49';
+  const VER = '50';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -4107,6 +4107,26 @@ function adminUnsubscribeRealtime() {
 
 function setAdminTab(tab) { _adminTab = tab; _renderAdminPanel(); }
 
+async function adminApproveKyc(userId) {
+  if(!_sb) return;
+  showToast('⏳ Aprovando selfie...');
+  const { error } = await _sb.from('profiles').update({ kyc_selfie_ok: true }).eq('id', userId);
+  if(error) { showToast('❌ Erro ao aprovar: ' + error.message); return; }
+  showToast('✅ Selfie aprovada!');
+  await _adminFetchData();
+  _renderAdminPanel();
+}
+
+async function adminRejectKyc(userId) {
+  if(!_sb) return;
+  showToast('⏳ Revogando aprovação...');
+  const { error } = await _sb.from('profiles').update({ kyc_selfie_ok: false }).eq('id', userId);
+  if(error) { showToast('❌ Erro: ' + error.message); return; }
+  showToast('⚠️ Selfie revogada — usuário precisará tirar nova foto');
+  await _adminFetchData();
+  _renderAdminPanel();
+}
+
 function _adminStat(icon, label, val) {
   return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
     <div style="font-size:22px">${icon}</div>
@@ -4149,13 +4169,45 @@ function _renderAdminPanel() {
           </div>`;
         }).join('');
   } else if(_adminTab==='usuarios') {
-    tabContent = us.length===0
-      ? `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário encontrado</div>`
-      : us.map(u=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
-          <div style="font-weight:800;font-size:14px;color:var(--text)">${esc(u.name||'-')}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(u.email||'-')} · ${esc(u.phone||'-')}</div>
-          <div style="font-size:11px;color:var(--pix);margin-top:2px">Pix: ${esc(u.pix||'não cadastrado')}</div>
-        </div>`).join('');
+    if(us.length===0) {
+      tabContent = `<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum usuário cadastrado</div>`;
+    } else {
+      const kycPendentes = us.filter(u=>!u.kyc_selfie_ok && u.kyc_selfie_at).length;
+      tabContent = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+          ${_adminStat('👥','Total',us.length)}
+          ${_adminStat('✅','KYC ok',us.filter(u=>u.kyc_selfie_ok).length)}
+          ${_adminStat('⚠️','Revisar',kycPendentes)}
+        </div>
+        ${us.map(u=>{
+          const kycStatus = u.kyc_selfie_ok
+            ? `<span style="color:var(--ok);font-size:11px;font-weight:700">✅ Foto aprovada</span>`
+            : u.kyc_selfie_at
+              ? `<span style="color:var(--warn);font-size:11px;font-weight:700">⚠️ Foto rejeitada — revisar</span>`
+              : `<span style="color:var(--text3);font-size:11px">📷 Sem selfie</span>`;
+          const boloes = bs.filter(b=>b.participants.some(p=>p.email===u.email));
+          const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('pt-BR') : '-';
+          return `<div style="background:var(--surface);border:1px solid ${u.kyc_selfie_at&&!u.kyc_selfie_ok?'rgba(243,156,18,.35)':'var(--border)'};border-radius:12px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:800;font-size:14px;color:var(--text)">${esc(u.name||'-')}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(u.email||'-')}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:1px">📱 ${esc(u.phone||'-')} · 🪪 CPF: ${esc(u.cpf||'-')}</div>
+                <div style="font-size:11px;color:var(--pix);margin-top:1px">🔑 Pix: ${esc(u.pix||'não cadastrado')}</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:3px">📅 Cadastro: ${joined} · 📋 ${boloes.length} bolão(ões)</div>
+                <div style="margin-top:4px">${kycStatus}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+                ${u.kyc_selfie_ok
+                  ? `<button onclick="adminRejectKyc('${u.id}')" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--err);background:rgba(231,76,60,.1);color:var(--err);cursor:pointer;white-space:nowrap">❌ Revogar</button>`
+                  : u.kyc_selfie_at
+                    ? `<button onclick="adminApproveKyc('${u.id}')" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--ok);background:rgba(39,174,96,.12);color:var(--ok);cursor:pointer;white-space:nowrap">✅ Aprovar</button>`
+                    : ''}
+              </div>
+            </div>
+          </div>`;
+        }).join('')}`;
+    }
   } else if(_adminTab==='pagamentos') {
     const pagamentos = [];
     bs.forEach(b => b.participants.forEach(p => {
@@ -4164,7 +4216,7 @@ function _renderAdminPanel() {
         name: p.name||'-', email: p.email||'-',
         pixKey: p.pixKey||'', amount: b.amount,
         paid: !!p.paid, paidAt: p.pixPaidAt||'', txid: p.pixTxid||'',
-        kycOk: !!(USERS.find(u=>u.email===p.email)?.kyc_selfie_ok ?? p.kycOk)
+        kycOk: !!(_adminAllUsers.find(u=>u.email===p.email)?.kyc_selfie_ok ?? p.kycOk)
       });
     }));
     pagamentos.sort((a,b) => {
