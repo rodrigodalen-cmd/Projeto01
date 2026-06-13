@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '38';
+  const VER = '39';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3262,8 +3262,9 @@ function _kycDetectCanvas() {
   canvas.width = 80; canvas.height = 80;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, 80, 80);
-  // Analisa região central (onde o rosto deve estar)
-  const data = ctx.getImageData(12, 8, 56, 64).data;
+  // Analisa apenas a região CENTRAL do frame (onde o rosto centralizado deve estar)
+  // Exclui as bordas onde só o topo da cabeça ou o queixo podem aparecer
+  const data = ctx.getImageData(20, 12, 40, 56).data;
   const n = data.length / 4;
   let sumR = 0, sumG = 0, sumB = 0;
   for(let i = 0; i < data.length; i += 4) { sumR += data[i]; sumG += data[i+1]; sumB += data[i+2]; }
@@ -3271,14 +3272,16 @@ function _kycDetectCanvas() {
   let skinCount = 0, variance = 0;
   for(let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i+1], b = data[i+2];
+    const brightness = (r + g + b) / 3;
     variance += Math.abs(r-avgR) + Math.abs(g-avgG) + Math.abs(b-avgB);
-    // Tom de pele: cobre pele clara até pele escura
-    if(r > 45 && b > 10 && r > b && (r-b) > 8 && Math.abs(r-g) < 80 && r < 248) skinCount++;
+    // Tom de pele: exclui branco/creme (teto, parede) com brightness < 215
+    // Exige diferença R-B > 22 (paredes brancas têm R-B ≈ 10-20)
+    if(r > 50 && b > 10 && brightness < 215 && r > b && (r-b) > 22 && Math.abs(r-g) < 65) skinCount++;
   }
   const skinRatio = skinCount / n;
   const avgVariance = variance / n;
-  // Rosto = pixels de pele + variação de textura (olhos, nariz criam contraste)
-  return skinRatio > 0.18 && avgVariance > 10;
+  // Rosto bem posicionado = ≥22% da região central com tom de pele + textura real
+  return skinRatio > 0.22 && avgVariance > 14;
 }
 
 function _kycStartDetection() {
