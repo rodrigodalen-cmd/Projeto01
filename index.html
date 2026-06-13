@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '47';
+  const VER = '48';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1994,6 +1994,9 @@ async function loginSuccess() {
   // Se foto foi rejeitada (tentou mas não aprovada), força retake sem sair
   if(state.user && !state.user.kyc_selfie_ok && state.user.kyc_selfie_at) {
     setTimeout(() => {
+      // Só abre se o overlay não estiver já aberto (evita dupla abertura com o refresh Supabase)
+      const ov = document.getElementById('kyc-overlay');
+      if(ov && ov.style.display !== 'none') return;
       showToast('⚠️ Sua foto não foi aceita. Tire uma nova selfie para continuar.');
       _kycForceMode = true;
       _kycOnSuccess = () => { updateProfileUI(); showToast('✅ Identidade verificada!'); };
