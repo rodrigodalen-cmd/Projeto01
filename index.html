@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '24';
+  const VER = '25';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -28,6 +28,7 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -3197,9 +3198,12 @@ function scheduleGameNotifications() {
 const _KYC_CLIENT_ID = '';
 const _KYC_API_KEY   = '';
 
-let _kycStream    = null;
-let _kycOnSuccess = null;
-let _kycCapturedPhoto = null; // selfie capturada, enviada ao Storage em background
+let _kycStream         = null;
+let _kycOnSuccess      = null;
+let _kycCapturedPhoto  = null;
+let _kycDetectionTimer = null;
+let _kycFaceDetected   = false;
+let _kycModelsLoaded   = false;
 
 // Exige selfie antes de qualquer ação financeira (pagar ou receber)
 function kycRequestSelfie(onSuccess, msg) {
@@ -3218,25 +3222,78 @@ async function _kycOpen(title, subtitle, camera) {
   document.getElementById('kyc-subtitle').textContent = subtitle;
   document.getElementById('kyc-status').textContent = '';
   document.getElementById('kyc-preview').style.display = 'none';
-  document.getElementById('kyc-video').style.display = 'block';
+  const video = document.getElementById('kyc-video');
+  video.style.display = 'block';
   document.getElementById('kyc-oval-guide').style.display = 'flex';
+  const hole = document.querySelector('.kyc-oval-hole');
+  if(hole) { hole.style.borderColor = 'rgba(255,255,255,.85)'; hole.style.boxShadow = '0 0 0 9999px rgba(0,0,0,.45)'; }
   const btn = document.getElementById('kyc-action-btn');
   btn.textContent = 'Tirar selfie';
-  btn.disabled = false;
+  btn.disabled = true; // habilitado só após rosto detectado
   btn.onclick = kycCapture;
   document.getElementById('kyc-overlay').style.display = 'flex';
   try {
     _kycStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: camera, width:{ideal:720}, height:{ideal:960} }
     });
-    document.getElementById('kyc-video').srcObject = _kycStream;
+    video.srcObject = _kycStream;
+    document.getElementById('kyc-status').textContent = 'Carregando detecção de rosto...';
+    video.addEventListener('loadedmetadata', async () => {
+      const ok = await _kycLoadModels();
+      if(ok) {
+        _kycStartDetection();
+      } else {
+        // fallback: sem detecção, habilita botão direto
+        btn.disabled = false;
+        document.getElementById('kyc-status').textContent = '';
+      }
+    }, { once: true });
   } catch(e) {
     document.getElementById('kyc-status').textContent = '⚠️ Permita o acesso à câmera e tente novamente.';
     btn.disabled = true;
   }
 }
 
+async function _kycLoadModels() {
+  if(_kycModelsLoaded || typeof faceapi === 'undefined') return false;
+  try {
+    await faceapi.nets.tinyFaceDetector.loadFromUri(
+      'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'
+    );
+    _kycModelsLoaded = true;
+    return true;
+  } catch(e) { return false; }
+}
+
+function _kycStartDetection() {
+  const video  = document.getElementById('kyc-video');
+  const hole   = document.querySelector('.kyc-oval-hole');
+  const btn    = document.getElementById('kyc-action-btn');
+  const status = document.getElementById('kyc-status');
+  _kycFaceDetected = false;
+  _kycDetectionTimer = setInterval(async () => {
+    if(!video || video.paused || video.ended || !_kycModelsLoaded) return;
+    const det = await faceapi.detectSingleFace(
+      video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 })
+    ).catch(() => null);
+    _kycFaceDetected = !!det;
+    if(hole) {
+      hole.style.borderColor  = _kycFaceDetected ? 'rgba(0,200,80,.95)' : 'rgba(255,255,255,.85)';
+      hole.style.boxShadow    = _kycFaceDetected
+        ? '0 0 0 9999px rgba(0,0,0,.45),0 0 20px rgba(0,200,80,.5)'
+        : '0 0 0 9999px rgba(0,0,0,.45)';
+    }
+    if(status) status.textContent = _kycFaceDetected ? '✅ Rosto detectado!' : 'Centralize seu rosto no oval';
+    if(btn) btn.disabled = !_kycFaceDetected;
+  }, 500);
+}
+
+function _kycStopDetection() {
+  if(_kycDetectionTimer) { clearInterval(_kycDetectionTimer); _kycDetectionTimer = null; }
+}
+
 function _kycStopStream() {
+  _kycStopDetection();
   if(_kycStream) { _kycStream.getTracks().forEach(t=>t.stop()); _kycStream = null; }
 }
 
@@ -3252,6 +3309,7 @@ async function kycCapture() {
   const btn     = document.getElementById('kyc-action-btn');
   const status  = document.getElementById('kyc-status');
 
+  _kycStopDetection(); // para o loop antes de capturar
   canvas.width  = video.videoWidth  || 720;
   canvas.height = video.videoHeight || 960;
   canvas.getContext('2d').drawImage(video, 0, 0);
