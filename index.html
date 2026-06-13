@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '41';
+  const VER = '42';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -2105,6 +2105,18 @@ function renderHome() {
 let _footballNews = [];
 let _newsFetching = false;
 
+function _newsCacheLoad() {
+  try {
+    const d = JSON.parse(localStorage.getItem('bolao_news') || '{}');
+    if(d.ts && Date.now() - d.ts < 30 * 60 * 1000 && Array.isArray(d.items) && d.items.length)
+      return d.items;
+  } catch(e) {}
+  return [];
+}
+function _newsCacheSave(items) {
+  try { localStorage.setItem('bolao_news', JSON.stringify({ts: Date.now(), items: items.slice(0,20)})); } catch(e) {}
+}
+
 // Busca RSS via allorigins.win (proxy CORS gratuito) e parseia XML no browser.
 // Decodifica como bytes: feeds BR antigos (UOL) vêm em Latin-1/Windows-1252, não UTF-8.
 function _fetchRSS(rssUrl) {
@@ -2168,19 +2180,29 @@ function _sortFutebolFirst(items) {
 async function fetchFootballNews() {
   if(_newsFetching) return;
   _newsFetching = true;
+
+  // Mostra cache instantaneamente enquanto busca da rede
+  if(!_footballNews.length) {
+    const cached = _newsCacheLoad();
+    if(cached.length) { _footballNews = cached; _renderNews(); }
+  }
+
   try {
-    for(const source of _NEWS_SOURCES) {
-      try {
-        const items = await source();
-        const valid = items.filter(n => n.headline && n.url);
-        if(valid.length > 0) {
-          _footballNews = _sortFutebolFirst(valid);
-          _newsRotIdx = 0;
-          break;
-        }
-      } catch(e) { console.warn('[news]', e.message); }
-    }
-  } finally {
+    // Todas as fontes em paralelo — usa a primeira que retornar dados válidos
+    const result = await Promise.any(
+      _NEWS_SOURCES.map(source =>
+        source().then(items => {
+          const valid = items.filter(n => n.headline && n.url);
+          if(!valid.length) throw new Error('empty');
+          return valid;
+        })
+      )
+    );
+    _footballNews = _sortFutebolFirst(result);
+    _newsRotIdx = 0;
+    _newsCacheSave(_footballNews);
+  } catch(e) { /* todas falharam — mantém cache */ }
+  finally {
     _newsFetching = false;
     _renderNews();
   }
