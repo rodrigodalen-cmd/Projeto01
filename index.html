@@ -15,14 +15,14 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '19';
+  const VER = '20';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=19'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=20'); });
   }
 })();
 </script>
@@ -597,11 +597,20 @@ input:checked+.slider:before{transform:translateX(18px)}
       </label>
     </div>
 
-    <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:20px;border:1px solid var(--border)">
+    <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
         <input type="checkbox" id="rg-terms" style="width:18px;height:18px;margin-top:2px;accent-color:var(--primary);flex-shrink:0">
         <span style="color:var(--text2);font-size:13px;line-height:1.5">
           Li e aceito os <button onclick="go('s-terms')" style="background:none;border:none;color:var(--primary);font-weight:700;font-size:13px;cursor:pointer;padding:0;text-decoration:underline">Termos de Uso, Política de Privacidade e Regras do Bolão</button>
+        </span>
+      </label>
+    </div>
+
+    <div style="background:rgba(231,76,60,.07);border-radius:12px;padding:14px;margin-bottom:20px;border:1px solid rgba(231,76,60,.2)">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="rg-declaration" style="width:18px;height:18px;margin-top:2px;accent-color:var(--primary);flex-shrink:0">
+        <span style="color:var(--text2);font-size:13px;line-height:1.5">
+          Declaro, sob responsabilidade civil e criminal, que os dados informados (nome, CPF, data de nascimento) são os meus próprios e verdadeiros, e que sou o titular desta conta.
         </span>
       </label>
     </div>
@@ -1871,8 +1880,10 @@ async function _doRegisterInner() {
   const pass2 = document.getElementById('rg-pass2').value;
   const ageOk = document.getElementById('rg-age').checked;
   const termsOk = document.getElementById('rg-terms').checked;
+  const declarationOk = document.getElementById('rg-declaration').checked;
 
   if(!name||!email||!phone||!cpf||!dob||!pix||!pass) { showToast('⚠️ Preencha todos os campos'); return; }
+  if(!declarationOk) { showToast('⚠️ Confirme a declaração de veracidade dos dados'); return; }
 
   if(!validCPF(cpf)) { showToast('❌ CPF inválido. Verifique o número'); return; }
 
