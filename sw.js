@@ -1,4 +1,4 @@
-const CACHE = 'bolao-fc-v46';
+const CACHE = 'bolao-fc-v47';
 const STATIC = [
   './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',

@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '46';
+  const VER = '47';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1384,6 +1384,15 @@ function initSupabase() {
       }
     });
   }
+}
+
+// Polyfill: Promise.any não existe no iOS 13 / Safari < 14
+if(!Promise.any) {
+  Promise.any = function(ps) {
+    return Promise.all(ps.map(p =>
+      Promise.resolve(p).then(v => Promise.reject(v), e => e)
+    )).then(es => Promise.reject(es), v => v);
+  };
 }
 
 // Convert Supabase row → local bolão object
@@ -3233,15 +3242,10 @@ function scheduleGameNotifications() {
 }
 
 // ===== KYC (Verificação de Identidade — Selfie) =====
-// Preencha após cadastro em https://unico.io — deixe vazio para modo demo (aprovação automática)
-const _KYC_CLIENT_ID = '';
-const _KYC_API_KEY   = '';
-
 let _kycStream         = null;
 let _kycOnSuccess      = null;
 let _kycCapturedPhoto  = null;
-let _kycDetectionTimer = null;
-let _kycFaceDetected   = false;
+let _kycOpenSeq        = 0;    // incrementado a cada _kycOpen para invalidar timers antigos
 let _kycForceMode      = false; // true = sem botão cancelar (retake obrigatório)
 
 // Exige selfie antes de qualquer ação financeira (pagar ou receber)
@@ -3257,6 +3261,7 @@ function kycRequestSelfie(onSuccess, msg) {
 
 
 async function _kycOpen(title, subtitle, camera) {
+  const seq = ++_kycOpenSeq; // invalida timers de chamadas anteriores
   document.getElementById('kyc-title').textContent = title;
   document.getElementById('kyc-subtitle').textContent = subtitle;
   document.getElementById('kyc-status').textContent = '';
@@ -3284,6 +3289,8 @@ async function _kycOpen(title, subtitle, camera) {
     status.textContent = '📸 Olhe para a câmera com rosto visível e boa iluminação';
     video.addEventListener('loadedmetadata', () => {
       setTimeout(() => {
+        // Ignora se outro _kycOpen foi aberto entre enquanto (timer obsoleto)
+        if(seq !== _kycOpenSeq) return;
         if(document.getElementById('kyc-overlay').style.display !== 'none') {
           btn.disabled = false;
           status.textContent = '📸 Pronto! Centralize seu rosto e tire a foto';
@@ -3293,15 +3300,15 @@ async function _kycOpen(title, subtitle, camera) {
   } catch(e) {
     document.getElementById('kyc-status').textContent = '⚠️ Permita o acesso à câmera e tente novamente.';
     btn.disabled = true;
+    // Não pode forçar retake sem câmera — libera o usuário para poder conceder permissão
+    if(_kycForceMode) {
+      _kycForceMode = false;
+      if(cancelBtn) cancelBtn.style.display = '';
+    }
   }
 }
 
-function _kycStopDetection() {
-  if(_kycDetectionTimer) { clearTimeout(_kycDetectionTimer); _kycDetectionTimer = null; }
-}
-
 function _kycStopStream() {
-  _kycStopDetection();
   if(_kycStream) { _kycStream.getTracks().forEach(t=>t.stop()); _kycStream = null; }
 }
 
@@ -3318,7 +3325,6 @@ async function kycCapture() {
   const btn     = document.getElementById('kyc-action-btn');
   const status  = document.getElementById('kyc-status');
 
-  _kycStopDetection(); // para o loop antes de capturar
   canvas.width  = video.videoWidth  || 720;
   canvas.height = video.videoHeight || 960;
   const ctx = canvas.getContext('2d');
@@ -3356,12 +3362,13 @@ async function kycCapture() {
 
   const ok = await _kycVerify(base64);
   if(!ok) {
-    // Foto rejeitada (não é rosto) — registra tentativa para force retake no próximo login
+    // Foto rejeitada — registra tentativa para force retake no próximo login
+    const rejTs = new Date().toISOString();
     if(_sb && state.user?.id) {
-      _sb.from('profiles').update({ kyc_selfie_ok: false, kyc_selfie_at: new Date().toISOString() })
+      _sb.from('profiles').update({ kyc_selfie_ok: false, kyc_selfie_at: rejTs })
         .eq('id', state.user.id).catch(()=>{});
-      if(state.user) state.user.kyc_selfie_at = new Date().toISOString();
     }
+    if(state.user) { state.user.kyc_selfie_at = rejTs; saveSession(state.user); }
     status.textContent = '❌ Rosto não detectado. Garanta boa iluminação e rosto visível na câmera.';
     btn.textContent = 'Tentar novamente';
     btn.disabled = false;
@@ -3422,7 +3429,7 @@ async function _kycSave() {
     kyc_selfie_at: now
   }).eq('id', state.user.id).catch(()=>{});
 
-  if(state.user) { state.user.kyc_selfie_ok = true; state.user.kyc_selfie_at = now; }
+  if(state.user) { state.user.kyc_selfie_ok = true; state.user.kyc_selfie_at = now; saveSession(state.user); }
   _kycForceMode = false;
 }
 
@@ -6289,6 +6296,16 @@ document.addEventListener('DOMContentLoaded', async ()=>{
               state.user = {...state.user, ...freshUser};
               updateProfileUI();
               updateFloatingAvatar();
+              // Verifica se foto foi rejeitada remotamente e força retake se overlay não estiver aberto
+              if(!freshUser.kyc_selfie_ok && freshUser.kyc_selfie_at) {
+                const overlay = document.getElementById('kyc-overlay');
+                if(!overlay || overlay.style.display === 'none') {
+                  showToast('⚠️ Sua foto não foi aceita. Tire uma nova selfie para continuar.');
+                  _kycForceMode = true;
+                  _kycOnSuccess = () => { updateProfileUI(); showToast('✅ Identidade verificada!'); };
+                  _kycOpen('Selfie necessária', 'Sua foto anterior não foi aceita. Tire uma nova selfie do seu rosto.', 'user');
+                }
+              }
             }
           }
           // Se profile null mas já temos cache, onAuthStateChange cuidará de sessão expirada
