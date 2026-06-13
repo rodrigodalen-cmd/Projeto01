@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '45';
+  const VER = '46';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1962,10 +1962,7 @@ async function _doRegisterInner() {
     }
     state.user = {id: userId, email, name, phone, pix, cpf, kyc_selfie_ok: false, kyc_selfie_at: null};
     saveSession(state.user);
-    // Selfie obrigatória no cadastro — abre antes da home
-    _kycForceMode = true;
-    _kycOnSuccess = loginSuccess;
-    _kycOpen('Quase lá! Tire uma selfie', 'Precisamos confirmar sua identidade para concluir o cadastro', 'user');
+    await loginSuccess();
     return;
   }
 
@@ -1973,9 +1970,7 @@ async function _doRegisterInner() {
   saveUsers();
   state.user = {name,email,phone,cpf,pix, kyc_selfie_ok: false, kyc_selfie_at: null};
   saveSession(state.user);
-  _kycForceMode = true;
-  _kycOnSuccess = loginSuccess;
-  _kycOpen('Quase lá! Tire uma selfie', 'Confirme sua identidade para concluir o cadastro', 'user');
+  await loginSuccess();
 }
 
 async function loginSuccess() {
@@ -3438,6 +3433,11 @@ async function openPix(id) {
   if(state.user) {
     const me = (b.participants||[]).find(p=>p.email===state.user.email);
     if(me?.paid) { showToast('✅ Seu pagamento já foi confirmado!'); return; }
+  }
+  // Selfie obrigatória antes de pagar
+  if(!state.user?.kyc_selfie_ok) {
+    kycRequestSelfie(() => _doOpenPix(id));
+    return;
   }
   _doOpenPix(id);
 }
