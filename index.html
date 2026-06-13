@@ -15,14 +15,14 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '16';
+  const VER = '17';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=16'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=17'); });
   }
 })();
 </script>
@@ -442,6 +442,11 @@ input:checked+.slider:before{transform:translateX(18px)}
 .gbs-overlay.open .gbs-panel{transform:translateY(0)}
 .gbs-panel{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
 .gbs-drag{width:36px;height:4px;border-radius:2px;background:var(--border);margin:12px auto 0}
+/* KYC MODAL */
+.kyc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:flex-end;justify-content:center}
+.kyc-panel{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 28px)}
+.kyc-video-wrap{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:16px;overflow:hidden;margin-bottom:16px}
+.kyc-video-wrap video,.kyc-video-wrap img{width:100%;height:100%;object-fit:cover}
 /* ONBOARDING */
 .ob-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px}
 .ob-modal{background:var(--surface);border-radius:24px;width:100%;max-width:360px;padding:32px 24px;text-align:center}
@@ -1259,6 +1264,24 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 </div><!-- #app -->
 
+<!-- KYC IDENTITY MODAL -->
+<div class="kyc-overlay" id="kyc-overlay">
+  <div class="kyc-panel">
+    <div id="kyc-title" style="font-size:18px;font-weight:800;text-align:center;margin-bottom:6px">Verificação de identidade</div>
+    <div id="kyc-subtitle" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px">Precisamos confirmar quem você é</div>
+    <div class="kyc-video-wrap" id="kyc-video-wrap">
+      <video id="kyc-video" autoplay playsinline muted></video>
+      <img id="kyc-preview" style="display:none" alt="preview">
+    </div>
+    <canvas id="kyc-canvas" style="display:none"></canvas>
+    <div id="kyc-status" style="text-align:center;min-height:20px;font-size:13px;color:var(--text2);margin-bottom:14px"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" style="flex:0 0 auto;padding:14px 20px" onclick="kycCancel()">Cancelar</button>
+      <button class="btn btn-primary" id="kyc-action-btn" onclick="kycCapture()">Tirar foto</button>
+    </div>
+  </div>
+</div>
+
 <!-- ONBOARDING MODAL -->
 <div class="ob-overlay" id="ob-overlay">
   <div class="ob-modal">
@@ -1731,7 +1754,7 @@ async function doLogin() {
       const data = authData;
       const { data: profile } = await _sbCall(_sb.from('profiles').select('*').eq('id', data.user.id).single(), 18000);
       if(!profile) { showToast('❌ Perfil não encontrado'); return; }
-      state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+      state.user = {id: data.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo, kyc_selfie_ok: !!profile.kyc_selfie_ok, kyc_full_ok: !!profile.kyc_full_ok};
       if(!state.user.photo) {
         try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
       }
@@ -3148,18 +3171,187 @@ function scheduleGameNotifications() {
   });
 }
 
+// ===== KYC (Verificação de Identidade) =====
+// Preencha após cadastro em https://unico.io — deixe vazio para modo demo (aprovação automática)
+const _KYC_CLIENT_ID = '';
+const _KYC_API_KEY   = '';
+
+let _kycStream    = null;
+let _kycStep      = null;   // 'selfie' | 'doc'
+let _kycOnSuccess = null;
+let _kycSelfieB64 = null;
+
+// Chama antes de pagar: exige selfie
+function kycRequestSelfie(onSuccess) {
+  if(state.user?.kyc_selfie_ok) { onSuccess(); return; }
+  _kycOnSuccess = onSuccess;
+  _kycStep = 'selfie';
+  _kycSelfieB64 = null;
+  _kycOpen('Confirme sua identidade', 'Tire uma selfie para continuar com o pagamento', 'user');
+}
+
+// Chama antes de receber prêmio: exige selfie + documento
+function kycRequestFull(onSuccess) {
+  if(state.user?.kyc_full_ok) { onSuccess(); return; }
+  if(state.user?.kyc_selfie_ok) {
+    // Selfie já feita, pedir só o documento
+    _kycOnSuccess = onSuccess;
+    _kycStep = 'doc';
+    _kycOpen('Verificação completa', 'Fotografe a frente do seu documento (RG ou CNH)', 'environment');
+    return;
+  }
+  _kycOnSuccess = onSuccess;
+  _kycStep = 'selfie';
+  _kycSelfieB64 = null;
+  _kycOpen('Verificação completa', 'Passo 1/2 — tire uma selfie', 'user');
+}
+
+async function _kycOpen(title, subtitle, camera) {
+  document.getElementById('kyc-title').textContent = title;
+  document.getElementById('kyc-subtitle').textContent = subtitle;
+  document.getElementById('kyc-status').textContent = '';
+  document.getElementById('kyc-preview').style.display = 'none';
+  document.getElementById('kyc-video').style.display = 'block';
+  const btn = document.getElementById('kyc-action-btn');
+  btn.textContent = 'Tirar foto';
+  btn.disabled = false;
+  btn.onclick = kycCapture;
+  document.getElementById('kyc-overlay').style.display = 'flex';
+
+  try {
+    _kycStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: camera, width:{ideal:720}, height:{ideal:960} }
+    });
+    document.getElementById('kyc-video').srcObject = _kycStream;
+  } catch(e) {
+    document.getElementById('kyc-status').textContent = '⚠️ Permita o acesso à câmera e tente novamente.';
+    btn.disabled = true;
+  }
+}
+
+function _kycStopStream() {
+  if(_kycStream) { _kycStream.getTracks().forEach(t=>t.stop()); _kycStream = null; }
+}
+
+function kycCancel() {
+  _kycStopStream();
+  document.getElementById('kyc-overlay').style.display = 'none';
+}
+
+async function kycCapture() {
+  const video   = document.getElementById('kyc-video');
+  const canvas  = document.getElementById('kyc-canvas');
+  const preview = document.getElementById('kyc-preview');
+  const btn     = document.getElementById('kyc-action-btn');
+  const status  = document.getElementById('kyc-status');
+
+  canvas.width  = video.videoWidth  || 720;
+  canvas.height = video.videoHeight || 960;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const base64 = canvas.toDataURL('image/jpeg', 0.82);
+  _kycStopStream();
+
+  preview.src = base64;
+  preview.style.display = 'block';
+  document.getElementById('kyc-video').style.display = 'none';
+
+  status.textContent = 'Verificando...';
+  btn.disabled = true;
+
+  const ok = await _kycVerify(base64);
+
+  if(!ok) {
+    status.textContent = '❌ Verificação falhou. Tente em local com boa iluminação.';
+    btn.textContent = 'Tentar novamente';
+    btn.disabled = false;
+    btn.onclick = () => {
+      const isSelfie = _kycStep === 'selfie';
+      _kycOpen(
+        document.getElementById('kyc-title').textContent,
+        document.getElementById('kyc-subtitle').textContent,
+        isSelfie ? 'user' : 'environment'
+      );
+    };
+    return;
+  }
+
+  if(_kycStep === 'selfie') {
+    _kycSelfieB64 = base64;
+    if(_kycOnSuccess === null) return; // fluxo completo: a selfie já foi, agora pede doc
+    // Selfie simples (pagar) → salva e segue
+    await _kycSave('selfie');
+    document.getElementById('kyc-overlay').style.display = 'none';
+    _kycOnSuccess?.();
+    return;
+  }
+
+  if(_kycStep === 'selfie-to-doc') {
+    _kycSelfieB64 = base64;
+    _kycStep = 'doc';
+    _kycOpen('Verificação completa', 'Passo 2/2 — fotografe a frente do documento (RG ou CNH)', 'environment');
+    return;
+  }
+
+  if(_kycStep === 'doc') {
+    await _kycSave('full');
+    document.getElementById('kyc-overlay').style.display = 'none';
+    _kycOnSuccess?.();
+  }
+}
+
+// Verificação: modo demo (sem credenciais) ou Unico Check (com credenciais)
+async function _kycVerify(base64) {
+  if(!_KYC_CLIENT_ID || !_KYC_API_KEY) {
+    await new Promise(r => setTimeout(r, 1500)); // simula latência
+    return true; // MODO DEMO — troca por chamada real ao Unico
+  }
+  try {
+    // Obtém token Unico
+    const tokResp = await fetch('https://api.id.unico.app/oauth/token', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ client_id:_KYC_CLIENT_ID, client_secret:_KYC_API_KEY, grant_type:'client_credentials' })
+    });
+    const { access_token } = await tokResp.json();
+    // Envia imagem para verificação
+    const resp = await fetch('https://api.id.unico.app/processes/v1', {
+      method:'POST',
+      headers:{'Authorization':`Bearer ${access_token}`,'Content-Type':'application/json'},
+      body: JSON.stringify({ subject:{ code: state.user?.id||'anon' }, imagebase64: base64.split(',')[1] })
+    });
+    const data = await resp.json();
+    return !!data?.result?.valid;
+  } catch(e) { return false; }
+}
+
+async function _kycSave(level) {
+  const update = level === 'selfie'
+    ? { kyc_selfie_ok: true }
+    : { kyc_selfie_ok: true, kyc_full_ok: true };
+  if(_sb && state.user?.id) {
+    await _sb.from('profiles').update(update).eq('id', state.user.id).catch(()=>{});
+  }
+  Object.assign(state.user, update);
+}
+
 // ===== PIX =====
 async function openPix(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
-  // Guard: if participant already paid, show confirmation screen directly (no new charge)
   if(state.user) {
     const me = (b.participants||[]).find(p=>p.email===state.user.email);
-    if(me?.paid) {
-      showToast('✅ Seu pagamento já foi confirmado!');
-      return;
-    }
+    if(me?.paid) { showToast('✅ Seu pagamento já foi confirmado!'); return; }
   }
+  // Selfie obrigatória antes de pagar
+  if(!state.user?.kyc_selfie_ok) {
+    kycRequestSelfie(() => _doOpenPix(id));
+    return;
+  }
+  _doOpenPix(id);
+}
+
+async function _doOpenPix(id) {
+  const b = state.boloes.find(x=>x.id===id);
+  if(!b) return;
   if(state.pixTimerInterval) { clearInterval(state.pixTimerInterval); state.pixTimerInterval = null; }
   if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   state.pixTxid = null;
@@ -5898,7 +6090,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(session) {
       const { data: profile } = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
       if(profile) {
-        state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo};
+        state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo, kyc_selfie_ok: !!profile.kyc_selfie_ok, kyc_full_ok: !!profile.kyc_full_ok};
         if(!state.user.photo) {
           try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
         }
