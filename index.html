@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '39';
+  const VER = '40';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3209,7 +3209,7 @@ let _kycOnSuccess      = null;
 let _kycCapturedPhoto  = null;
 let _kycDetectionTimer = null;
 let _kycFaceDetected   = false;
-let _kycModelsLoaded   = false;
+let _kycBlazeFace      = null; // modelo BlazeFace carregado sob demanda
 
 // Exige selfie antes de qualquer ação financeira (pagar ou receber)
 function kycRequestSelfie(onSuccess, msg) {
@@ -3243,9 +3243,17 @@ async function _kycOpen(title, subtitle, camera) {
       video: { facingMode: camera, width:{ideal:720}, height:{ideal:960} }
     });
     video.srcObject = _kycStream;
-    document.getElementById('kyc-status').textContent = 'Aponte a câmera para seu rosto';
-    video.addEventListener('loadedmetadata', () => {
-      _kycStartDetection();
+    const status = document.getElementById('kyc-status');
+    status.textContent = 'Carregando modelo de detecção...';
+    video.addEventListener('loadedmetadata', async () => {
+      const ok = await _kycLoadModels();
+      if(ok) {
+        status.textContent = 'Aponte a câmera para seu rosto';
+        _kycStartDetection();
+      } else {
+        status.textContent = 'Posicione seu rosto e tire a foto';
+        setTimeout(() => { btn.disabled = false; }, 3000);
+      }
     }, { once: true });
   } catch(e) {
     document.getElementById('kyc-status').textContent = '⚠️ Permita o acesso à câmera e tente novamente.';
@@ -3253,35 +3261,32 @@ async function _kycOpen(title, subtitle, camera) {
   }
 }
 
-// Detecção de rosto por análise de canvas: tom de pele + variação de textura
-// Funciona em todo celular sem dependências externas
-function _kycDetectCanvas() {
+function _loadScript(src) {
+  return new Promise((res, rej) => {
+    if(document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function _kycLoadModels() {
+  if(_kycBlazeFace) return true;
+  try {
+    await _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
+    await _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0/dist/blazeface.min.js');
+    _kycBlazeFace = await blazeface.load();
+    return true;
+  } catch(e) { return false; }
+}
+
+async function _kycDetectFace() {
   const video = document.getElementById('kyc-video');
-  if(!video || video.paused || video.ended || !video.videoWidth) return false;
-  const canvas = document.getElementById('kyc-canvas');
-  canvas.width = 80; canvas.height = 80;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, 80, 80);
-  // Analisa apenas a região CENTRAL do frame (onde o rosto centralizado deve estar)
-  // Exclui as bordas onde só o topo da cabeça ou o queixo podem aparecer
-  const data = ctx.getImageData(20, 12, 40, 56).data;
-  const n = data.length / 4;
-  let sumR = 0, sumG = 0, sumB = 0;
-  for(let i = 0; i < data.length; i += 4) { sumR += data[i]; sumG += data[i+1]; sumB += data[i+2]; }
-  const avgR = sumR/n, avgG = sumG/n, avgB = sumB/n;
-  let skinCount = 0, variance = 0;
-  for(let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i+1], b = data[i+2];
-    const brightness = (r + g + b) / 3;
-    variance += Math.abs(r-avgR) + Math.abs(g-avgG) + Math.abs(b-avgB);
-    // Tom de pele: exclui branco/creme (teto, parede) com brightness < 215
-    // Exige diferença R-B > 22 (paredes brancas têm R-B ≈ 10-20)
-    if(r > 50 && b > 10 && brightness < 215 && r > b && (r-b) > 22 && Math.abs(r-g) < 65) skinCount++;
-  }
-  const skinRatio = skinCount / n;
-  const avgVariance = variance / n;
-  // Rosto bem posicionado = ≥22% da região central com tom de pele + textura real
-  return skinRatio > 0.22 && avgVariance > 14;
+  if(!video || video.paused || video.ended || !video.videoWidth || !_kycBlazeFace) return false;
+  try {
+    const faces = await _kycBlazeFace.estimateFaces(video, false);
+    return faces.length > 0;
+  } catch(e) { return false; }
 }
 
 function _kycStartDetection() {
@@ -3290,9 +3295,9 @@ function _kycStartDetection() {
   const status = document.getElementById('kyc-status');
   _kycFaceDetected = false;
   btn.disabled = true;
-  function detect() {
+  async function detect() {
     if(!_kycDetectionTimer) return;
-    _kycFaceDetected = _kycDetectCanvas();
+    _kycFaceDetected = await _kycDetectFace();
     if(wrap) wrap.style.outline = _kycFaceDetected
       ? '3px solid rgba(0,200,80,.9)'
       : '3px solid rgba(255,80,80,.4)';
@@ -3302,9 +3307,9 @@ function _kycStartDetection() {
         : 'Aponte a câmera para seu rosto';
     }
     if(btn) btn.disabled = !_kycFaceDetected;
-    _kycDetectionTimer = setTimeout(detect, 350);
+    _kycDetectionTimer = setTimeout(detect, 500);
   }
-  _kycDetectionTimer = setTimeout(detect, 700); // aguarda câmera estabilizar
+  _kycDetectionTimer = setTimeout(detect, 300);
 }
 
 function _kycStopDetection() {
