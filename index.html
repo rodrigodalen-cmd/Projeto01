@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Bolão Copa 2026</title>
+<title>Bolão FC</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#006B3F">
 <meta name="description" content="Bolão da Copa do Mundo 2026 · Aposte com seus amigos">
@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '25';
+  const VER = '26';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -647,8 +647,8 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div style="background:var(--surface);border-radius:12px;padding:4px 16px 16px;border:1px solid var(--border)">
 
       <div style="text-align:center;padding:20px 0 12px">
-        <div style="font-size:32px">🏆⚖️</div>
-        <div style="font-size:16px;font-weight:800;margin-top:8px">Bolão Copa</div>
+        <img src="./icon-192.png" alt="Bolão FC" style="width:64px;height:64px;border-radius:16px">
+        <div style="font-size:16px;font-weight:800;margin-top:10px">Bolão FC</div>
         <div style="color:var(--text3);font-size:11px;margin-top:4px">Termos de Uso · Política de Privacidade · Regras do Bolão</div>
         <div style="color:var(--text3);font-size:10px;margin-top:2px">Última atualização: Junho de 2026</div>
       </div>
@@ -656,7 +656,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="terms-section" id="t-sec-1">
         <div class="terms-title">1. IDENTIFICAÇÃO E NATUREZA DO SERVIÇO</div>
         <div class="terms-text">
-          O Bolão Copa é uma plataforma digital destinada exclusivamente à organização de bolões informais entre grupos de amigos, familiares ou colegas previamente conhecidos ("usuários"). O serviço <strong>não constitui casa de apostas, jogo de azar comercial ou operação de loteria</strong>, sendo classificado como entretenimento privado entre conhecidos, nos termos do § 2° do Art. 50 da Lei de Contravenções Penais (Decreto-Lei n° 3.688/1941), que isenta de punição os jogos realizados em âmbito privado, sem finalidade lucrativa pública.<br><br>
+          O Bolão FC é uma plataforma digital destinada exclusivamente à organização de bolões informais entre grupos de amigos, familiares ou colegas previamente conhecidos ("usuários"). O serviço <strong>não constitui casa de apostas, jogo de azar comercial ou operação de loteria</strong>, sendo classificado como entretenimento privado entre conhecidos, nos termos do § 2° do Art. 50 da Lei de Contravenções Penais (Decreto-Lei n° 3.688/1941), que isenta de punição os jogos realizados em âmbito privado, sem finalidade lucrativa pública.<br><br>
           A plataforma não possui licença da Secretaria de Prêmios e Apostas (SPA/MF), razão pela qual seu uso deve se restringir a grupos fechados de pessoas físicas maiores de 18 anos.<br><br>
           <strong>Responsável:</strong> CNPJ 67.182.496/0001-32 · Contato: rodrigodalen@gmail.com
         </div>
@@ -746,7 +746,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="terms-section" id="t-sec-7">
         <div class="terms-title">7. LIMITAÇÃO DE RESPONSABILIDADE</div>
         <div class="terms-text">
-          <strong>7.1</strong> A plataforma Bolão Copa atua como intermediária tecnológica e não se responsabiliza por:<br>
+          <strong>7.1</strong> A plataforma Bolão FC atua como intermediária tecnológica e não se responsabiliza por:<br>
           • Resultados das apostas ou dos jogos;<br>
           • Inadimplência de participantes no pagamento via Pix;<br>
           • Problemas técnicos de conectividade ou nos sistemas do Banco Central;<br>
@@ -971,6 +971,18 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="stat-div"></div>
       <div class="stat" id="prof-total"><div class="stat-val">R$0</div><div class="stat-lbl">Apostado</div></div>
     </div>
+    <!-- Verificação de identidade -->
+    <div id="prof-kyc-card" style="background:var(--surface);border-radius:16px;padding:14px 16px;border:1px solid var(--border);margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">🛡️</span>
+        <span style="font-weight:800;font-size:14px">Verificação</span>
+        <span id="prof-kyc-badge" style="margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(231,76,60,.12);color:#ff6b7a">Pendente</span>
+      </div>
+      <div id="prof-kyc-photo-wrap" style="display:none">
+        <img id="prof-kyc-photo" src="" alt="Selfie" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;object-position:center top">
+        <div id="prof-kyc-date" style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px"></div>
+      </div>
+    </div>
     <div class="section-title">Meus dados</div>
     <div class="info-row">
       <div><div class="info-lbl">Telefone</div><div class="info-val" id="prof-phone">-</div></div>
@@ -1191,7 +1203,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Criar bolão
     </button>
     <button class="drawer-item" id="di-app-boloes" onclick="drawerGo('app-boloes')" style="color:var(--secondary)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Bolão Copa
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Bolão FC
     </button>
     <button class="drawer-item" id="di-ranking" onclick="drawerGo('ranking')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4H2v16h5V4zm5-2H8v18h4V2zm5 5h-4v13h4V7zm5 2h-4v11h4V9z"/></svg>Ranking
@@ -1234,7 +1246,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- === BOLÃO DO APP === -->
 <div class="screen" id="s-app-boloes">
-  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Bolão Copa</span></div>
+  <div class="topbar"><button class="back-btn" onclick="back()">←</button><span class="topbar-title">Bolão FC</span></div>
   <div class="scroll" style="padding-bottom:40px">
     <div style="background:linear-gradient(135deg,rgba(244,208,63,.15),rgba(0,107,63,.1));border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(244,208,63,.25)">
       <div style="font-size:14px;font-weight:800;color:var(--secondary);margin-bottom:4px">🏟️ Bolões oficiais do Bolão FC</div>
@@ -1306,7 +1318,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div class="ob-overlay" id="ob-overlay">
   <div class="ob-modal">
     <div id="ob-icon" class="ob-icon">🏆</div>
-    <div id="ob-title" class="ob-title">Bem-vindo ao Bolão Copa!</div>
+    <div id="ob-title" class="ob-title">Bem-vindo ao Bolão FC!</div>
     <div id="ob-text" class="ob-text">Aposte com amigos nos jogos da Copa do Mundo 2026. Crie bolões privados e torça junto!</div>
     <div class="ob-dots" id="ob-dots">
       <div class="ob-dot active"></div>
@@ -2917,7 +2929,7 @@ function shareWhatsApp(id) {
   const b = state.boloes.find(x=>x.id===id);
   if(!b) return;
   const link = `https://rodrigodalen-cmd.github.io/Projeto01/?join=${b.code}`;
-  const msg = `🏆 *${b.title}* — Bolão Copa 2026!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
+  const msg = `🏆 *${b.title}* — Bolão FC 2026!\n\n⚽ ${b.game.home.flag} ${b.game.home.name} × ${b.game.away.name} ${b.game.away.flag}\n📅 ${b.game.date} · ${b.game.time} (BRT)\n💰 Entrada: R$${b.amount}\n\n🔗 ${link}\nOu use o código: *${b.code}*`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -3169,7 +3181,7 @@ function scheduleGameNotifications() {
       _notifTimeouts.push(setTimeout(() => {
         const me = state.boloes.find(x=>x.id===b.id)?.participants.find(p=>p.email===state.user?.email);
         if(me?.homeScore == null) {
-          new Notification('⚽ Bolão Copa — faltam 1h!', {
+          new Notification('⚽ Bolão FC — faltam 1h!', {
             body: `${b.game.home.name} × ${b.game.away.name} começa em 1h. Registre seu palpite em "${b.title}"!`,
             icon: './icon-512.png',
             tag: `bet-1h-${b.id}`
@@ -5980,7 +5992,7 @@ function exportResult(bolaoId) {
   });
   // Footer
   c.fillStyle='rgba(255,255,255,.3)'; c.font='12px sans-serif'; c.textAlign='center';
-  c.fillText('Bolão Copa · Copa do Mundo 2026', W/2, H-20);
+  c.fillText('Bolão FC · Copa do Mundo 2026', W/2, H-20);
   cv.toBlob(blob=>{
     if(navigator.share && navigator.canShare?.({files:[]})) {
       navigator.share({title:`Resultado: ${b.title}`, files:[new File([blob],'resultado.png',{type:'image/png'})]}).catch(()=>{});
@@ -6282,7 +6294,7 @@ document.addEventListener('visibilitychange', () => {
 <!-- iOS INSTALL MODAL -->
 <div class="ios-modal" id="ios-modal" onclick="if(event.target===this)closeIOSModal()">
   <div class="ios-sheet">
-    <div style="font-size:18px;font-weight:900;margin-bottom:4px">Instalar Bolão Copa</div>
+    <div style="font-size:18px;font-weight:900;margin-bottom:4px">Instalar Bolão FC</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Adicione à tela de início do iPhone/iPad</div>
     <div class="ios-step">
       <div class="ios-step-num">1</div>
