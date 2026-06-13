@@ -117,19 +117,7 @@ serve(async (req) => {
       const data = await resp.json();
       if (!resp.ok) {
         console.error('[payout] MP error:', JSON.stringify(data));
-        // Fallback: cria pagamento para a chave PIX via charges
-        const fallback = await mpFetch('/v1/payments', {
-          method: 'POST',
-          body: JSON.stringify({
-            transaction_amount: valor,
-            description: description || 'Premio Bolao FC',
-            payment_method_id: 'pix',
-            payer: { email: 'plataforma@bolaofc.com.br' },
-          }),
-        });
-        const fd = await fallback.json();
-        if (!fallback.ok) return json({ error: fd.message || 'Erro ao enviar prêmio' });
-        return json({ ok: true, txid: String(fd.id) });
+        return json({ error: data.message || 'Erro ao enviar prêmio. Verifique as permissões de transferência na conta Mercado Pago.' });
       }
       return json({ ok: true, id: data.id });
     }
