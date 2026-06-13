@@ -1,11 +1,8 @@
-const CACHE = 'bolao-fc-v36';
+const CACHE = 'bolao-fc-v37';
 const STATIC = [
   './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
-  './models/tiny_face_detector_model-weights_manifest.json',
-  './models/tiny_face_detector_model-shard1',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
-  './face-api.min.js',
 ];
 
 self.addEventListener('install', e => {
