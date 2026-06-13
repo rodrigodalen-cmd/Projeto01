@@ -15,14 +15,14 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '21';
+  const VER = '22';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=21'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=22'); });
   }
 })();
 </script>
@@ -1287,7 +1287,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <img id="kyc-preview" style="display:none" alt="preview">
       <div class="kyc-oval-guide" id="kyc-oval-guide">
         <div class="kyc-oval-hole"></div>
-        <span class="kyc-hint">Encaixe seu rosto no oval</span>
+        <span class="kyc-hint">Posicione seu rosto aqui</span>
       </div>
     </div>
     <canvas id="kyc-canvas" style="display:none"></canvas>
