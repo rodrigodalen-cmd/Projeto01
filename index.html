@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '23';
+  const VER = '24';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -817,8 +817,10 @@ input:checked+.slider:before{transform:translateX(18px)}
       <span style="font-size:22px;flex-shrink:0">📲</span>
       <div class="pwa-banner-text" id="pwa-banner-text">Instale o Bolão FC no celular para acesso rápido</div>
       <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-        <button class="pwa-banner-btn" id="pwa-install-btn" onclick="installPWA()">Instalar</button>
-        <a id="apk-dl-btn" href="/bolaofc.apk" download style="display:none;padding:6px 12px;border-radius:8px;background:rgba(0,107,63,.15);color:var(--primary);border:1px solid var(--primary);font-size:11px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer">⬇ Baixar APK</a>
+        <!-- Android: baixar APK -->
+        <a id="apk-dl-btn" href="./bolaofc.apk" download="BolaoFC.apk" style="display:none;padding:8px 14px;border-radius:8px;background:var(--primary);color:#fff;font-size:12px;font-weight:700;text-align:center;text-decoration:none;cursor:pointer">⬇ Baixar APK</a>
+        <!-- iOS: instrução Safari -->
+        <button class="pwa-banner-btn" id="pwa-install-btn" style="display:none" onclick="openIOSModal()">Como instalar</button>
       </div>
       <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;align-self:flex-start" onclick="this.parentElement.style.display='none';try{localStorage.setItem('pwa_banner_dismissed','1')}catch(e){}">×</button>
     </div>
@@ -5746,21 +5748,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(!banner) return;
   const isAndroid = /android/i.test(navigator.userAgent);
   if(_isIOS) {
-    if(txt) txt.textContent = 'Instale o Bolão FC na tela de início do iPhone/iPad';
-    if(instBtn) instBtn.textContent = 'Como instalar';
+    if(txt) txt.textContent = 'Instale o Bolão FC pelo Safari — é rápido!';
+    if(instBtn) instBtn.style.display = 'block';
     banner.style.display = 'flex';
   } else if(isAndroid) {
-    if(txt) txt.textContent = 'Instale o Bolão FC no seu Android';
+    if(txt) txt.textContent = 'Baixe o app Bolão FC para Android';
     if(apkBtn) apkBtn.style.display = 'block';
     banner.style.display = 'flex';
   }
 });
 
 function installPWA() {
-  if(_isIOS) {
-    openIOSModal();
-    return;
-  }
+  // iOS: instrução via Safari — Android usa APK direto
+  if(_isIOS) { openIOSModal(); return; }
   if(!_pwaPrompt) {
     showToast('Para instalar: use o menu do navegador → "Adicionar à tela inicial"');
     return;
