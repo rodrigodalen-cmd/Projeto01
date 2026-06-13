@@ -15,14 +15,14 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '20';
+  const VER = '21';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=20'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=21'); });
   }
 })();
 </script>
@@ -447,6 +447,10 @@ input:checked+.slider:before{transform:translateX(18px)}
 .kyc-panel{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 28px)}
 .kyc-video-wrap{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:16px;overflow:hidden;margin-bottom:16px}
 .kyc-video-wrap video,.kyc-video-wrap img{width:100%;height:100%;object-fit:cover}
+.kyc-oval-guide{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.kyc-oval-guide::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.kyc-oval-hole{position:relative;width:72%;aspect-ratio:3/4;border-radius:50%;border:3px solid rgba(255,255,255,.85);box-shadow:0 0 0 9999px rgba(0,0,0,.45);z-index:1}
+.kyc-oval-guide .kyc-hint{position:absolute;bottom:14%;color:rgba(255,255,255,.9);font-size:12px;font-weight:600;text-align:center;z-index:2;text-shadow:0 1px 4px rgba(0,0,0,.6)}
 /* ONBOARDING */
 .ob-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px}
 .ob-modal{background:var(--surface);border-radius:24px;width:100%;max-width:360px;padding:32px 24px;text-align:center}
@@ -1281,6 +1285,10 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="kyc-video-wrap" id="kyc-video-wrap">
       <video id="kyc-video" autoplay playsinline muted></video>
       <img id="kyc-preview" style="display:none" alt="preview">
+      <div class="kyc-oval-guide" id="kyc-oval-guide">
+        <div class="kyc-oval-hole"></div>
+        <span class="kyc-hint">Encaixe seu rosto no oval</span>
+      </div>
     </div>
     <canvas id="kyc-canvas" style="display:none"></canvas>
     <div id="kyc-status" style="text-align:center;min-height:20px;font-size:13px;color:var(--text2);margin-bottom:14px"></div>
@@ -3208,6 +3216,7 @@ async function _kycOpen(title, subtitle, camera) {
   document.getElementById('kyc-status').textContent = '';
   document.getElementById('kyc-preview').style.display = 'none';
   document.getElementById('kyc-video').style.display = 'block';
+  document.getElementById('kyc-oval-guide').style.display = 'flex';
   const btn = document.getElementById('kyc-action-btn');
   btn.textContent = 'Tirar selfie';
   btn.disabled = false;
@@ -3249,6 +3258,7 @@ async function kycCapture() {
   preview.src = base64;
   preview.style.display = 'block';
   document.getElementById('kyc-video').style.display = 'none';
+  document.getElementById('kyc-oval-guide').style.display = 'none';
   status.textContent = 'Verificando...';
   btn.disabled = true;
 
@@ -3265,9 +3275,13 @@ async function kycCapture() {
     return;
   }
 
-  await _kycSave();
-  document.getElementById('kyc-overlay').style.display = 'none';
-  _kycOnSuccess?.();
+  // Fecha imediatamente — não espera o Supabase para não travar
+  status.textContent = '✅ Verificado!';
+  setTimeout(() => {
+    document.getElementById('kyc-overlay').style.display = 'none';
+    _kycSave(); // salva em background, sem await
+    _kycOnSuccess?.();
+  }, 600);
 }
 
 // Verificação: modo demo sem credenciais, Unico Check com credenciais
