@@ -14,16 +14,15 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
-// Força limpeza de cache e SW antigos na primeira carga da versão 13
 (function(){
-  const VER = '15';
+  const VER = '16';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=15'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=16'); });
   }
 })();
 </script>
@@ -45,9 +44,8 @@
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.screen{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform .3s ease;z-index:1;visibility:hidden}
-.screen.active{transform:translateX(0);z-index:2;visibility:visible}
-.screen.prev{transform:translateX(-30%);pointer-events:none;visibility:visible}
+.screen{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--bg);display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen.active{display:flex}
 .scroll{overflow-y:auto;flex:1;padding:20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:16px 20px 0;position:sticky;top:0;background:var(--bg);z-index:10}
@@ -524,10 +522,9 @@ input:checked+.slider:before{transform:translateX(18px)}
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
-<div id="_dbg" style="position:fixed;bottom:60px;left:8px;background:rgba(0,0,0,.85);color:#0f0;font-family:monospace;font-size:9px;z-index:99999;padding:4px 6px;border-radius:6px;max-width:90vw;word-break:break-all;pointer-events:none;display:none"></div>
 
 <!-- === LOGIN === -->
-<div class="screen active" id="s-login">
+<div class="screen active" id="s-login" style="display:flex">
   <div class="auth-wrapper">
     <div id="invite-banner" style="display:none;background:rgba(0,107,63,.15);border:1px solid rgba(0,107,63,.4);border-radius:14px;padding:14px 16px;margin-bottom:24px;text-align:center">
       <div style="font-size:22px;margin-bottom:4px">🎉</div>
@@ -1330,8 +1327,7 @@ function initSupabase() {
       if(event === 'SIGNED_OUT' && state.user) {
         state.user = null; clearSession();
         state.screenStack = ['s-login'];
-        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
-        document.getElementById('s-login').classList.add('active');
+        _activate('s-login');
         updateGlobalNav('s-login'); updateFloatingAvatar();
       }
     });
@@ -1619,52 +1615,22 @@ function saveSession(u){ try{localStorage.setItem('bolao_session',JSON.stringify
 function clearSession(){ try{localStorage.removeItem('bolao_session');}catch(e){} }
 
 // ===== NAV =====
-// Autoritativo sobre o DOM: SOMENTE a tela alvo fica com 'active'.
-// Qualquer tela "fantasma" que tenha sobrado com 'active' (ex.: s-ranking-geral,
-// que é a última no DOM e por isso pinta por cima de tudo) é removida aqui.
-function _activate(targetId, outgoingId) {
-  // DEBUG: log activation calls
-  try {
-    const dbg = document.getElementById('_dbg');
-    if(dbg) {
-      dbg.style.display = 'block';
-      const ghosts = [...document.querySelectorAll('.screen.active')].filter(s=>s.id!==targetId).map(s=>s.id).join(',');
-      const ts = new Date().toISOString().slice(11,23);
-      dbg.textContent += (dbg.textContent?'\n':'')+'['+ts+'] →'+targetId+(ghosts?' G:'+ghosts:'');
-      if(dbg.textContent.split('\n').length > 8) dbg.textContent = dbg.textContent.split('\n').slice(-8).join('\n');
-    }
-  } catch(e) {}
-
-  document.querySelectorAll('.screen').forEach(s=>{
-    s.style.zIndex = '';  // reseta z-index inline de todos
-    if(s.id === targetId) return;
-    if(s.id === outgoingId) { s.classList.remove('active'); s.classList.add('prev'); }
-    else s.classList.remove('active','prev');
+function _activate(targetId) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active','prev');
+    s.style.display = 'none';
   });
   const t = document.getElementById(targetId);
   if(t) {
-    t.classList.remove('prev');
     t.classList.add('active');
-    t.style.zIndex = '10';  // garante que o alvo sempre ganha, independente de ordem no DOM
+    t.style.display = 'flex';
   }
-  // DEBUG: log post-activation state
-  try {
-    const dbg = document.getElementById('_dbg');
-    if(dbg) {
-      const ghosts2 = [...document.querySelectorAll('.screen.active')].filter(s=>s.id!==targetId).map(s=>s.id).join(',');
-      if(ghosts2) dbg.textContent += '\nPÓS-GHOST:'+ghosts2;
-      const tEl = document.getElementById(targetId);
-      dbg.textContent += '\nzIdx:'+(tEl?.style?.zIndex||'?');
-    }
-  } catch(e) {}
-
-  setTimeout(()=> document.querySelectorAll('.screen.prev').forEach(s=>{ if(s.id!==targetId) { s.classList.remove('prev'); s.style.zIndex = ''; } }), 400);
 }
 
 function _navCore(screenId, push=true) {
   const cur = state.screenStack[state.screenStack.length-1];
-  if(cur === screenId) { _activate(screenId, null); return; }
-  _activate(screenId, cur);
+  if(cur === screenId) { _activate(screenId); return; }
+  _activate(screenId);
   if(push) state.screenStack.push(screenId);
 }
 
@@ -1682,7 +1648,7 @@ function back() {
     if(state.pixPollInterval)  { clearInterval(state.pixPollInterval);  state.pixPollInterval  = null; }
   }
   if(!document.getElementById(prev)) { drawerGo('home'); return; }
-  _activate(prev, cur);
+  _activate(prev);
   updateGlobalNav(prev);
   if(prev === 's-detail' && state.currentBolaoId) renderDetail();
   if(prev === 's-home') renderHome();
@@ -1693,19 +1659,7 @@ function back() {
 // Chamado ao retomar o app (iOS/Android voltam do background com telas fantasmas).
 function _healScreens() {
   const top = state.screenStack[state.screenStack.length-1];
-  if(!top || !document.getElementById(top)) return;
-  try {
-    const dbg = document.getElementById('_dbg');
-    if(dbg) {
-      const ts = new Date().toISOString().slice(11,23);
-      dbg.style.display = 'block';
-      dbg.textContent += '\n['+ts+'] HEAL→'+top+' stk:'+state.screenStack.join(',');
-    }
-  } catch(e) {}
-  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!==top) { s.classList.remove('active','prev'); s.style.zIndex = ''; } });
-  const t = document.getElementById(top);
-  t.classList.add('active');
-  t.style.zIndex = '10';
+  if(top && document.getElementById(top)) _activate(top);
 }
 
 function showToast(msg) {
@@ -1972,8 +1926,7 @@ async function loginSuccess() {
   renderHome();
   // Clear stack and go home
   state.screenStack = ['s-home'];
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
-  document.getElementById('s-home').classList.add('active');
+  _activate('s-home');
   updateGlobalNav('s-home');
   updateFloatingAvatar();
   checkDeepLink();
@@ -2014,8 +1967,7 @@ async function confirmLogout() {
   if(_newsRefetchTimer) { clearInterval(_newsRefetchTimer); _newsRefetchTimer = null; }
   _notifTimeouts.forEach(t=>clearTimeout(t)); _notifTimeouts = [];
   state.screenStack = ['s-login'];
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
-  document.getElementById('s-login').classList.add('active');
+  _activate('s-login');
   updateGlobalNav('s-login');
   updateFloatingAvatar();
   if(_sb) _sb.auth.signOut().catch(()=>{});
@@ -2075,8 +2027,7 @@ async function doDeleteAccount() {
       setTimeout(() => {
         showToast('✅ Dados removidos. Conta encerrada.');
         state.screenStack = ['s-login'];
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','prev'));
-        document.getElementById('s-login').classList.add('active');
+        _activate('s-login');
         updateGlobalNav('s-login');
         updateFloatingAvatar();
       }, 600);
@@ -4369,11 +4320,9 @@ const _INVALID_CREATE_PREV = new Set(['s-ranking','s-login','s-register','s-term
 
 function _hardGoCreate(prevScreenId) {
   if(_INVALID_CREATE_PREV.has(prevScreenId)) prevScreenId = 's-home';
-  // Força limpeza absoluta de todos os screens antes de ativar s-create
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','prev'));
   renderCreateStep();
   state.screenStack = prevScreenId ? [prevScreenId, 's-create'] : ['s-create'];
-  _activate('s-create', prevScreenId || null);
+  _activate('s-create');
   updateGlobalNav('s-create');
 }
 
@@ -4480,8 +4429,6 @@ function closeDrawer() {
 }
 function drawerGo(tab) {
   closeDrawer();
-  // Reset navigation stack so drawer navigation never leaves orphaned screens in history
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','prev'));
   state.screenStack = [];
   if(tab==='home') { renderHome(); go('s-home'); }
   else if(tab==='meus-boloes') { renderMyBoloes(); go('s-meus-boloes'); }
@@ -5999,11 +5946,9 @@ if('serviceWorker' in navigator) {
 // Conserta telas fantasmas ao retomar o app (iOS/Android voltam do background
 // e às vezes deixam uma tela antiga com 'active', pintando por cima da atual).
 window.addEventListener('pageshow', () => {
-  try { const d=document.getElementById('_dbg'); if(d){d.style.display='block';d.textContent+=(d.textContent?'\n':'')+'['+new Date().toISOString().slice(11,23)+'] pageshow';} } catch(e) {}
   if(state.user) _healScreens();
 });
 document.addEventListener('visibilitychange', () => {
-  try { const d=document.getElementById('_dbg'); if(d){d.style.display='block';d.textContent+=(d.textContent?'\n':'')+'['+new Date().toISOString().slice(11,23)+'] visChange hidden='+document.hidden;} } catch(e) {}
   if(!document.hidden && state.user) _healScreens();
 });
 
