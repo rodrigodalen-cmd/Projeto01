@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '32';
+  const VER = '33';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1299,10 +1299,6 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="kyc-video-wrap" id="kyc-video-wrap">
       <video id="kyc-video" autoplay playsinline muted></video>
       <img id="kyc-preview" style="display:none" alt="preview">
-      <div class="kyc-oval-guide" id="kyc-oval-guide">
-        <div class="kyc-oval-hole"></div>
-        <span class="kyc-hint">Posicione seu rosto aqui</span>
-      </div>
     </div>
     <canvas id="kyc-canvas" style="display:none"></canvas>
     <div id="kyc-status" style="text-align:center;min-height:20px;font-size:13px;color:var(--text2);margin-bottom:14px"></div>
@@ -3235,9 +3231,9 @@ async function _kycOpen(title, subtitle, camera) {
   document.getElementById('kyc-preview').style.display = 'none';
   const video = document.getElementById('kyc-video');
   video.style.display = 'block';
-  document.getElementById('kyc-oval-guide').style.display = 'flex';
-  const hole = document.querySelector('.kyc-oval-hole');
-  if(hole) { hole.style.borderColor = 'rgba(255,255,255,.85)'; hole.style.boxShadow = '0 0 0 9999px rgba(0,0,0,.45)'; }
+  video.style.transform = '';
+  const wrap = document.getElementById('kyc-video-wrap');
+  if(wrap) wrap.style.borderColor = '';
   const btn = document.getElementById('kyc-action-btn');
   btn.textContent = 'Tirar selfie';
   btn.disabled = true; // habilitado só após rosto detectado
@@ -3248,15 +3244,19 @@ async function _kycOpen(title, subtitle, camera) {
       video: { facingMode: camera, width:{ideal:720}, height:{ideal:960} }
     });
     video.srcObject = _kycStream;
-    document.getElementById('kyc-status').textContent = 'Carregando detecção de rosto...';
+    document.getElementById('kyc-status').textContent = 'Aguarde...';
     video.addEventListener('loadedmetadata', async () => {
+      // Corrige rotação em câmeras Android que retornam stream landscape
+      if(video.videoWidth > 0 && video.videoHeight > 0 && video.videoWidth > video.videoHeight) {
+        const scale = video.videoHeight / video.videoWidth * 1.35;
+        video.style.transform = `rotate(90deg) scaleX(${scale}) scaleY(${scale})`;
+      }
       const ok = await _kycLoadModels();
       if(ok) {
         _kycStartDetection();
       } else {
-        // fallback: sem detecção, habilita botão direto
         btn.disabled = false;
-        document.getElementById('kyc-status').textContent = '';
+        document.getElementById('kyc-status').textContent = 'Posicione seu rosto e tire a foto';
       }
     }, { once: true });
   } catch(e) {
@@ -3287,25 +3287,24 @@ async function _kycLoadModels() {
 
 function _kycStartDetection() {
   const video  = document.getElementById('kyc-video');
-  const hole   = document.querySelector('.kyc-oval-hole');
+  const wrap   = document.getElementById('kyc-video-wrap');
   const btn    = document.getElementById('kyc-action-btn');
   const status = document.getElementById('kyc-status');
   _kycFaceDetected = false;
   _kycDetectionTimer = setInterval(async () => {
     if(!video || video.paused || video.ended || !_kycModelsLoaded) return;
     const det = await faceapi.detectSingleFace(
-      video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 })
+      video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 })
     ).catch(() => null);
     _kycFaceDetected = !!det;
-    if(hole) {
-      hole.style.borderColor  = _kycFaceDetected ? 'rgba(0,200,80,.95)' : 'rgba(255,255,255,.85)';
-      hole.style.boxShadow    = _kycFaceDetected
-        ? '0 0 0 9999px rgba(0,0,0,.45),0 0 20px rgba(0,200,80,.5)'
-        : '0 0 0 9999px rgba(0,0,0,.45)';
+    if(wrap) {
+      wrap.style.outline = _kycFaceDetected
+        ? '3px solid rgba(0,200,80,.9)'
+        : '3px solid rgba(255,255,255,.2)';
     }
-    if(status) status.textContent = _kycFaceDetected ? '✅ Rosto detectado!' : 'Centralize seu rosto no oval';
+    if(status) status.textContent = _kycFaceDetected ? '✅ Rosto detectado — pode tirar a foto!' : 'Aponte a câmera para seu rosto';
     if(btn) btn.disabled = !_kycFaceDetected;
-  }, 500);
+  }, 300);
 }
 
 function _kycStopDetection() {
@@ -3362,7 +3361,6 @@ async function kycCapture() {
   preview.src = base64;
   preview.style.display = 'block';
   document.getElementById('kyc-video').style.display = 'none';
-  document.getElementById('kyc-oval-guide').style.display = 'none';
   status.textContent = 'Verificando...';
   btn.disabled = true;
 
