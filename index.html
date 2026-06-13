@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '50';
+  const VER = '51';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3393,11 +3393,13 @@ async function kycCapture() {
     return;
   }
 
-  // Fecha imediatamente — não espera o Supabase para não travar
+  // Marca aprovado imediatamente — não aguarda Supabase para liberar o PIX
+  if(state.user) { state.user.kyc_selfie_ok = true; saveSession(state.user); }
+  _kycForceMode = false;
   status.textContent = '✅ Verificado!';
   setTimeout(() => {
     document.getElementById('kyc-overlay').style.display = 'none';
-    _kycSave(); // salva em background, sem await
+    _kycSave(); // persiste foto e flag no Supabase em background
     _kycOnSuccess?.();
   }, 600);
 }
@@ -3442,8 +3444,7 @@ async function _kycSave() {
     kyc_selfie_at: now
   }).eq('id', state.user.id).catch(()=>{});
 
-  if(state.user) { state.user.kyc_selfie_ok = true; state.user.kyc_selfie_at = now; saveSession(state.user); }
-  _kycForceMode = false;
+  if(state.user) { state.user.kyc_selfie_at = now; saveSession(state.user); }
 }
 
 // ===== PIX =====
