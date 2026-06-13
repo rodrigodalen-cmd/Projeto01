@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '44';
+  const VER = '45';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3438,11 +3438,6 @@ async function openPix(id) {
   if(state.user) {
     const me = (b.participants||[]).find(p=>p.email===state.user.email);
     if(me?.paid) { showToast('✅ Seu pagamento já foi confirmado!'); return; }
-  }
-  // Selfie obrigatória antes de pagar
-  if(!state.user?.kyc_selfie_ok) {
-    kycRequestSelfie(() => _doOpenPix(id));
-    return;
   }
   _doOpenPix(id);
 }
