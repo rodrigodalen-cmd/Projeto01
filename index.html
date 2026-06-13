@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '22';
+  const VER = '23';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3197,6 +3197,7 @@ const _KYC_API_KEY   = '';
 
 let _kycStream    = null;
 let _kycOnSuccess = null;
+let _kycCapturedPhoto = null; // selfie capturada, enviada ao Storage em background
 
 // Exige selfie antes de qualquer ação financeira (pagar ou receber)
 function kycRequestSelfie(onSuccess, msg) {
@@ -3253,6 +3254,7 @@ async function kycCapture() {
   canvas.height = video.videoHeight || 960;
   canvas.getContext('2d').drawImage(video, 0, 0);
   const base64 = canvas.toDataURL('image/jpeg', 0.82);
+  _kycCapturedPhoto = base64;
   _kycStopStream();
 
   preview.src = base64;
@@ -3307,9 +3309,26 @@ async function _kycVerify(base64) {
 }
 
 async function _kycSave() {
-  if(_sb && state.user?.id) {
-    await _sb.from('profiles').update({ kyc_selfie_ok: true }).eq('id', state.user.id).catch(()=>{});
+  if(!_sb || !state.user?.id) return;
+
+  // Envia foto ao Storage (bucket privado kyc-selfies)
+  const photo = _kycCapturedPhoto;
+  _kycCapturedPhoto = null;
+  if(photo) {
+    try {
+      const blob = await fetch(photo).then(r => r.blob());
+      await _sb.storage.from('kyc-selfies').upload(
+        `${state.user.id}.jpg`, blob,
+        { contentType: 'image/jpeg', upsert: true }
+      );
+    } catch(e) { /* upload falhou, mas segue — flag já salva */ }
   }
+
+  await _sb.from('profiles').update({
+    kyc_selfie_ok: true,
+    kyc_selfie_at: new Date().toISOString()
+  }).eq('id', state.user.id).catch(()=>{});
+
   if(state.user) state.user.kyc_selfie_ok = true;
 }
 
