@@ -15,14 +15,14 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '31';
+  const VER = '32';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=22'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=' + VER); });
   }
 })();
 </script>
@@ -6243,20 +6243,29 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   // If Supabase configured, try to restore session from Supabase
   if(_sb) {
-    const { data: { session } } = await _sb.auth.getSession();
-    if(session) {
-      const { data: profile } = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
-      if(profile) {
-        state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo, kyc_selfie_ok: !!profile.kyc_selfie_ok, kyc_full_ok: !!profile.kyc_full_ok};
-        if(!state.user.photo) {
-          try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
+    try {
+      const sessionResult = await Promise.race([
+        _sb.auth.getSession(),
+        new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+      ]);
+      const session = sessionResult?.data?.session;
+      if(session) {
+        const { data: profile } = await Promise.race([
+          _sb.from('profiles').select('*').eq('id', session.user.id).single(),
+          new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+        ]).catch(() => ({ data: null }));
+        if(profile) {
+          state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo, kyc_selfie_ok: !!profile.kyc_selfie_ok, kyc_full_ok: !!profile.kyc_full_ok};
+          if(!state.user.photo) {
+            try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
+          }
+          await loginSuccess();
+          if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+          return;
         }
-        await loginSuccess();
-        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-        return;
       }
-    }
-    // Supabase configured but session missing/expired — show login
+    } catch(e) {}
+    // Supabase lento ou sem sessão — mostra login
     updateGlobalNav('s-login');
     updateFloatingAvatar();
     if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
