@@ -1,4 +1,4 @@
-const CACHE = 'bolao-fc-v33';
+const CACHE = 'bolao-fc-v34';
 const STATIC = [
   './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
   './models/tiny_face_detector_model-weights_manifest.json',
