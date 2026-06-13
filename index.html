@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '33';
+  const VER = '34';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3246,11 +3246,6 @@ async function _kycOpen(title, subtitle, camera) {
     video.srcObject = _kycStream;
     document.getElementById('kyc-status').textContent = 'Aguarde...';
     video.addEventListener('loadedmetadata', async () => {
-      // Corrige rotação em câmeras Android que retornam stream landscape
-      if(video.videoWidth > 0 && video.videoHeight > 0 && video.videoWidth > video.videoHeight) {
-        const scale = video.videoHeight / video.videoWidth * 1.35;
-        video.style.transform = `rotate(90deg) scaleX(${scale}) scaleY(${scale})`;
-      }
       const ok = await _kycLoadModels();
       if(ok) {
         _kycStartDetection();
@@ -6263,9 +6258,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         }
       }
     } catch(e) {}
-    // Supabase lento ou sem sessão — mostra login
+    // Supabase lento ou sem sessão — mostra login e carrega conteúdo em background
     updateGlobalNav('s-login');
     updateFloatingAvatar();
+    initAppBoloes().catch(()=>{}); // carrega jogos/conteúdo sem bloquear o login
     if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
     return;
   }
