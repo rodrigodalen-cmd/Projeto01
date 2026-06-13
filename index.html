@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '37';
+  const VER = '38';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -6236,57 +6236,70 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(b) b.style.display = 'block';
   }
 
-  // If Supabase configured, try to restore session from Supabase
-  if(_sb) {
-    try {
-      const sessionResult = await Promise.race([
-        _sb.auth.getSession(),
-        new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-      ]);
-      const session = sessionResult?.data?.session;
-      if(session) {
-        const { data: profile } = await Promise.race([
-          _sb.from('profiles').select('*').eq('id', session.user.id).single(),
-          new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-        ]).catch(() => ({ data: null }));
-        if(profile) {
-          state.user = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo, kyc_selfie_ok: !!profile.kyc_selfie_ok, kyc_full_ok: !!profile.kyc_full_ok};
-          if(!state.user.photo) {
-            try { state.user.photo = localStorage.getItem(`bolao_photo_${state.user.email}`) || undefined; } catch(_) {}
-          }
-          await loginSuccess();
-          if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-          return;
-        }
-      }
-    } catch(e) {}
-    // Supabase lento ou sem sessão — mostra login e carrega conteúdo em background
-    updateGlobalNav('s-login');
-    updateFloatingAvatar();
-    initAppBoloes().catch(()=>{}); // carrega jogos/conteúdo sem bloquear o login
-    if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    return;
-  }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-  // No Supabase: try local session restore
+  // Restaura sessão do cache local imediatamente — sem esperar rede
+  let restoredFromCache = false;
   try {
     const saved = localStorage.getItem('bolao_session');
     if(saved) {
       const parsed = JSON.parse(saved);
-      const found = USERS.find(x=>x.email===parsed.email);
-      if(found) {
-        state.user = {...found};
-        await loginSuccess();
-        if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-        return;
+      if(parsed && (parsed.id || parsed.email)) {
+        // Usuário Supabase tem `id`; usuário local pode só ter `email`
+        if(!_sb && !parsed.id) {
+          const found = USERS.find(x=>x.email===parsed.email);
+          if(found) { state.user = {...found}; await loginSuccess(); restoredFromCache = true; }
+          else clearSession();
+        } else if(parsed.id) {
+          state.user = parsed;
+          await loginSuccess();
+          restoredFromCache = true;
+        }
       }
-      clearSession();
     }
   } catch(e) {}
 
-  updateGlobalNav('s-login');
-  updateFloatingAvatar();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  if(!restoredFromCache) {
+    updateGlobalNav('s-login');
+    updateFloatingAvatar();
+    initAppBoloes().catch(()=>{});
+  }
+
+  // Valida/atualiza sessão com Supabase em background (não bloqueia UI)
+  if(_sb) {
+    (async () => {
+      try {
+        const sessionResult = await Promise.race([
+          _sb.auth.getSession(),
+          new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 10000))
+        ]);
+        const session = sessionResult?.data?.session;
+        if(session) {
+          const { data: profile } = await Promise.race([
+            _sb.from('profiles').select('*').eq('id', session.user.id).single(),
+            new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+          ]).catch(() => ({ data: null }));
+          if(profile) {
+            const freshUser = {id: session.user.id, email: profile.email, name: profile.name, phone: profile.phone, pix: profile.pix, cpf: profile.cpf, photo: profile.photo, kyc_selfie_ok: !!profile.kyc_selfie_ok, kyc_full_ok: !!profile.kyc_full_ok};
+            if(!freshUser.photo) {
+              try { freshUser.photo = localStorage.getItem(`bolao_photo_${freshUser.email}`) || undefined; } catch(_) {}
+            }
+            saveSession(freshUser);
+            if(!restoredFromCache) {
+              state.user = freshUser;
+              await loginSuccess();
+            } else {
+              state.user = {...state.user, ...freshUser};
+              updateProfileUI();
+              updateFloatingAvatar();
+            }
+          }
+          // Se profile null mas já temos cache, onAuthStateChange cuidará de sessão expirada
+        }
+        // Se sem sessão Supabase e sem cache: permanece na tela de login
+      } catch(e) {}
+    })();
+  }
 });
 
 // Reload quando nova versão do SW ativar
