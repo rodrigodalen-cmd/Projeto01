@@ -15,14 +15,14 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '17';
+  const VER = '19';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=17'); });
+    ]).then(() => { location.replace(location.href.split('?')[0] + '?v=19'); });
   }
 })();
 </script>
@@ -3171,40 +3171,25 @@ function scheduleGameNotifications() {
   });
 }
 
-// ===== KYC (Verificação de Identidade) =====
+// ===== KYC (Verificação de Identidade — Selfie) =====
 // Preencha após cadastro em https://unico.io — deixe vazio para modo demo (aprovação automática)
 const _KYC_CLIENT_ID = '';
 const _KYC_API_KEY   = '';
 
 let _kycStream    = null;
-let _kycStep      = null;   // 'selfie' | 'doc'
 let _kycOnSuccess = null;
-let _kycSelfieB64 = null;
 
-// Chama antes de pagar: exige selfie
-function kycRequestSelfie(onSuccess) {
+// Exige selfie antes de qualquer ação financeira (pagar ou receber)
+function kycRequestSelfie(onSuccess, msg) {
   if(state.user?.kyc_selfie_ok) { onSuccess(); return; }
   _kycOnSuccess = onSuccess;
-  _kycStep = 'selfie';
-  _kycSelfieB64 = null;
-  _kycOpen('Confirme sua identidade', 'Tire uma selfie para continuar com o pagamento', 'user');
+  _kycOpen(
+    'Confirme sua identidade',
+    msg || 'Tire uma selfie para continuar',
+    'user'
+  );
 }
 
-// Chama antes de receber prêmio: exige selfie + documento
-function kycRequestFull(onSuccess) {
-  if(state.user?.kyc_full_ok) { onSuccess(); return; }
-  if(state.user?.kyc_selfie_ok) {
-    // Selfie já feita, pedir só o documento
-    _kycOnSuccess = onSuccess;
-    _kycStep = 'doc';
-    _kycOpen('Verificação completa', 'Fotografe a frente do seu documento (RG ou CNH)', 'environment');
-    return;
-  }
-  _kycOnSuccess = onSuccess;
-  _kycStep = 'selfie';
-  _kycSelfieB64 = null;
-  _kycOpen('Verificação completa', 'Passo 1/2 — tire uma selfie', 'user');
-}
 
 async function _kycOpen(title, subtitle, camera) {
   document.getElementById('kyc-title').textContent = title;
@@ -3213,11 +3198,10 @@ async function _kycOpen(title, subtitle, camera) {
   document.getElementById('kyc-preview').style.display = 'none';
   document.getElementById('kyc-video').style.display = 'block';
   const btn = document.getElementById('kyc-action-btn');
-  btn.textContent = 'Tirar foto';
+  btn.textContent = 'Tirar selfie';
   btn.disabled = false;
   btn.onclick = kycCapture;
   document.getElementById('kyc-overlay').style.display = 'flex';
-
   try {
     _kycStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: camera, width:{ideal:720}, height:{ideal:960} }
@@ -3254,65 +3238,39 @@ async function kycCapture() {
   preview.src = base64;
   preview.style.display = 'block';
   document.getElementById('kyc-video').style.display = 'none';
-
   status.textContent = 'Verificando...';
   btn.disabled = true;
 
   const ok = await _kycVerify(base64);
-
   if(!ok) {
-    status.textContent = '❌ Verificação falhou. Tente em local com boa iluminação.';
+    status.textContent = '❌ Não foi possível verificar. Tente em local com boa iluminação.';
     btn.textContent = 'Tentar novamente';
     btn.disabled = false;
-    btn.onclick = () => {
-      const isSelfie = _kycStep === 'selfie';
-      _kycOpen(
-        document.getElementById('kyc-title').textContent,
-        document.getElementById('kyc-subtitle').textContent,
-        isSelfie ? 'user' : 'environment'
-      );
-    };
+    btn.onclick = () => _kycOpen(
+      document.getElementById('kyc-title').textContent,
+      document.getElementById('kyc-subtitle').textContent,
+      'user'
+    );
     return;
   }
 
-  if(_kycStep === 'selfie') {
-    _kycSelfieB64 = base64;
-    if(_kycOnSuccess === null) return; // fluxo completo: a selfie já foi, agora pede doc
-    // Selfie simples (pagar) → salva e segue
-    await _kycSave('selfie');
-    document.getElementById('kyc-overlay').style.display = 'none';
-    _kycOnSuccess?.();
-    return;
-  }
-
-  if(_kycStep === 'selfie-to-doc') {
-    _kycSelfieB64 = base64;
-    _kycStep = 'doc';
-    _kycOpen('Verificação completa', 'Passo 2/2 — fotografe a frente do documento (RG ou CNH)', 'environment');
-    return;
-  }
-
-  if(_kycStep === 'doc') {
-    await _kycSave('full');
-    document.getElementById('kyc-overlay').style.display = 'none';
-    _kycOnSuccess?.();
-  }
+  await _kycSave();
+  document.getElementById('kyc-overlay').style.display = 'none';
+  _kycOnSuccess?.();
 }
 
-// Verificação: modo demo (sem credenciais) ou Unico Check (com credenciais)
+// Verificação: modo demo sem credenciais, Unico Check com credenciais
 async function _kycVerify(base64) {
   if(!_KYC_CLIENT_ID || !_KYC_API_KEY) {
-    await new Promise(r => setTimeout(r, 1500)); // simula latência
-    return true; // MODO DEMO — troca por chamada real ao Unico
+    await new Promise(r => setTimeout(r, 1500));
+    return true; // MODO DEMO — substitua por Unico quando tiver credenciais
   }
   try {
-    // Obtém token Unico
     const tokResp = await fetch('https://api.id.unico.app/oauth/token', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ client_id:_KYC_CLIENT_ID, client_secret:_KYC_API_KEY, grant_type:'client_credentials' })
     });
     const { access_token } = await tokResp.json();
-    // Envia imagem para verificação
     const resp = await fetch('https://api.id.unico.app/processes/v1', {
       method:'POST',
       headers:{'Authorization':`Bearer ${access_token}`,'Content-Type':'application/json'},
@@ -3323,14 +3281,11 @@ async function _kycVerify(base64) {
   } catch(e) { return false; }
 }
 
-async function _kycSave(level) {
-  const update = level === 'selfie'
-    ? { kyc_selfie_ok: true }
-    : { kyc_selfie_ok: true, kyc_full_ok: true };
+async function _kycSave() {
   if(_sb && state.user?.id) {
-    await _sb.from('profiles').update(update).eq('id', state.user.id).catch(()=>{});
+    await _sb.from('profiles').update({ kyc_selfie_ok: true }).eq('id', state.user.id).catch(()=>{});
   }
-  Object.assign(state.user, update);
+  if(state.user) state.user.kyc_selfie_ok = true;
 }
 
 // ===== PIX =====
