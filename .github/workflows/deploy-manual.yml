@@ -1,0 +1,35 @@
+name: Deploy Manual → gh-pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      motivo:
+        description: 'Motivo do deploy (opcional)'
+        required: false
+        default: 'deploy manual'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Merge dev → gh-pages
+        run: |
+          git checkout gh-pages
+          git merge origin/claude/charming-hypatia-TQuEJ --no-edit -m "deploy: ${{ github.event.inputs.motivo }}"
+          git push origin gh-pages
+
+      - name: Resultado
+        run: echo "✅ Deploy concluído — site ao vivo em bolaofc.net.br"
