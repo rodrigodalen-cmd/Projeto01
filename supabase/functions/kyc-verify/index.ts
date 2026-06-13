@@ -5,6 +5,8 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
@@ -20,13 +22,24 @@ serve(async (req) => {
     }
 
     const imageBytes = await req.arrayBuffer();
+
     if (!imageBytes.byteLength) {
       return new Response(JSON.stringify({ valid: false, reason: 'empty_image' }), {
         headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
-    const azureUrl = `${endpoint}/face/v1.0/detect?detectionModel=detection_03&returnFaceId=false`;
+    // Rejeita imagens muito grandes (proteção contra abuso de cota Azure)
+    if (imageBytes.byteLength > MAX_IMAGE_BYTES) {
+      return new Response(JSON.stringify({ valid: false, reason: 'image_too_large' }), {
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Normaliza endpoint (remove barra final se houver)
+    const baseUrl = endpoint.replace(/\/$/, '');
+    const azureUrl = `${baseUrl}/face/v1.0/detect?detectionModel=detection_03&returnFaceId=false`;
+
     const azureResp = await fetch(azureUrl, {
       method: 'POST',
       headers: {

@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '48';
+  const VER = '49';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -1393,6 +1393,16 @@ if(!Promise.any) {
       Promise.resolve(p).then(v => Promise.reject(v), e => e)
     )).then(es => Promise.reject(es), v => v);
   };
+}
+
+// Helper: chama bright-api com JWT do usuário (mais seguro que anon key como Bearer)
+async function _efiFetch(body) {
+  const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+  if (_sb) {
+    const { data: s } = await _sb.auth.getSession().catch(() => ({ data: {} }));
+    if (s?.session?.access_token) headers['Authorization'] = `Bearer ${s.session.access_token}`;
+  }
+  return fetch(EFI_FN_URL, { method: 'POST', headers, body: JSON.stringify(body) });
 }
 
 // Convert Supabase row → local bolão object
@@ -3470,16 +3480,12 @@ async function _doOpenPix(id) {
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="back()">Cancelar</button>`;
   try {
-    const res = await fetch(EFI_FN_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-      body: JSON.stringify({
-        action: 'create',
-        bolaoId: b.id,
-        amount: b.amount,
-        description: `Bolão FC – ${b.title} – R$${b.amount}`,
-        email: state.user?.email || '',
-      }),
+    const res = await _efiFetch({
+      action: 'create',
+      bolaoId: b.id,
+      amount: b.amount,
+      description: `Bolão FC – ${b.title} – R$${b.amount}`,
+      email: state.user?.email || '',
     });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
@@ -3545,11 +3551,7 @@ async function _doOpenPix(id) {
       try {
         const txid = state.pixTxid;
         if(!txid) return;
-        const r = await fetch(EFI_FN_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-          body: JSON.stringify({ action:'status', txid }),
-        });
+        const r = await _efiFetch({ action:'status', txid });
         const statusData = await r.json();
         if(statusData.paid) {
           // Não limpa os intervalos aqui: _autoConfirmPix decide se a verificação MP passou
@@ -3577,11 +3579,7 @@ async function _autoConfirmPix(bolaoId) {
     const txid = state.pixTxid || me.pixTxid;
     if(!txid) { console.warn('[PIX] _autoConfirmPix: sem txid — abortando'); return; }
     try {
-      const r = await fetch(EFI_FN_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-        body: JSON.stringify({ action:'status', txid }),
-      });
+      const r = await _efiFetch({ action:'status', txid });
       const statusData = await r.json();
       if(!statusData.paid) {
         // MP ainda não confirmou — poll continua rodando até confirmar ou tempo esgotar
@@ -3815,11 +3813,7 @@ async function _triggerWinnerPayouts(b) {
     saveBoloes(b);
     for(const winner of winners) {
       try {
-        const r = await fetch(EFI_FN_URL, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-          body: JSON.stringify({action:'payout', pixKey:winner.pixKey, amount:prizeEach, description:`Premio Bolao FC – ${b.title}`}),
-        });
+        const r = await _efiFetch({action:'payout', pixKey:winner.pixKey, amount:prizeEach, description:`Premio Bolao FC – ${b.title}`});
         const result = await r.json();
         if(result.error) throw new Error(result.error);
         addSystemMessage(b.id, `💰 Prêmio de R$${prizeEach} enviado via PIX para ${winner.name}!`);
@@ -3966,11 +3960,7 @@ async function confirmDeleteBolao() {
     for(const p of withTxid) {
       if(p.paid) { toRefund.push(p); continue; }
       try {
-        const r = await fetch(EFI_FN_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-          body: JSON.stringify({action:'status', txid:p.pixTxid}),
-        });
+        const r = await _efiFetch({action:'status', txid:p.pixTxid});
         const s = await r.json();
         if(s.paid) toRefund.push(p);
       } catch(e) { console.error('[delete] status check:', e); }
@@ -3980,11 +3970,7 @@ async function confirmDeleteBolao() {
       let ok = 0, fail = 0;
       for(const p of toRefund) {
         try {
-          const r = await fetch(EFI_FN_URL, {
-            method:'POST',
-            headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-            body: JSON.stringify({action:'refund', txid:p.pixTxid}),
-          });
+          const r = await _efiFetch({action:'refund', txid:p.pixTxid});
           const data = await r.json();
           if(data.error) { fail++; console.error('[refund]', p.name, data.error); }
           else ok++;
@@ -4045,11 +4031,7 @@ async function _doQuitBolao(id) {
   if(me.paid && me.pixTxid) {
     showToast('♻️ Processando reembolso PIX...');
     try {
-      const r = await fetch(EFI_FN_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-        body: JSON.stringify({action:'refund', txid:me.pixTxid}),
-      });
+      const r = await _efiFetch({action:'refund', txid:me.pixTxid});
       const result = await r.json();
       if(result.error) throw new Error(result.error);
       showToast('♻️ Reembolso iniciado — chegará em instantes');
@@ -4303,11 +4285,7 @@ async function _doAdminDeleteBolao(id) {
     for(const p of withTxid) {
       if(p.paid) { toRefund.push(p); continue; }
       try {
-        const r = await fetch(EFI_FN_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-          body:JSON.stringify({action:'status',txid:p.pixTxid}),
-        });
+        const r = await _efiFetch({action:'status',txid:p.pixTxid});
         const s = await r.json();
         if(s.paid) toRefund.push(p);
       } catch(e) { console.error('[admin-delete] status check:',e); }
@@ -4315,11 +4293,7 @@ async function _doAdminDeleteBolao(id) {
     let ok=0, fail=0;
     for(const p of toRefund) {
       try {
-        const r = await fetch(EFI_FN_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`},
-          body:JSON.stringify({action:'refund',txid:p.pixTxid}),
-        });
+        const r = await _efiFetch({action:'refund',txid:p.pixTxid});
         const data = await r.json();
         if(data.error){ fail++; console.error('[refund]',p.name,data.error); } else ok++;
       } catch(e){ fail++; console.error('[refund]',p.name,e.message); }
