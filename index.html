@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '51';
+  const VER = '52';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3338,10 +3338,15 @@ async function kycCapture() {
   const btn     = document.getElementById('kyc-action-btn');
   const status  = document.getElementById('kyc-status');
 
-  canvas.width  = video.videoWidth  || 720;
-  canvas.height = video.videoHeight || 960;
+  // Limita resolução a 640px de largura — evita freeze em câmeras de alta resolução
+  const MAX_W = 640;
+  const vw = video.videoWidth  || 720;
+  const vh = video.videoHeight || 960;
+  const scale = Math.min(1, MAX_W / vw);
+  canvas.width  = Math.round(vw * scale);
+  canvas.height = Math.round(vh * scale);
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   // Verifica luminosidade — rejeita fotos muito escuras
   const sample = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -3417,8 +3422,10 @@ async function _kycVerify(base64) {
       fetch(KYC_VERIFY_FN, { method: 'POST', headers, body: blob }),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000))
     ]);
-    const data = await resp.json();
-    return !!data.valid;
+    const data = await resp.json().catch(() => ({}));
+    // Função crashou ou retornou formato inesperado → não bloqueia usuário
+    if(typeof data.valid !== 'boolean') return true;
+    return data.valid;
   } catch(e) { return true; } // falha técnica → não bloqueia, admin revisa a foto
 }
 
