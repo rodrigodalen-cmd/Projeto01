@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '53';
+  const VER = '54';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3689,6 +3689,36 @@ function updateProfileUI() {
     }).catch(()=>{});
   }
   _updateAdminBtn();
+  // Atualiza badge e foto do KYC no perfil
+  const kycBadge = document.getElementById('prof-kyc-badge');
+  if(kycBadge) {
+    if(u.kyc_selfie_ok) {
+      kycBadge.textContent = '✅ Verificado';
+      kycBadge.style.background = 'rgba(39,174,96,.15)';
+      kycBadge.style.color = '#2ecc71';
+    } else if(u.kyc_selfie_at) {
+      kycBadge.textContent = '❌ Foto rejeitada';
+      kycBadge.style.background = 'rgba(231,76,60,.12)';
+      kycBadge.style.color = '#ff6b7a';
+    } else {
+      kycBadge.textContent = '📷 Sem selfie';
+      kycBadge.style.background = 'rgba(243,156,18,.12)';
+      kycBadge.style.color = 'var(--warn)';
+    }
+  }
+  // Foto da selfie no perfil
+  const photoWrap = document.getElementById('prof-kyc-photo-wrap');
+  const kycPhoto  = document.getElementById('prof-kyc-photo');
+  const kycDate   = document.getElementById('prof-kyc-date');
+  if(photoWrap && u.kyc_selfie_at) {
+    const selfieUrl = _sb && u.id
+      ? `${SUPABASE_URL}/storage/v1/object/public/kyc-selfies/${u.id}.jpg`
+      : null;
+    if(selfieUrl && kycPhoto) { kycPhoto.src = selfieUrl; photoWrap.style.display = ''; }
+    if(kycDate) kycDate.textContent = `Enviada em ${new Date(u.kyc_selfie_at).toLocaleDateString('pt-BR')}`;
+  } else if(photoWrap) {
+    photoWrap.style.display = 'none';
+  }
 }
 
 function uploadPhoto(input) {
