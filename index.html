@@ -976,10 +976,6 @@ input:checked+.slider:before{transform:translateX(18px)}
         <span style="font-weight:800;font-size:14px">Verificação</span>
         <span id="prof-kyc-badge" style="margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(231,76,60,.12);color:#ff6b7a">Pendente</span>
       </div>
-      <div id="prof-kyc-photo-wrap" style="display:none">
-        <img id="prof-kyc-photo" src="" alt="Selfie" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;object-position:center top">
-        <div id="prof-kyc-date" style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px"></div>
-      </div>
     </div>
     <div class="section-title">Meus dados</div>
     <div class="info-row">
@@ -3708,19 +3704,6 @@ function updateProfileUI() {
       kycBadge.style.background = 'rgba(243,156,18,.12)';
       kycBadge.style.color = 'var(--warn)';
     }
-  }
-  // Foto da selfie no perfil
-  const photoWrap = document.getElementById('prof-kyc-photo-wrap');
-  const kycPhoto  = document.getElementById('prof-kyc-photo');
-  const kycDate   = document.getElementById('prof-kyc-date');
-  if(photoWrap && u.kyc_selfie_at) {
-    const selfieUrl = _sb && u.id
-      ? `${SUPABASE_URL}/storage/v1/object/public/kyc-selfies/${u.id}.jpg`
-      : null;
-    if(selfieUrl && kycPhoto) { kycPhoto.src = selfieUrl; photoWrap.style.display = ''; }
-    if(kycDate) kycDate.textContent = `Enviada em ${new Date(u.kyc_selfie_at).toLocaleDateString('pt-BR')}`;
-  } else if(photoWrap) {
-    photoWrap.style.display = 'none';
   }
 }
 
