@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '56';
+  const VER = '57';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3437,19 +3437,23 @@ async function _kycSave() {
   if(photo) {
     try {
       const blob = await fetch(photo).then(r => r.blob());
-      await _sb.storage.from('kyc-selfies').upload(
+      const { error: uploadErr } = await _sb.storage.from('kyc-selfies').upload(
         `${state.user.id}.jpg`, blob,
         { contentType: 'image/jpeg', upsert: true }
       );
-    } catch(e) { /* upload falhou, mas segue — flag já salva */ }
+      if(uploadErr) console.error('[kycSave] upload:', uploadErr.message);
+    } catch(e) { console.error('[kycSave] upload catch:', e.message); }
   }
 
   const now = new Date().toISOString();
-  await _sb.from('profiles').update({
+  const { error: updateErr } = await _sb.from('profiles').update({
     kyc_selfie_ok: true,
     kyc_selfie_at: now
-  }).eq('id', state.user.id).catch(()=>{});
-
+  }).eq('id', state.user.id);
+  if(updateErr) {
+    console.error('[kycSave] profiles update:', updateErr.message);
+    showToast('⚠️ Erro ao salvar verificação — contate o suporte: ' + updateErr.message);
+  }
   if(state.user) { state.user.kyc_selfie_at = now; saveSession(state.user); }
 }
 
