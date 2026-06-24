@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -17,11 +18,26 @@ serve(async (req) => {
     });
 
   try {
+    // ── Auth: requer JWT válido do usuário ───────────────────────────
+    const jwt = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!jwt) return json({ error: 'Não autorizado' }, 401);
+
+    const sb = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } }
+    );
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return json({ error: 'Não autorizado' }, 401);
+
     const token = Deno.env.get('MP_ACCESS_TOKEN');
     if (!token) return json({ error: 'MP_ACCESS_TOKEN não configurado' }, 500);
 
     const body = await req.json().catch(() => ({}));
     const { action } = body;
+
+    // Chave de idempotência estável por requisição (não por tentativa)
+    const idempotencyKey = crypto.randomUUID();
 
     const mpFetch = (path: string, opts: RequestInit = {}) =>
       fetch(`${MP_BASE}${path}`, {
@@ -29,7 +45,7 @@ serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'X-Idempotency-Key': crypto.randomUUID(),
+          'X-Idempotency-Key': idempotencyKey,
           ...((opts.headers as Record<string, string>) || {}),
         },
       });
@@ -92,7 +108,7 @@ serve(async (req) => {
       const data = await resp.json();
       if (!resp.ok) {
         console.error('[refund] MP error:', JSON.stringify(data));
-        return json({ error: data.message || 'Erro ao reembolsar' });
+        return json({ error: data.message || 'Erro ao reembolsar' }, 400);
       }
       return json({ ok: true, refundId: data.id });
     }
@@ -101,9 +117,8 @@ serve(async (req) => {
     if (action === 'payout') {
       const { pixKey, amount, description } = body;
       const valor = parseFloat(String(amount));
-      if (!pixKey || !valor) return json({ error: 'pixKey ou amount ausente' }, 400);
+      if (!pixKey || !valor || valor <= 0) return json({ error: 'pixKey ou amount inválido' }, 400);
 
-      // Transferência PIX saindo da conta MP para a chave PIX do vencedor
       const resp = await mpFetch('/v1/account/bank_transfers', {
         method: 'POST',
         body: JSON.stringify({
@@ -117,7 +132,7 @@ serve(async (req) => {
       const data = await resp.json();
       if (!resp.ok) {
         console.error('[payout] MP error:', JSON.stringify(data));
-        return json({ error: data.message || 'Erro ao enviar prêmio. Verifique as permissões de transferência na conta Mercado Pago.' });
+        return json({ error: data.message || 'Erro ao enviar prêmio. Verifique as permissões de transferência na conta Mercado Pago.' }, 400);
       }
       return json({ ok: true, id: data.id });
     }

@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <script>
 (function(){
-  const VER = '58';
+  const VER = '59';
   if(localStorage.getItem('_fv') === VER) return;
   localStorage.setItem('_fv', VER);
   if('serviceWorker' in navigator && 'caches' in window) {
@@ -3333,11 +3333,11 @@ async function kycCapture() {
   const btn     = document.getElementById('kyc-action-btn');
   const status  = document.getElementById('kyc-status');
 
-  // Limita resolução a 640px de largura — evita freeze em câmeras de alta resolução
-  const MAX_W = 640;
+  // Limita resolução — evita freeze em câmeras de alta resolução
+  const MAX_W = 640, MAX_H = 960;
   const vw = video.videoWidth  || 720;
   const vh = video.videoHeight || 960;
-  const scale = Math.min(1, MAX_W / vw);
+  const scale = Math.min(1, MAX_W / vw, MAX_H / vh);
   canvas.width  = Math.round(vw * scale);
   canvas.height = Math.round(vh * scale);
   const ctx = canvas.getContext('2d');
@@ -3437,8 +3437,8 @@ async function _kycSave() {
         `${state.user.id}.jpg`, blob,
         { contentType: 'image/jpeg', upsert: true }
       );
-      if(uploadErr) { console.error('[kycSave] upload:', uploadErr.message); showToast('⚠️ Foto não salva: ' + uploadErr.message); }
-    } catch(e) { console.error('[kycSave] upload catch:', e.message); }
+      if(uploadErr) { console.error('[kycSave] upload:', uploadErr.message); showToast('⚠️ Foto não salva: ' + uploadErr.message); return; }
+    } catch(e) { console.error('[kycSave] upload catch:', e.message); return; }
   }
 
   const now = new Date().toISOString();
@@ -3449,6 +3449,7 @@ async function _kycSave() {
   if(updateErr) {
     console.error('[kycSave] profiles update:', updateErr.message);
     showToast('⚠️ Erro ao salvar verificação — contate o suporte: ' + updateErr.message);
+    return;
   }
   if(state.user) { state.user.kyc_selfie_at = now; saveSession(state.user); }
 }
@@ -4222,12 +4223,14 @@ function _renderAdminPanel() {
                 <div style="margin-top:4px">${kycStatus}</div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
-                ${u.kyc_selfie_at ? `<img src="${SUPABASE_URL}/storage/v1/object/public/kyc-selfies/${u.id}.jpg"
+                ${u.kyc_selfie_at ? `<img src="${SUPABASE_URL}/storage/v1/object/public/kyc-selfies/${u.id}.jpg?t=${encodeURIComponent(u.kyc_selfie_at)}"
                   onerror="this.style.display='none'"
                   style="width:64px;height:64px;border-radius:10px;object-fit:cover;object-position:center top;border:2px solid ${u.kyc_selfie_ok?'var(--ok)':'var(--warn)'}">` : ''}
                 ${u.kyc_selfie_ok
                   ? `<button onclick="adminRejectKyc('${u.id}')" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--err);background:rgba(231,76,60,.1);color:var(--err);cursor:pointer;white-space:nowrap">❌ Revogar</button>`
-                  : ''}
+                  : u.kyc_selfie_at
+                    ? `<button onclick="adminApproveKyc('${u.id}')" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--ok);background:rgba(39,174,96,.12);color:var(--ok);cursor:pointer;white-space:nowrap">✅ Aprovar</button>`
+                    : ''}
               </div>
             </div>
           </div>`;
