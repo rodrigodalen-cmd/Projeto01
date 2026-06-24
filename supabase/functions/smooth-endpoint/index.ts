@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +18,18 @@ serve(async (req) => {
     });
 
   try {
+    // ── Auth: requer JWT válido do usuário ───────────────────────────
+    const jwt = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!jwt) return json({ valid: true, error: 'unauthorized' });
+
+    const sb = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } }
+    );
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return json({ valid: true, error: 'unauthorized' });
+
     const endpoint = Deno.env.get('AZURE_FACE_ENDPOINT');
     const key      = Deno.env.get('AZURE_FACE_KEY');
 
@@ -25,8 +38,8 @@ serve(async (req) => {
 
     const imageBytes = await req.arrayBuffer();
 
-    if (!imageBytes.byteLength)           return json({ valid: false, reason: 'empty_image' });
-    if (imageBytes.byteLength > MAX_IMAGE_BYTES) return json({ valid: false, reason: 'image_too_large' });
+    if (!imageBytes.byteLength)                      return json({ valid: false, reason: 'empty_image' });
+    if (imageBytes.byteLength > MAX_IMAGE_BYTES)     return json({ valid: false, reason: 'image_too_large' });
 
     // Normaliza endpoint (remove barra final)
     const baseUrl  = endpoint.replace(/\/$/, '');
@@ -41,14 +54,15 @@ serve(async (req) => {
       body: imageBytes,
     });
 
-    const faces = await azureResp.json();
-
+    // Verifica status ANTES de parsear o body — evita throw em respostas não-JSON
     if (!azureResp.ok) {
-      console.error('Azure error:', JSON.stringify(faces));
+      const errText = await azureResp.text().catch(() => '');
+      console.error('Azure error:', azureResp.status, errText);
       // Falha na API Azure → não bloqueia o usuário; admin revisa foto
       return json({ valid: true, error: 'azure_error' });
     }
 
+    const faces = await azureResp.json();
     const valid = Array.isArray(faces) && faces.length > 0;
     return json({ valid, faces: faces.length });
 
